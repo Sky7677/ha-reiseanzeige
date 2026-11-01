@@ -1,0 +1,29 @@
+Moritzplatz, Augsburg (Bayern) → Breitenbachplatz (U), Berlin
+So. 01.11.2026
+
+STR 1
+Nach Lechhausen N. Ostfr., Augsburg (Bayern)
+Ab 14:18 Moritzplatz, Augsburg (Bayern)
+An 14:27 Königsplatz, Augsburg (Bayern)
+
+RE1 (4024)
+Nach Nürnberg Hbf
+Ab 14:37 Augsburg Hbf, Gleis 3
+An 15:49 Nürnberg Hbf, Gleis 5 C-F
+
+ICE 1004
+Nach Berlin Hbf
+Ab 16:36 Nürnberg Hbf, Gleis 4
+An 19:40 Berlin Südkreuz, Gleis 7
+
+S41
+Nach Ring S41
+Ab 19:47 Berlin Südkreuz (S), Gleis 11
+An 19:54 Berlin Heidelberger Platz, Gleis 1
+
+U3
+Nach Warschauer Straße
+Ab 20:03 Heidelberger Platz (S+U), Berlin, Gleis 2 (U3)
+An 20:10 Breitenbachplatz (U), Berlin
+
+Verbindung ansehen: https://www.bahn.de/buchung/start?vbid=00000000-0000-4000-8000-000000000002

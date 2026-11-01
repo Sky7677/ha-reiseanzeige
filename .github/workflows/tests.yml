@@ -1,0 +1,37 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  integration:
+    name: Integration (Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install -r requirements_test.txt
+      - run: pytest -q
+
+  card:
+    name: Karte (JavaScript)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Ausgelieferte Kartendatei passt zum Quellcode
+        run: |
+          npm run build
+          git diff --exit-code -- custom_components/reiseanzeige/frontend/reiseanzeige-card.js \
+            || (echo "::error::reiseanzeige-card.js ist veraltet – npm run build ausführen und einchecken" && exit 1)

@@ -1,0 +1,19 @@
+{
+  "name": "reiseanzeige-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Dashboard-Karte der Integration Reiseanzeige",
+  "scripts": {
+    "build": "node scripts/build-card.mjs",
+    "test": "node --test --no-deprecation \"frontend/test/**/*.test.js\""
+  },
+  "devDependencies": {
+    "@maplibre/maplibre-gl-leaflet": "0.1.4",
+    "@versatiles/style": "6.0.3",
+    "esbuild": "0.28.2",
+    "jsdom": "24.1.3",
+    "leaflet": "1.9.4",
+    "maplibre-gl": "6.11.2"
+  }
+}

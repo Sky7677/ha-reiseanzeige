@@ -1,0 +1,527 @@
+{
+ "snapshot": {
+  "schemaVersion": 2,
+  "createdAt": "2026-11-01T14:17:00+01:00",
+  "source": "share-text",
+  "vbid": "00000000-0000-4000-8000-000000000002",
+  "origin": {
+   "id": null,
+   "name": "Moritzplatz, Augsburg (Bayern)",
+   "lat": null,
+   "lon": null
+  },
+  "destination": {
+   "id": null,
+   "name": "Breitenbachplatz (U), Berlin",
+   "lat": null,
+   "lon": null
+  },
+  "plannedDeparture": "2026-11-01T14:18:00+01:00",
+  "plannedArrival": "2026-11-01T20:10:00+01:00",
+  "legs": [
+   {
+    "kind": "ride",
+    "index": 0,
+    "tripId": null,
+    "line": {
+     "name": "STR 1",
+     "trainNumber": null,
+     "productName": "STR",
+     "product": "tram",
+     "operator": null
+    },
+    "replacementService": false,
+    "direction": "Lechhausen N. Ostfr., Augsburg (Bayern)",
+    "origin": {
+     "id": null,
+     "name": "Moritzplatz, Augsburg (Bayern)",
+     "lat": null,
+     "lon": null
+    },
+    "destination": {
+     "id": null,
+     "name": "Königsplatz, Augsburg (Bayern)",
+     "lat": null,
+     "lon": null
+    },
+    "plannedDeparture": "2026-11-01T14:18:00+01:00",
+    "plannedArrival": "2026-11-01T14:27:00+01:00",
+    "plannedDeparturePlatform": null,
+    "plannedArrivalPlatform": null,
+    "stopovers": [
+     {
+      "station": {
+       "id": null,
+       "name": "Moritzplatz, Augsburg (Bayern)",
+       "lat": null,
+       "lon": null
+      },
+      "plannedArrival": null,
+      "plannedDeparture": "2026-11-01T14:18:00+01:00",
+      "plannedPlatform": null
+     },
+     {
+      "station": {
+       "id": null,
+       "name": "Königsplatz, Augsburg (Bayern)",
+       "lat": null,
+       "lon": null
+      },
+      "plannedArrival": "2026-11-01T14:27:00+01:00",
+      "plannedDeparture": null,
+      "plannedPlatform": null
+     }
+    ],
+    "polyline": null,
+    "remarks": [],
+    "matched": false,
+    "source": "text",
+    "iris": null
+   },
+   {
+    "kind": "ride",
+    "index": 1,
+    "tripId": "-111-2611011437",
+    "line": {
+     "name": "RE1",
+     "trainNumber": "4024",
+     "productName": "RE",
+     "product": "regional",
+     "operator": "80"
+    },
+    "replacementService": false,
+    "direction": "Nürnberg Hbf",
+    "origin": {
+     "id": "8000013",
+     "name": "Augsburg Hbf",
+     "lat": 48.3654,
+     "lon": 10.8856
+    },
+    "destination": {
+     "id": "8000284",
+     "name": "Nürnberg Hbf",
+     "lat": 49.4457,
+     "lon": 11.0827
+    },
+    "plannedDeparture": "2026-11-01T14:37:00+01:00",
+    "plannedArrival": "2026-11-01T15:49:00+01:00",
+    "plannedDeparturePlatform": "3",
+    "plannedArrivalPlatform": "5",
+    "stopovers": [
+     {
+      "station": {
+       "id": "8000013",
+       "name": "Augsburg Hbf",
+       "lat": 48.3654,
+       "lon": 10.8856
+      },
+      "plannedArrival": null,
+      "plannedDeparture": "2026-11-01T14:37:00+01:00",
+      "plannedPlatform": "3"
+     },
+     {
+      "station": {
+       "id": "8000080",
+       "name": "Donauwörth",
+       "lat": 48.7143,
+       "lon": 10.7717
+      },
+      "plannedArrival": "2026-11-01T14:58:00+01:00",
+      "plannedDeparture": "2026-11-01T15:00:00+01:00",
+      "plannedPlatform": "2",
+      "estimated": false
+     },
+     {
+      "station": {
+       "id": "8000122",
+       "name": "Treuchtlingen",
+       "lat": 48.9567,
+       "lon": 10.9087
+      },
+      "plannedArrival": "2026-11-01T15:21:00+01:00",
+      "plannedDeparture": "2026-11-01T15:23:00+01:00",
+      "plannedPlatform": "4",
+      "estimated": false
+     },
+     {
+      "station": {
+       "id": "8000284",
+       "name": "Nürnberg Hbf",
+       "lat": 49.4457,
+       "lon": 11.0827
+      },
+      "plannedArrival": "2026-11-01T15:49:00+01:00",
+      "plannedDeparture": null,
+      "plannedPlatform": "5"
+     }
+    ],
+    "polyline": null,
+    "remarks": [],
+    "matched": true,
+    "source": "timetables",
+    "iris": {
+     "tripKey": "-111-2611011437",
+     "depEva": "8000013",
+     "arrEva": "8000284",
+     "number": "4024",
+     "pathAfter": [
+      "Donauwörth",
+      "Treuchtlingen",
+      "Nürnberg Hbf"
+     ],
+     "pathBefore": [
+      "Augsburg Hbf",
+      "Donauwörth",
+      "Treuchtlingen"
+     ],
+     "category": "RE"
+    }
+   },
+   {
+    "kind": "ride",
+    "index": 2,
+    "tripId": "-222-2611011636",
+    "line": {
+     "name": "ICE 1004",
+     "trainNumber": "1004",
+     "productName": "ICE",
+     "product": "longdistance",
+     "operator": "80"
+    },
+    "replacementService": false,
+    "direction": "Berlin Hbf",
+    "origin": {
+     "id": "8000284",
+     "name": "Nürnberg Hbf",
+     "lat": 49.4457,
+     "lon": 11.0827
+    },
+    "destination": {
+     "id": "8011113",
+     "name": "Berlin Südkreuz",
+     "lat": 52.4753,
+     "lon": 13.3655
+    },
+    "plannedDeparture": "2026-11-01T16:36:00+01:00",
+    "plannedArrival": "2026-11-01T19:40:00+01:00",
+    "plannedDeparturePlatform": "4",
+    "plannedArrivalPlatform": "7",
+    "stopovers": [
+     {
+      "station": {
+       "id": "8000284",
+       "name": "Nürnberg Hbf",
+       "lat": 49.4457,
+       "lon": 11.0827
+      },
+      "plannedArrival": null,
+      "plannedDeparture": "2026-11-01T16:36:00+01:00",
+      "plannedPlatform": "4"
+     },
+     {
+      "station": {
+       "id": "8010101",
+       "name": "Erfurt Hbf",
+       "lat": 50.9725,
+       "lon": 11.038
+      },
+      "plannedArrival": "2026-11-01T17:42:00+01:00",
+      "plannedDeparture": "2026-11-01T17:44:00+01:00",
+      "plannedPlatform": "1",
+      "estimated": false
+     },
+     {
+      "station": {
+       "id": "8010159",
+       "name": "Halle (Saale) Hbf",
+       "lat": 51.4776,
+       "lon": 11.987
+      },
+      "plannedArrival": "2026-11-01T18:20:00+01:00",
+      "plannedDeparture": "2026-11-01T18:22:00+01:00",
+      "plannedPlatform": "8",
+      "estimated": false
+     },
+     {
+      "station": {
+       "id": "8011113",
+       "name": "Berlin Südkreuz",
+       "lat": 52.4753,
+       "lon": 13.3655
+      },
+      "plannedArrival": "2026-11-01T19:40:00+01:00",
+      "plannedDeparture": null,
+      "plannedPlatform": "7"
+     }
+    ],
+    "polyline": null,
+    "remarks": [],
+    "matched": true,
+    "source": "timetables",
+    "iris": {
+     "tripKey": "-222-2611011636",
+     "depEva": "8000284",
+     "arrEva": "8011113",
+     "number": "1004",
+     "pathAfter": [
+      "Erfurt Hbf",
+      "Halle (Saale) Hbf",
+      "Berlin Südkreuz",
+      "Berlin Hbf"
+     ],
+     "pathBefore": [
+      "Nürnberg Hbf",
+      "Erfurt Hbf",
+      "Halle (Saale) Hbf"
+     ],
+     "category": "ICE"
+    }
+   },
+   {
+    "kind": "ride",
+    "index": 3,
+    "tripId": "-333-2611011947",
+    "line": {
+     "name": "S41",
+     "trainNumber": "41047",
+     "productName": "S",
+     "product": "suburban",
+     "operator": "80"
+    },
+    "replacementService": false,
+    "direction": "Ring S41",
+    "origin": {
+     "id": "8089110",
+     "name": "Berlin Südkreuz (S)",
+     "lat": 52.4753,
+     "lon": 13.3655
+    },
+    "destination": {
+     "id": "8089015",
+     "name": "Berlin Heidelberger Platz",
+     "lat": 52.48,
+     "lon": 13.3125
+    },
+    "plannedDeparture": "2026-11-01T19:47:00+01:00",
+    "plannedArrival": "2026-11-01T19:54:00+01:00",
+    "plannedDeparturePlatform": "11",
+    "plannedArrivalPlatform": "1",
+    "stopovers": [
+     {
+      "station": {
+       "id": "8089110",
+       "name": "Berlin Südkreuz (S)",
+       "lat": 52.4753,
+       "lon": 13.3655
+      },
+      "plannedArrival": null,
+      "plannedDeparture": "2026-11-01T19:47:00+01:00",
+      "plannedPlatform": "11"
+     },
+     {
+      "station": {
+       "id": "8089032",
+       "name": "Berlin-Schöneberg",
+       "lat": 52.4801,
+       "lon": 13.351
+      },
+      "plannedArrival": "2026-11-01T19:49:00+01:00",
+      "plannedDeparture": "2026-11-01T19:49:00+01:00",
+      "plannedPlatform": "1",
+      "estimated": false
+     },
+     {
+      "station": {
+       "id": "8089017",
+       "name": "Berlin Innsbrucker Platz",
+       "lat": 52.4782,
+       "lon": 13.343
+      },
+      "plannedArrival": "2026-11-01T19:51:00+01:00",
+      "plannedDeparture": "2026-11-01T19:51:00+01:00",
+      "plannedPlatform": "1",
+      "estimated": false
+     },
+     {
+      "station": {
+       "id": "8089015",
+       "name": "Berlin Heidelberger Platz",
+       "lat": 52.48,
+       "lon": 13.3125
+      },
+      "plannedArrival": "2026-11-01T19:54:00+01:00",
+      "plannedDeparture": null,
+      "plannedPlatform": "1"
+     }
+    ],
+    "polyline": null,
+    "remarks": [],
+    "matched": true,
+    "source": "timetables",
+    "iris": {
+     "tripKey": "-333-2611011947",
+     "depEva": "8089110",
+     "arrEva": "8089015",
+     "number": "41047",
+     "pathAfter": [
+      "Berlin-Schöneberg",
+      "Berlin Innsbrucker Platz",
+      "Berlin Heidelberger Platz"
+     ],
+     "pathBefore": [
+      "Berlin Südkreuz (S)",
+      "Berlin-Schöneberg",
+      "Berlin Innsbrucker Platz"
+     ],
+     "category": "S"
+    }
+   },
+   {
+    "kind": "ride",
+    "index": 4,
+    "tripId": null,
+    "line": {
+     "name": "U3",
+     "trainNumber": null,
+     "productName": "U",
+     "product": "subway",
+     "operator": null
+    },
+    "replacementService": false,
+    "direction": "Warschauer Straße",
+    "origin": {
+     "id": null,
+     "name": "Heidelberger Platz (S+U), Berlin",
+     "lat": null,
+     "lon": null
+    },
+    "destination": {
+     "id": null,
+     "name": "Breitenbachplatz (U), Berlin",
+     "lat": null,
+     "lon": null
+    },
+    "plannedDeparture": "2026-11-01T20:03:00+01:00",
+    "plannedArrival": "2026-11-01T20:10:00+01:00",
+    "plannedDeparturePlatform": "2",
+    "plannedArrivalPlatform": null,
+    "stopovers": [
+     {
+      "station": {
+       "id": null,
+       "name": "Heidelberger Platz (S+U), Berlin",
+       "lat": null,
+       "lon": null
+      },
+      "plannedArrival": null,
+      "plannedDeparture": "2026-11-01T20:03:00+01:00",
+      "plannedPlatform": "2"
+     },
+     {
+      "station": {
+       "id": null,
+       "name": "Breitenbachplatz (U), Berlin",
+       "lat": null,
+       "lon": null
+      },
+      "plannedArrival": "2026-11-01T20:10:00+01:00",
+      "plannedDeparture": null,
+      "plannedPlatform": null
+     }
+    ],
+    "polyline": null,
+    "remarks": [],
+    "matched": false,
+    "source": "text",
+    "iris": null
+   }
+  ]
+ },
+ "realtime": {
+  "legs": {
+   "2": {
+    "legIndex": 2,
+    "tripId": "-222-2611011636",
+    "origin": "timetables",
+    "fetchedAt": "2026-11-01T16:42:18.294552+01:00",
+    "cancelled": false,
+    "hasRealtime": true,
+    "stopovers": [
+     {
+      "stationId": "8000284",
+      "cancelled": false,
+      "arrival": {
+       "planned": null,
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-11-01T16:36:00+01:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "4",
+      "platform": "4",
+      "platformChanged": false,
+      "source": null
+     },
+     {
+      "stationId": "8010101",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-11-01T17:42:00+01:00",
+       "prognosed": "2026-11-01T17:47:00+01:00",
+       "delay": 300
+      },
+      "departure": {
+       "planned": "2026-11-01T17:44:00+01:00",
+       "prognosed": "2026-11-01T17:49:00+01:00",
+       "delay": 300
+      },
+      "plannedPlatform": "1",
+      "platform": "2",
+      "platformChanged": true,
+      "source": "iris"
+     },
+     {
+      "stationId": "8010159",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-11-01T18:20:00+01:00",
+       "prognosed": "2026-11-01T18:25:00+01:00",
+       "delay": 300
+      },
+      "departure": {
+       "planned": "2026-11-01T18:22:00+01:00",
+       "prognosed": "2026-11-01T18:27:00+01:00",
+       "delay": 300
+      },
+      "plannedPlatform": "8",
+      "platform": "8",
+      "platformChanged": false,
+      "source": "propagated"
+     },
+     {
+      "stationId": "8011113",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-11-01T19:40:00+01:00",
+       "prognosed": "2026-11-01T19:45:00+01:00",
+       "delay": 300
+      },
+      "departure": {
+       "planned": null,
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "7",
+      "platform": "7",
+      "platformChanged": false,
+      "source": "propagated"
+     }
+    ],
+    "remarks": []
+   }
+  }
+ }
+}

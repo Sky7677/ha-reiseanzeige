@@ -1,0 +1,324 @@
+{
+ "legs": [
+  {
+   "legIndex": 0,
+   "status": "ok",
+   "realtime": {
+    "legIndex": 0,
+    "tripId": "2|#VN#1#ST#1790795983#PI#0#ZI#274442#TA#0#DA#81026#1S#8000013#1T#557#LS#8000284#LT#730#PU#80#RT#1#CA#NRE#ZE#59116#ZB#            59116#PC#3#FR#8000013#FT#557#TO#8000284#TT#730#",
+    "origin": "journey",
+    "fetchedAt": "2026-10-02T17:38:00.608Z",
+    "cancelled": false,
+    "hasRealtime": false,
+    "stopovers": [
+     {
+      "stationId": "8000013",
+      "cancelled": false,
+      "arrival": {
+       "planned": null,
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T05:57:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "5",
+      "platform": "5",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8000662",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T05:59:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T06:00:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "3",
+      "platform": "3",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8003952",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T06:10:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T06:10:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "1",
+      "platform": "1",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8004451",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T06:14:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T06:15:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "2",
+      "platform": "2",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8003989",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T06:20:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T06:20:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "3",
+      "platform": "3",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8000078",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T06:26:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T06:27:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "3",
+      "platform": "3",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8004731",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T06:39:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T06:39:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "1",
+      "platform": "1",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8000122",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T06:47:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T06:49:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "3",
+      "platform": "3",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8006298",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T06:55:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T06:55:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "2",
+      "platform": "2",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8004835",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T07:01:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T07:02:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "2",
+      "platform": "2",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8005185",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T07:11:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T07:12:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "2",
+      "platform": "2",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8005439",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T07:18:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T07:19:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "3",
+      "platform": "3",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8000284",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T07:30:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": null,
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "9",
+      "platform": "9",
+      "platformChanged": false
+     }
+    ],
+    "remarks": []
+   }
+  },
+  {
+   "legIndex": 2,
+   "status": "ok",
+   "realtime": {
+    "legIndex": 2,
+    "tripId": "2|#VN#1#ST#1790795983#PI#0#ZI#230664#TA#0#DA#81026#1S#8000261#1T#619#LS#8098160#LT#1024#PU#80#RT#1#CA#ICE#ZE#1604#ZB#ICE          1604#PC#0#FR#8000261#FT#619#TO#8098160#TT#1024#",
+    "origin": "journey",
+    "fetchedAt": "2026-10-02T17:38:00.609Z",
+    "cancelled": false,
+    "hasRealtime": false,
+    "stopovers": [
+     {
+      "stationId": "8000284",
+      "cancelled": false,
+      "arrival": {
+       "planned": null,
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T07:36:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "6",
+      "platform": "6",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8010101",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T08:44:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T08:46:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "2",
+      "platform": "2",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8010159",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T09:13:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": "2026-10-08T09:15:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "7",
+      "platform": "7",
+      "platformChanged": false
+     },
+     {
+      "stationId": "8011113",
+      "cancelled": false,
+      "arrival": {
+       "planned": "2026-10-08T10:17:00+02:00",
+       "prognosed": null,
+       "delay": null
+      },
+      "departure": {
+       "planned": null,
+       "prognosed": null,
+       "delay": null
+      },
+      "plannedPlatform": "7",
+      "platform": "7",
+      "platformChanged": false
+     }
+    ],
+    "remarks": []
+   }
+  }
+ ],
+ "newTripIds": {}
+}

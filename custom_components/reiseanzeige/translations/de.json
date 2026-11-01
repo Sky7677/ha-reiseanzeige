@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Reiseanzeige einrichten",
+        "description": "Zugangsdaten der Timetables-API aus dem DB API Marketplace (developers.deutschebahn.com, kostenloser Plan „Free“). Jede Installation braucht eigene Zugangsdaten. Optional: Abonniere für dieselbe Anwendung auch „StaDa – Station Data“ (Free4All), dann zeigt die Karte die Strecke.",
+        "data": {
+          "client_id": "Client-ID",
+          "api_key": "API-Schlüssel",
+          "station": "Bahnhof für die Abfahrtstafel (optional)"
+        }
+      },
+      "reconfigure": {
+        "title": "Zugangsdaten ändern",
+        "data": {
+          "client_id": "Client-ID",
+          "api_key": "API-Schlüssel"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Die Zugangsdaten werden von der Timetables-API nicht akzeptiert. Ist die Anwendung für „Timetables“ freigeschaltet?",
+      "cannot_connect": "Die Timetables-API ist gerade nicht erreichbar."
+    },
+    "abort": {
+      "already_configured": "Die Reiseanzeige ist bereits eingerichtet.",
+      "reconfigure_successful": "Zugangsdaten geändert."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Optionen",
+        "data": {
+          "station": "Bahnhof für die Abfahrtstafel",
+          "grace_minutes": "Reise nach Ankunft noch so lange anzeigen (Minuten)",
+          "refresh_seconds": "Kürzester Abfrageabstand während der Reise (Sekunden)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "trip": {
+        "state": {
+          "none": "Keine Reise",
+          "upcoming": "Anstehend",
+          "running": "Unterwegs",
+          "completed": "Angekommen"
+        }
+      }
+    }
+  }
+}

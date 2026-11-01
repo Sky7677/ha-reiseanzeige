@@ -1,0 +1,54 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Reiseanzeige",
+        "description": "Credentials for the Timetables API from the DB API Marketplace (developers.deutschebahn.com, free plan). Every installation needs its own credentials. Optional: also subscribe the same application to “StaDa – Station Data” (Free4All) so the map can draw the route.",
+        "data": {
+          "client_id": "Client ID",
+          "api_key": "API key",
+          "station": "Station for the departure board (optional)"
+        }
+      },
+      "reconfigure": {
+        "title": "Change credentials",
+        "data": {
+          "client_id": "Client ID",
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The Timetables API does not accept these credentials. Is the application subscribed to “Timetables”?",
+      "cannot_connect": "The Timetables API is not reachable right now."
+    },
+    "abort": {
+      "already_configured": "Reiseanzeige is already set up.",
+      "reconfigure_successful": "Credentials changed."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options",
+        "data": {
+          "station": "Station for the departure board",
+          "grace_minutes": "Keep showing a trip after arrival (minutes)",
+          "refresh_seconds": "Shortest refresh interval during a trip (seconds)"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "trip": {
+        "state": {
+          "none": "No trip",
+          "upcoming": "Upcoming",
+          "running": "Travelling",
+          "completed": "Arrived"
+        }
+      }
+    }
+  }
+}
