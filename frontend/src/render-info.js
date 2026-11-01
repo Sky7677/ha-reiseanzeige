@@ -51,9 +51,18 @@ const legBlock = (leg, ui) => `
 		<ol class="stops">${leg.stops.map(stopRow).join('')}</ol>
 		${leg.transfer ? `
 		<div class="transfer${leg.transfer.risky ? ' risky' : ''}">
-			Umstieg ${esc(leg.transfer.station)}${leg.transfer.minutes !== null ? ` · ${leg.transfer.minutes} min` : ''}${leg.transfer.fromPlatform || leg.transfer.toPlatform ? ` · Gl. ${esc(leg.transfer.fromPlatform ?? '?')} → ${esc(leg.transfer.toPlatform ?? '?')}` : ''}${leg.transfer.risky ? ' · Anschluss gefährdet' : ''}
+			Umstieg ${esc(leg.transfer.station)}${leg.transfer.minutes !== null ? ` · ${leg.transfer.minutes} min` : ''}${platforms(leg.transfer)}${leg.transfer.risky ? ' · Anschluss gefährdet' : ''}
 		</div>` : ''}
 	</section>`;
+
+// Gleise beim Umstieg: beide bekannt „Gl. 8 → 5“, sonst nur das bekannte (Bus, Tram: kein Gleis)
+const platforms = (t) => {
+	const a = t.fromPlatform, b = t.toPlatform;
+	if (a && b) return ` · Gl. ${esc(a)} → ${esc(b)}`;
+	if (a) return ` · Gl. ${esc(a)}`;
+	if (b) return ` · → Gl. ${esc(b)}`;
+	return '';
+};
 
 // ui: {owned, editLeg, confirmDelete, message, canLocate}
 export const renderInfo = (v, ui = {}) => `

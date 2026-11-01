@@ -178,3 +178,14 @@ test('Reiseinformationen: Zwischenhalte aus dem Fahrplan (GTFS) mit eigenem Hinw
 	assert.match(html, /Zwischenhalte laut Fahrplan; Echtzeit folgt etwa einen Tag vorher/);
 	assert.match(html, /DELFI e\.V\.\/gtfs\.de, CC BY 4\.0/);
 });
+
+test('Umstieg: Gleis nur, wenn bekannt – kein „?“ beim Bus', () => {
+	const trip = fullTrip('upcoming', null);
+	const v = buildTripView(trip, Date.parse(T(5)));
+	const t = v.legs[0].transfer;
+	const html = renderInfo({...v, legs: [{...v.legs[0], transfer: {...t, toPlatform: null}}]});
+	assert.doesNotMatch(html, /→ \?/);
+	assert.match(html, new RegExp(`Gl\\. ${t.fromPlatform}(?! →)`));
+	assert.match(renderInfo({...v, legs: [{...v.legs[0], transfer: {...t, fromPlatform: null}}]}), /→ Gl\. 6/);
+	assert.match(renderInfo({...v, legs: [{...v.legs[0], transfer: {...t, fromPlatform: null, toPlatform: null}}]}), /Umstieg Nürnberg Hbf · 6 min\s*</);
+});
