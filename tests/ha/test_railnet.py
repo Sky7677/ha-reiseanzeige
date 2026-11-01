@@ -99,3 +99,59 @@ async def test_gleisnetz_abgeschaltet(hass, iris, railnet_release, hass_admin_us
     await share(hass, hass_admin_user)
     trip = entry.runtime_data.trips.list()[0]
     assert all(l["polyline"] is None for l in trip["snapshot"]["legs"])
+
+
+async def test_unerwartetes_format_und_kaputte_dateien(hass, iris, railnet_release, freezer):
+    """Weder ein neues Format noch kaputte Dateien dürfen die Integration stören:
+    altes Netz behalten, nicht in Schleife laden, Start nie verhindern."""
+    import gzip
+    import hashlib
+
+    from custom_components.reiseanzeige.railnet_store import MANIFEST_URL, RELEASES
+
+    freezer.move_to("2026-11-01T12:00:00+01:00")
+    entry = await setup(hass)
+    rt = entry.runtime_data
+    assert rt.railnet.version == "2026-11-02"
+
+    def serve(manifest, content=None):
+        railnet_release.mock.clear_requests()
+        railnet_release.mock.get(MANIFEST_URL, json=manifest)
+        if content is not None:
+            railnet_release.mock.get(RELEASES + manifest["file"], content=content)
+
+    async def check_again(hours=0):
+        rt.railnet.checked_at -= timedelta(days=8)
+        if hours:
+            freezer.tick(timedelta(hours=hours))
+        await rt.tick()
+        await hass.async_block_till_done(wait_background_tasks=True)
+
+    # 1. Neueres Format: nicht laden, altes Netz bleibt
+    serve({**railnet_release.manifest, "format": 2, "version": "2027-01-01"})
+    await check_again()
+    assert rt.railnet.version == "2026-11-02" and rt.railnet.net is not None
+    assert "Format 2" in rt.railnet.error and railnet_release.mock.call_count == 1
+    await rt.tick()  # gleich danach: keine erneute Anfrage
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert railnet_release.mock.call_count == 1
+
+    # 2. Prüfsumme stimmt, Inhalt aber kein Gleisnetz
+    junk = gzip.compress(b"kein Gleisnetz")
+    serve({**railnet_release.manifest, "version": "2027-02-01", "size": len(junk),
+           "sha256": hashlib.sha256(junk).hexdigest()}, junk)
+    await check_again(hours=7)
+    assert rt.railnet.version == "2026-11-02" and rt.railnet.net is not None and rt.railnet.error
+
+    # 3. Manifest ist kein Objekt
+    serve(["unsinn"])
+    await check_again(hours=7)
+    assert rt.railnet.net is not None and rt.railnet.error == "Manifest unlesbar"
+
+    # 4. Gespeicherte Datei beschädigt: Start klappt trotzdem, Datei wird neu geholt
+    railnet_release.path.write_bytes(gzip.compress(b"RLNET\x00\x01\x00kaputt"))
+    railnet_release.publish()
+    assert await hass.config_entries.async_reload(entry.entry_id)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert entry.state.name == "LOADED"
+    assert entry.runtime_data.railnet.net is not None, "neu heruntergeladen"

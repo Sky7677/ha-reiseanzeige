@@ -39,9 +39,13 @@ FILE_NAME = "reiseanzeige.gleisnetz.bin.gz"
 
 
 def _load(path: str) -> tuple[RailNet, Places]:
+    """Datei laden und grob prüfen. Jeder Fehler hier heißt: Datei unbrauchbar."""
     with open(path, "rb") as f:
         data = gzip.decompress(f.read())
     net = RailNet(data)
+    if net.header.get("format") != FORMAT_VERSION or len(net.e_from) != len(net.e_len) or \
+            len(net.shape_start) != len(net.e_len) + 1 or len(net.adj_start) != len(net.node_lat) + 1:
+        raise RailNetError("Gleisnetz-Datei passt nicht zum erwarteten Aufbau")
     return net, Places(net.stations, net.routes)
 
 
@@ -75,7 +79,7 @@ class RailNetStore:
                 self.version = self.manifest.get("version")
                 _LOGGER.info("Gleisnetz %s geladen: %s Kanten, %s Bahnhöfe mit Nummer",
                              self.version, len(self.net.e_len), len(self.places))
-            except (OSError, ValueError, EOFError, gzip.BadGzipFile) as err:
+            except Exception as err:  # noqa: BLE001 – eine kaputte Datei darf den Start nie verhindern
                 _LOGGER.warning("Gespeichertes Gleisnetz unbrauchbar, wird neu geladen: %s", err)
                 await self.hass.async_add_executor_job(self._remove)
                 self.manifest, self.checked_at = None, None
@@ -108,6 +112,8 @@ class RailNetStore:
                 if res.status >= 400:
                     raise RailNetError(f"Manifest: HTTP {res.status}")
                 manifest = await res.json(content_type=None)
+            if not isinstance(manifest, dict):
+                raise RailNetError("Manifest unlesbar")
             if manifest.get("format") != FORMAT_VERSION:
                 raise RailNetError(f"Format {manifest.get('format')} wird von dieser Version nicht unterstützt – bitte die Integration aktualisieren")
             if self.net is not None and manifest.get("version") == self.version:
@@ -117,9 +123,9 @@ class RailNetStore:
             await self._download(session, headers, manifest)
             net, places = await self.hass.async_add_executor_job(_load, self.path + ".part")
             await self.hass.async_add_executor_job(os.replace, self.path + ".part", self.path)
-        except (aiohttp.ClientError, TimeoutError, ValueError, OSError, EOFError, RailNetError) as err:
-            self.error, self.failed_at = str(err), now
-            _LOGGER.warning("Gleisnetz nicht aktualisiert: %s", err)
+        except Exception as err:  # noqa: BLE001 – jeder Fehler: altes Netz behalten, in 6 h erneut
+            self.error, self.failed_at = str(err) or type(err).__name__, now
+            _LOGGER.warning("Gleisnetz nicht aktualisiert, %s: %s", "bisheriges bleibt in Gebrauch" if self.net else "Karte ohne Streckenverlauf", self.error)
             await self.hass.async_add_executor_job(self._remove_part)
             return False
         self.net, self.places = net, places
