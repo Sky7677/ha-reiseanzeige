@@ -30,7 +30,8 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_API_KEY, CONF_CLIENT_ID, CONF_GRACE_MINUTES, CONF_RAILNET, CONF_REFRESH_SECONDS, CONF_STATION,
-    DEFAULT_GRACE_MINUTES, DEFAULT_RAILNET, DEFAULT_REFRESH_SECONDS, DOMAIN, NOTIFY_TITLE, SHARE_EVENT,
+    CONF_TIMETABLE, DEFAULT_GRACE_MINUTES, DEFAULT_RAILNET, DEFAULT_REFRESH_SECONDS, DEFAULT_TIMETABLE, DOMAIN,
+    NOTIFY_TITLE, SHARE_EVENT,
     SIGNAL_NEW_OWNER, SIGNAL_TRIPS_CHANGED, STORAGE_KEY_TRIPS, STORAGE_VERSION, TICK_SECONDS,
 )
 from .core.geometry import apply_geometry
@@ -42,7 +43,7 @@ from .core.trips import (
     ENRICH_WINDOW, TripError, TripManager, realtime_unavailable, share_confirmation, share_error,
 )
 from .owners import Owners
-from .railnet_store import RailNetStore
+from .railnet_store import DataStore, RailNetStore, TimetableStore
 from .stations import StationDirectory
 
 _LOGGER = logging.getLogger(__name__)
@@ -84,6 +85,7 @@ class Reiseanzeige:
         self.client = TimetablesClient(aiohttp_fetch(session), entry.data[CONF_CLIENT_ID], entry.data[CONF_API_KEY])
         self.stations = StationDirectory(hass, entry.data[CONF_CLIENT_ID], entry.data[CONF_API_KEY])
         self.railnet = RailNetStore(hass, enabled=opts.get(CONF_RAILNET, DEFAULT_RAILNET))
+        self.timetable = TimetableStore(hass, enabled=opts.get(CONF_TIMETABLE, DEFAULT_TIMETABLE))
         self.coords = Coordinates(self.railnet, self.stations)
         self.trips = TripManager(
             HaTripStore(hass),
@@ -100,7 +102,7 @@ class Reiseanzeige:
         self._tasks: set[asyncio.Task] = set()
         self._unsubs: list = []
         self._ticking = False
-        self._railnet_busy = False
+        self._busy: set[str] = set()   # gerade ladende Datenquellen
         self._geo_lock = asyncio.Lock()
         self.sensor_owners: set[str] = set()
 
@@ -110,8 +112,9 @@ class Reiseanzeige:
         await self.owners.load()
         await self.trips.init()
         await self.stations.load()
-        await self.railnet.load()
-        self.railnet.listeners.append(self.update_geometry)
+        for store in (self.railnet, self.timetable):
+            await store.load()
+            store.listeners.append(self.update_geometry)
         await self._load_names()
         self.trips.listeners.append(self._trips_changed)
         self._unsubs.append(self.hass.bus.async_listen(SHARE_EVENT, self._on_share))
@@ -233,7 +236,7 @@ class Reiseanzeige:
                 try:
                     changed = await self.hass.async_add_executor_job(
                         apply_geometry, snapshot, self.railnet.net, self.railnet.places,
-                        self.stations.coords, self.railnet.version or "")
+                        self.stations.coords, self.railnet.version or "", self.timetable.timetable)
                 except Exception:  # noqa: BLE001 – ohne Verlauf geht es auch
                     _LOGGER.exception("Streckenverlauf für Reise %s nicht berechnet", trip["id"])
                     continue
@@ -242,12 +245,11 @@ class Reiseanzeige:
                     _LOGGER.debug("Reise %s: Verlauf für %s von %s Abschnitten", trip["id"],
                                   sum(1 for l in legs if l.get("polyline")), len(legs))
 
-    async def _refresh_railnet(self) -> None:
-        self._railnet_busy = True
+    async def _refresh_store(self, store: DataStore) -> None:
         try:
-            await self.railnet.refresh_if_due()
+            await store.refresh_if_due()
         finally:
-            self._railnet_busy = False
+            self._busy.discard(store.label)
 
     # --- Echtzeit ---
 
@@ -269,10 +271,11 @@ class Reiseanzeige:
             for trip in self.trips.due_for_refresh():
                 await self._refresh(trip)
             await self.stations.refresh_if_due()  # fragt höchstens alle 7 Tage wirklich ab
-            if not self._railnet_busy and self.railnet.due(dt_util.now()):
-                # Download kann dauern: eigene Aufgabe, damit die Echtzeit weiterläuft
-                self._railnet_busy = True
-                self._spawn(self._refresh_railnet())
+            for store in (self.railnet, self.timetable):
+                if store.label not in self._busy and store.due(dt_util.now()):
+                    # Download kann dauern: eigene Aufgabe, damit die Echtzeit weiterläuft
+                    self._busy.add(store.label)
+                    self._spawn(self._refresh_store(store))
         except Exception:  # noqa: BLE001 – ein Durchlauf darf die Integration nicht stoppen
             _LOGGER.exception("Durchlauf fehlgeschlagen")
         finally:

@@ -162,3 +162,19 @@ test('Abfahrtstafel: pünktlich grün, bis 3 Minuten gelb, ab 4 Minuten rot', ()
 	const html = renderBoard({status: 'ok', station: {name: 'Augsburg Hbf'}, fetchedAt: '2026-10-08T05:40:00Z', departures: [dep(0), dep(3), dep(4)]});
 	assert.deepEqual([...html.matchAll(/class="rt (\w+)"/g)].map(m => m[1]), ['ok', 'minor', 'late']);
 });
+
+test('Reiseinformationen: Zwischenhalte aus dem Fahrplan (GTFS) mit eigenem Hinweis und Quelle', () => {
+	const trip = fullTrip('upcoming', null);
+	trip.snapshot.legs[0].matched = false;
+	trip.snapshot.legs[0].source = 'gtfs';
+	trip.snapshot.legs[0].line.product = 'regional';
+	trip.snapshot.legs[2].matched = false;
+	trip.snapshot.legs[2].line.product = 'longdistance';
+	const v = buildTripView(trip, Date.parse(T(5)));
+	assert.equal(v.legs[0].planned, true);
+	assert.equal(v.legs[0].pending, false, 'kein „folgen“-Hinweis, die Halte sind ja da');
+	assert.equal(v.legs[1].pending, true, 'ohne Fahrplan wie bisher');
+	const html = renderInfo(v);
+	assert.match(html, /Zwischenhalte laut Fahrplan; Echtzeit folgt etwa einen Tag vorher/);
+	assert.match(html, /DELFI e\.V\.\/gtfs\.de, CC BY 4\.0/);
+});

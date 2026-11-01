@@ -46,6 +46,7 @@ const legBlock = (leg, ui) => `
 		</div>
 		${seatPart(leg, ui)}
 		${leg.pending ? '<div class="remark pending">Zwischenhalte und Echtzeit folgen, sobald der Fahrplan dafür bereitsteht (etwa einen Tag vorher).</div>' : ''}
+		${leg.planned ? `<div class="remark pending">${leg.rail ? 'Zwischenhalte laut Fahrplan; Echtzeit folgt etwa einen Tag vorher.' : 'Zwischenhalte laut Fahrplan, ohne Echtzeit.'}</div>` : ''}
 		${leg.remarks.map(r => `<div class="remark">${esc(r)}</div>`).join('')}
 		<ol class="stops">${leg.stops.map(stopRow).join('')}</ol>
 		${leg.transfer ? `
@@ -67,7 +68,7 @@ export const renderInfo = (v, ui = {}) => `
 	${ui.message ? `<div class="banner ${ui.message.error ? 'warn' : ''}">${esc(ui.message.text)}</div>` : ''}
 	${v.legs.map(leg => legBlock(leg, ui)).join('')}
 	<footer class="updated">
-		<span>${v.updatedAt ? `Echtzeit aktualisiert ${esc(clock(v.updatedAt))}` : 'Noch keine Echtzeitdaten'} · <a class="source" href="https://creativecommons.org/licenses/by/4.0/deed.de" target="_blank" rel="noopener noreferrer">Daten: Deutsche Bahn AG, CC BY 4.0</a></span>
+		<span>${v.updatedAt ? `Echtzeit aktualisiert ${esc(clock(v.updatedAt))}` : 'Noch keine Echtzeitdaten'} · <a class="source" href="https://creativecommons.org/licenses/by/4.0/deed.de" target="_blank" rel="noopener noreferrer">Daten: Deutsche Bahn AG${v.legs.some(l => l.planned) ? ', DELFI e.V./gtfs.de' : ''}, CC BY 4.0</a></span>
 		${ui.owned ? `<button type="button" class="link danger" data-action="delete">${ui.confirmDelete ? 'Wirklich löschen?' : 'Reise löschen'}</button>` : ''}
 	</footer>`;
 

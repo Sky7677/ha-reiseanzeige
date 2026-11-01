@@ -35,10 +35,12 @@
           "station": "Bahnhof für die Abfahrtstafel",
           "grace_minutes": "Reise nach Ankunft noch so lange anzeigen (Minuten)",
           "refresh_seconds": "Kürzester Abfrageabstand während der Reise (Sekunden)",
-          "railnet": "Streckenverlauf aus dem Gleisnetz (OpenStreetMap) laden"
+          "railnet": "Streckenverlauf aus dem Gleisnetz (OpenStreetMap) laden",
+          "timetable": "Zwischenhalte aus dem Fahrplan laden (gtfs.de)"
         },
         "data_description": {
-          "railnet": "Zeichnet den Weg auf den Gleisen und findet die Lage der Halte. Lädt einmalig einige Dutzend MB, danach monatlich eine neue Fassung. Ohne Gleisnetz: gerade Linien, sofern StaDa abonniert ist."
+          "railnet": "Zeichnet den Weg auf den Gleisen und findet die Lage der Halte. Lädt einmalig einige Dutzend MB, danach monatlich eine neue Fassung. Ohne Gleisnetz: gerade Linien, sofern StaDa abonniert ist.",
+          "timetable": "Zeigt Zwischenhalte mit Planzeiten für Züge bis 30 Tage im Voraus und für Straßenbahn und U-Bahn. Lädt täglich wenige MB. Fahrplandaten: DELFI e.V., CC BY 4.0."
         }
       }
     }

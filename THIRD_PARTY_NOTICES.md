@@ -7,7 +7,7 @@ Die Kartenstile in `custom_components/reiseanzeige/map_styles/` wurden mit Versa
 
 Der Ordner `custom_components/reiseanzeige/core/railnet/` (Dateiformat und Routing des Gleisnetzes) stammt aus [reiseanzeige-gleisnetz](https://github.com/Sky7677/reiseanzeige-gleisnetz), ebenfalls MIT.
 
-Laufzeitdaten, die nicht im Repository liegen: Kartendaten und das Gleisnetz © OpenStreetMap-Mitwirkende (ODbL 1.0), Fahrplan- und Echtzeitdaten der Deutschen Bahn AG (CC BY 4.0). Die Karte zeigt beide Quellen an.
+Laufzeitdaten, die nicht im Repository liegen: Kartendaten und das Gleisnetz © OpenStreetMap-Mitwirkende (ODbL 1.0), Fahrplan- und Echtzeitdaten der Deutschen Bahn AG (CC BY 4.0), Fahrplandaten DELFI e.V., aufbereitet von gtfs.de (CC BY 4.0). Die Karte zeigt die Quellen an.
 
 ## Leaflet 1.9.4 (BSD-2-Clause)
 

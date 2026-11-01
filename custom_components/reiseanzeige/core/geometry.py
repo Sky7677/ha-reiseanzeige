@@ -21,7 +21,9 @@ import re
 from typing import Callable
 
 from .places import Places, km
+from .railnet.plan import Timetable
 from .railnet.router import RailNet
+from .schedule import fill_from_timetable
 from .share_text import RAIL_MODES
 
 LINE_MAX_DIST_M = 200.0     # Halt so nah an der OSM-Linie, sonst passt sie nicht
@@ -176,9 +178,12 @@ def leg_polyline(net: RailNet, leg: dict, mode: str, pts: list) -> tuple[list, s
 
 
 def apply_geometry(snapshot: dict, net: RailNet | None, places: Places | None,
-                   fallback: Fallback | None = None, version: str = "") -> bool:
-    """Snapshot an Ort und Stelle ergänzen. True, wenn sich etwas geändert hat."""
+                   fallback: Fallback | None = None, version: str = "", timetable: Timetable | None = None) -> bool:
+    """Snapshot an Ort und Stelle ergänzen: Lage der Halte, Zwischenhalte aus dem
+    Fahrplan (nur für Abschnitte aus dem Text), Streckenverlauf. True, wenn sich
+    etwas geändert hat."""
     changed = fill_coordinates(snapshot, places, fallback)
+    changed |= fill_from_timetable(snapshot, timetable)
     if net is None:
         return changed
     for leg in snapshot.get("legs", []):

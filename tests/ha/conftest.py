@@ -35,12 +35,15 @@ async def http_like_home_assistant(hass):
 
 
 @pytest.fixture(autouse=True)
-def no_railnet_download(request):
-    """Kein Gleisnetz aus dem Netz laden – außer in Tests mit railnet_release."""
-    if "railnet_release" in request.fixturenames:
-        yield
-        return
-    with patch("custom_components.reiseanzeige.railnet_store.RailNetStore.refresh_if_due", return_value=False):
+def no_data_download(request):
+    """Weder Gleisnetz noch Fahrplan aus dem Netz laden – außer in Tests mit
+    railnet_release bzw. timetable_release."""
+    from contextlib import ExitStack
+    with ExitStack() as stack:
+        if "railnet_release" not in request.fixturenames:
+            stack.enter_context(patch("custom_components.reiseanzeige.railnet_store.RailNetStore.refresh_if_due", return_value=False))
+        if "timetable_release" not in request.fixturenames:
+            stack.enter_context(patch("custom_components.reiseanzeige.railnet_store.TimetableStore.refresh_if_due", return_value=False))
         yield
 
 
@@ -67,6 +70,19 @@ def railnet_release(hass, aioclient_mock, tmp_path):
     rel.publish = publish
     publish()
     return rel
+
+
+@pytest.fixture
+def timetable_release(hass, aioclient_mock, tmp_path):
+    """Release „fahrplan“ wie auf GitHub: fahrplan-manifest.json und die gepackte Datei."""
+    from custom_components.reiseanzeige.railnet_store import TT_MANIFEST_URL, TT_RELEASES
+    from timetable_fixture import build, release
+
+    hass.config.config_dir = str(tmp_path)
+    gz, manifest = release(build())
+    aioclient_mock.get(TT_MANIFEST_URL, json=manifest)
+    aioclient_mock.get(TT_RELEASES + manifest["file"], content=gz)
+    return manifest
 
 
 @pytest.fixture

@@ -20,7 +20,7 @@ import {createTripMap} from './map.js';
 import {STYLE} from './styles.js';
 import {esc} from './format.js';
 
-export const CARD_VERSION = '0.7.3';
+export const CARD_VERSION = '0.7.4';
 const POLL_MS = 60 * 1000;
 const SESSION_CHECK_MS = 60 * 1000;
 const field = (form, name) => form.elements.namedItem(name);

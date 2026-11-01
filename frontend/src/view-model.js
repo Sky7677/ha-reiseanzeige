@@ -59,7 +59,10 @@ export const buildTripView = (trip, now = Date.now()) => {
 			name: leg.line.name,
 			product: leg.line.product ?? null,
 			// Bahn-Abschnitt noch nicht im Fahrplan gefunden (ältere Reisen ohne Angabe: gefunden)
-			pending: leg.matched === false && ['longdistance', 'regional', 'suburban'].includes(leg.line.product),
+			pending: leg.matched === false && leg.source !== 'gtfs' && ['longdistance', 'regional', 'suburban'].includes(leg.line.product),
+			// Zwischenhalte laut Fahrplan (GTFS), ohne Echtzeit
+			planned: leg.source === 'gtfs',
+			rail: ['longdistance', 'regional', 'suburban'].includes(leg.line.product),
 			direction: leg.direction,
 			replacement: Boolean(leg.replacementService),
 			cancelled: Boolean(rt?.cancelled),

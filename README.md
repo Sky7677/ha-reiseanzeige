@@ -10,6 +10,7 @@ Bahnreisen aus dem DB Navigator an Home Assistant teilen und live verfolgen: ein
 - die offizielle [Timetables-API](https://developers.deutschebahn.com/db-api-marketplace/apis/product/timetables) der Deutschen Bahn für Fahrplan und Echtzeit, Daten unter CC BY 4.0
 - für die Karte [OpenStreetMap](https://www.openstreetmap.org/copyright) (© OpenStreetMap-Mitwirkende)
 - für Streckenverlauf und Lage der Halte das [Gleisnetz](https://github.com/Sky7677/reiseanzeige-gleisnetz), monatlich aus OpenStreetMap gebaut (ODbL 1.0, © OpenStreetMap-Mitwirkende)
+- für Zwischenhalte vor dem Fahrplanabgleich und für Straßenbahn und U-Bahn der Fahrplan aus den GTFS-Feeds von [gtfs.de](https://gtfs.de), täglich verdichtet im selben Repository (Daten DELFI e.V., CC BY 4.0)
 
 Nicht-öffentliche Schnittstellen der Bahn werden nicht genutzt.
 
@@ -40,8 +41,9 @@ Optional kann dieselbe Anwendung zusätzlich **StaDa – Station Data** (Plan �
 Im DB Navigator eine Verbindung öffnen → **Teilen** → **Home Assistant**. Die Integration liest den mitgeschickten Text (Datum, Züge, Zeiten, Gleise), speichert die Reise und bestätigt das per Push aufs teilende Handy.
 
 - **Fahrplanabgleich:** Die Integration sucht die Züge im Fahrplan der Timetables-API, um Zwischenhalte und Echtzeit zu bekommen. Weil die API ihren Fahrplan nur kurz im Voraus liefert, geschieht das ab etwa einem Tag vor der Abfahrt.
+- **Zwischenhalte im Voraus:** Bis dahin kommen die Zwischenhalte mit Planzeiten aus dem GTFS-Fahrplan, für Reisen bis 30 Tage im Voraus. Die freien Daten haben keine Zugnummern; die Integration findet die Fahrt über Einstiegsbahnhof, Abfahrtsminute, Linie und Ausstieg.
 - **Echtzeit:** Abgefragt werden nur die nächsten Halte des laufenden Zuges, sein Ausstieg und der Einstieg des nächsten Zuges, eng getaktet nur kurz vor Abfahrt, Umstieg und Ankunft.
-- **Tram, U-Bahn und Bus** kennt die Timetables-API nicht. Diese Abschnitte erscheinen mit Ein- und Ausstieg aus dem Text, ohne Zwischenhalte und Echtzeit.
+- **Tram und U-Bahn** kennt die Timetables-API nicht. Ihre Zwischenhalte kommen aus dem GTFS-Fahrplan, Echtzeit gibt es dafür nicht. **Busse** erscheinen nur mit Ein- und Ausstieg aus dem Text.
 - **Streckenverlauf:** Die Integration lädt beim ersten Start das Gleisnetz (einige Dutzend MB, gespeichert in `.storage`) und prüft wöchentlich auf eine neue Fassung. Züge laufen damit auf den Gleisen von Halt zu Halt, ohne an Weichen umzukehren. Güterstrecken nimmt die Berechnung nur, wenn der Umweg sonst deutlich länger wäre. Straßenbahn und U-Bahn folgen der OSM-Linie mit derselben Nummer. Die Lage der Halte kommt über die Bahnhofsnummer aus OpenStreetMap. Fehlt die Nummer, sucht die Integration nach dem Namen und nimmt bei mehrdeutigen Namen den Halt nahe der übrigen Reise. In den Optionen lässt sich das Gleisnetz abschalten.
 - **Ohne Einrichtung je Person:** Beim ersten Teilen erkennt die Integration das Handy, also Benachrichtigungsdienst und `device_tracker`. Darüber laufen Bestätigungen, die GPS-Korrektur der Zugposition und der Knopf „Standort anfordern“.
 - **Neue Verbindung im selben Zeitraum:** Sie ersetzt die alte, zum Beispiel wenn man unterwegs umplant.
