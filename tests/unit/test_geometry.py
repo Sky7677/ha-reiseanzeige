@@ -46,9 +46,17 @@ def near(line, p, tol_km=0.3):
     ("Moritzplatz, Augsburg (Bayern)", "Moritzplatz"),
     ("Berlin Heidelberger Platz", "Heidelberger Platz"),
     ("München Hbf", "München Hauptbahnhof"),
+    ("Göggingen Maria Stern, Augsburg (Bayern)", "Maria Stern"),
+    ("Göggingen Klausenberg, Augsburg (Bayern)", "Klausenberg"),
 ])
 def test_namen_aus_dem_navigator_passen_zu_osm(hafas, osm):
     assert norm_key(osm) in name_keys(hafas)
+
+
+def test_stadtteil_zuletzt_und_nicht_zu_grob():
+    keys = name_keys("Göggingen Maria Stern, Augsburg (Bayern)")
+    assert keys.index("mariastern") > keys.index("goeggingenmariastern"), "genauer zuerst"
+    assert "stern" not in keys and "hauptbahnhof" not in name_keys("Augsburg Hbf, Augsburg")
 
 
 def test_gleiche_namen_in_verschiedenen_staedten(places):

@@ -44,7 +44,9 @@ def name_keys(name: str) -> list[str]:
     """Schlüssel eines Namens aus dem DB Navigator, vom genauesten zum gröbsten.
 
     „Moritzplatz, Augsburg (Bayern)“ → Halt „Moritzplatz“, auch „Augsburg Moritzplatz“;
-    „Berlin Heidelberger Platz“ → auch ohne vorangestellten Ort."""
+    „Berlin Heidelberger Platz“ → auch ohne vorangestellten Ort;
+    „Göggingen Maria Stern, Augsburg (Bayern)“ → zuletzt auch ohne Stadtteil („Maria Stern“,
+    so in OSM). Die gröberen Schlüssel greifen nur, wenn die genaueren nichts finden."""
     keys: list[str] = []
 
     def add(k: str) -> None:
@@ -59,11 +61,22 @@ def name_keys(name: str) -> list[str]:
         add(norm_key(stop))
         add(norm_key(f"{city_plain} {stop}"))
         add(norm_key(f"{city} {stop}"))
+        _drop_prefix(stop.split(), add)
     else:
         words = plain.split()
         if len(words) >= 3 or (len(words) == 2 and norm_key(words[1]) not in ("hauptbahnhof", "bahnhof")):
             add(norm_key(" ".join(words[1:])))
     return keys
+
+
+def _drop_prefix(words: list[str], add) -> None:
+    """Vorangestellten Stadtteil weglassen: mindestens zwei Wörter bleiben, oder ein
+    einzelnes langes Wort („Göggingen Klausenberg“ → „Klausenberg“)."""
+    for i in range(1, len(words)):
+        rest = words[i:]
+        if len(rest) >= 2 or (len(rest) == 1 and len(norm_key(rest[0])) >= 6
+                              and norm_key(rest[0]) not in ("hauptbahnhof", "bahnhof")):
+            add(norm_key(" ".join(rest)))
 
 
 def km(a: tuple[float, float], b: tuple[float, float]) -> float:
