@@ -4,6 +4,9 @@
 // Am Bahnhof steht der Punkt, bis die Abfahrt erreicht ist; beim Umstieg am
 // Umstiegsbahnhof. Entfallene Halte werden übersprungen.
 // Reine Funktionen: Strecke + aufbereitete Reise (view-model) + Uhrzeit.
+// Bei einer Umleitung gelten deren Haltliste und Verlauf (legs.js).
+
+import {legCoords, legStopovers} from './legs.js';
 
 const toRad = Math.PI / 180;
 // Abstand in km; für Strecken innerhalb Europas genau genug
@@ -13,20 +16,16 @@ export const dist = ([la1, lo1], [la2, lo2]) => {
 	return Math.hypot(x, y) * 6371;
 };
 
-const coordsOf = (leg) => {
-	if (Array.isArray(leg.polyline) && leg.polyline.length >= 2) return leg.polyline;
-	return leg.stopovers.map(s => [s.station?.lat, s.station?.lon]).filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
-};
-
 // Pro Fahrtabschnitt: Linie, Lage jedes Halts auf der Linie, aufsummierte Länge
 export const buildGeometry = (trip) => trip.snapshot.legs.filter(l => l.kind === 'ride').map((leg) => {
-	const coords = coordsOf(leg);
+	const coords = legCoords(leg);
 	const cum = [0];
 	for (let i = 1; i < coords.length; i++) cum.push(cum[i - 1] + dist(coords[i - 1], coords[i]));
 	let from = 0;
-	const stopIdx = leg.stopovers.map((s) => {
+	const stopIdx = legStopovers(leg).map((s) => {
 		const p = [s.station?.lat, s.station?.lon];
-		if (!Number.isFinite(p[0]) || coords.length === 0) return null;
+		// entfallene Halte liegen nicht auf dem neuen Verlauf
+		if (s.cancelled || !Number.isFinite(p[0]) || coords.length === 0) return null;
 		// nächster Linienpunkt, nur vorwärts suchen (Halte kommen in Fahrtrichtung)
 		let best = from, bestD = Infinity;
 		for (let i = from; i < coords.length; i++) {
@@ -104,7 +103,8 @@ const computeRaw = (view, geometry, now) => {
 	for (let li = 0; li < view.legs.length; li++) {
 		const g = geometry[li];
 		const stops = view.legs[li].stops;
-		const usable = stops.map((s, k) => ({k, s})).filter(({s}) => !s.cancelled && Number.isFinite(s.lat));
+		// angefahrene Halte mit Lage und Zeit (neue Halte einer Umleitung haben keine Zeit)
+		const usable = stops.map((s, k) => ({k, s})).filter(({s}) => !s.cancelled && Number.isFinite(s.lat) && (s.arr || s.dep));
 		for (let j = 0; j < usable.length; j++) {
 			const {k, s} = usable[j];
 			const arr = Number.isNaN(eff(s.arr)) ? eff(s.dep) : eff(s.arr);

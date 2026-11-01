@@ -11,10 +11,13 @@ apply_geometry() ergänzt einen Snapshot (Format von journey.py):
 Reine Funktionen ohne Home Assistant; laufen im Executor (rechenintensiv).
 Schon berechnete Verläufe werden nur neu berechnet, wenn sich Halte, Verkehrsmittel
 oder die Version des Gleisnetzes geändert haben (legs[].geometry.key).
+Umleitungen (geänderter Laufweg laut Echtzeit) landen in legs[].diversion,
+neben dem geplanten Verlauf; die Karte zeigt dann diese Fassung.
 """
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import math
 import re
@@ -177,13 +180,72 @@ def leg_polyline(net: RailNet, leg: dict, mode: str, pts: list) -> tuple[list, s
     return None
 
 
+# --- Umleitungen ------------------------------------------------------------------------
+
+def _diversion_stopovers(leg: dict, div: dict) -> list[dict]:
+    """Haltliste laut geändertem Laufweg: geplante Halte (entfallene markiert) und
+    neue Halte ohne Zeiten. Leer, wenn die Angaben nicht zum Abschnitt passen."""
+    sos = leg.get("stopovers") or []
+    known = {so["station"].get("name"): _known(so["station"])
+             for so in (leg.get("diversion") or {}).get("stopovers", []) if so.get("added")}
+    out: list[dict] = []
+    for st in div.get("stops") or []:
+        if st.get("kind") == "added":
+            name = st.get("name") or ""
+            c = known.get(name)
+            out.append({"station": {"id": None, "name": name, "lat": c[0] if c else None, "lon": c[1] if c else None},
+                        "plannedArrival": None, "plannedDeparture": None, "plannedPlatform": None, "added": True})
+            continue
+        i = st.get("index")
+        if not isinstance(i, int) or not 0 <= i < len(sos):
+            return []
+        so = copy.deepcopy(sos[i])
+        if st.get("kind") == "cancelled":
+            so["cancelled"] = True
+        out.append(so)
+    return out
+
+
+def apply_diversion(leg: dict, div: dict | None, net: RailNet | None, places: Places | None,
+                    fallback: Fallback | None = None, version: str = "") -> bool:
+    """Geänderten Laufweg eines Abschnitts (realtime.leg_diversion) übernehmen:
+    leg.diversion = {path, stopovers, polyline, geometry}; der Verlauf führt über
+    die angefahrenen Halte. Kein Laufweg mehr → leg.diversion entfällt.
+    True, wenn sich etwas geändert hat."""
+    stopovers = _diversion_stopovers(leg, div) if div else []
+    if not stopovers:
+        return leg.pop("diversion", None) is not None
+    mode = (leg.get("line") or {}).get("product") or ""
+    fill_coordinates({"legs": [{"line": leg.get("line"), "stopovers": stopovers}]}, places, fallback)
+    pts = [p for p in (_known(so["station"]) for so in stopovers if not so.get("cancelled")) if p]
+    key = _key(version, mode, leg.get("line") or {}, pts)
+    old = leg.get("diversion") or {}
+    if old.get("path") == div.get("path") and (old.get("geometry") or {}).get("key") == key:
+        return False
+    polyline, geo = None, {"key": key, "source": None, "routed": 0, "segments": max(len(pts) - 1, 0)}
+    if net is not None and len(pts) >= 2 and km(pts[0], pts[-1]) > 0:
+        res = leg_polyline(net, leg, mode, pts)
+        if res:
+            line, source, found = res
+            polyline = _round(line)
+            geo.update(source=source, routed=found)
+    leg["diversion"] = {"path": list(div.get("path") or []), "stops": copy.deepcopy(div.get("stops") or []),
+                        "stopovers": stopovers, "polyline": polyline, "geometry": geo}
+    return True
+
+
 def apply_geometry(snapshot: dict, net: RailNet | None, places: Places | None,
-                   fallback: Fallback | None = None, version: str = "", timetable: Timetable | None = None) -> bool:
+                   fallback: Fallback | None = None, version: str = "", timetable: Timetable | None = None,
+                   diversions: dict[int, dict | None] | None = None) -> bool:
     """Snapshot an Ort und Stelle ergänzen: Lage der Halte, Zwischenhalte aus dem
-    Fahrplan (nur für Abschnitte aus dem Text), Streckenverlauf. True, wenn sich
-    etwas geändert hat."""
+    Fahrplan (nur für Abschnitte aus dem Text), Streckenverlauf und – für die
+    Abschnitte in diversions (Index → realtime.leg_diversion) – Umleitungen.
+    True, wenn sich etwas geändert hat."""
     changed = fill_coordinates(snapshot, places, fallback)
     changed |= fill_from_timetable(snapshot, timetable)
+    for leg in snapshot.get("legs", []):
+        if diversions and leg.get("index") in diversions:
+            changed |= apply_diversion(leg, diversions[leg["index"]], net, places, fallback, version)
     if net is None:
         return changed
     for leg in snapshot.get("legs", []):

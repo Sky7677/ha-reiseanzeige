@@ -1,13 +1,17 @@
 // Bereitet eine Reise für die Reiseinformationen auf. Reine Funktion: bekommt
 // die Reise aus der App und die aktuelle Zeit, liefert, was angezeigt wird.
 
+import {legStopovers} from './legs.js';
+
 const ms = (iso) => (iso ? Date.parse(iso) : NaN);
 const MIN = 60 * 1000;
 
-// Echtzeit eines Halts zum Fahrplan-Halt finden (gleiche Station, in Reihenfolge)
+// Echtzeit eines Halts zum Fahrplan-Halt finden (gleiche Station, in Reihenfolge).
+// Neue Halte einer Umleitung haben keine eigene Echtzeit.
 const alignRealtime = (stops, rtStops = []) => {
 	let j = 0;
 	return stops.map((s) => {
+		if (s.added) return null;
 		for (let k = j; k < rtStops.length; k++) {
 			if (rtStops[k].stationId === s.station?.id) { j = k + 1; return rtStops[k]; }
 		}
@@ -33,11 +37,12 @@ export const buildTripView = (trip, now = Date.now()) => {
 
 	const legs = rides.map((leg, i) => {
 		const rt = failing ? null : trip.realtime?.legs?.[leg.index] ?? null;
-		const aligned = alignRealtime(leg.stopovers, rt?.stopovers);
-		const last = leg.stopovers.length - 1;
-		const stops = leg.stopovers.map((s, k) => {
+		const stopovers = legStopovers(leg);
+		const aligned = alignRealtime(stopovers, rt?.stopovers);
+		const last = stopovers.length - 1;
+		const stops = stopovers.map((s, k) => {
 			const r = aligned[k];
-			const cancelled = Boolean(r?.cancelled || rt?.cancelled);
+			const cancelled = Boolean(r?.cancelled || rt?.cancelled || s.cancelled);
 			const arr = k === 0 ? null : timeInfo(s.plannedArrival, r?.arrival, cancelled);
 			const dep = k === last ? null : timeInfo(s.plannedDeparture, r?.departure, cancelled);
 			const plannedPlatform = r?.plannedPlatform ?? s.plannedPlatform ?? null;
@@ -50,6 +55,7 @@ export const buildTripView = (trip, now = Date.now()) => {
 				platform: r?.platform ?? plannedPlatform,
 				platformChanged: Boolean(r?.platformChanged),
 				cancelled,
+				added: Boolean(s.added),
 				first: k === 0, last: k === last,
 			};
 		});
@@ -65,6 +71,12 @@ export const buildTripView = (trip, now = Date.now()) => {
 			rail: ['longdistance', 'regional', 'suburban'].includes(leg.line.product),
 			direction: leg.direction,
 			replacement: Boolean(leg.replacementService),
+			// Geänderter Laufweg laut Bahn: was entfällt, was dazukommt
+			diversion: leg.diversion ? {
+				cancelled: stops.filter(s => s.cancelled).map(s => s.name),
+				added: stops.filter(s => s.added).map(s => s.name),
+				endCancelled: stops.at(-1).cancelled,
+			} : null,
 			cancelled: Boolean(rt?.cancelled),
 			hasRealtime: Boolean(rt?.hasRealtime),
 			remarks: (rt?.remarks ?? leg.remarks ?? []).filter(m => m.type === 'warning' || m.type === 'status').map(m => m.text),

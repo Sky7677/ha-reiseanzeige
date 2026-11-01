@@ -12,10 +12,10 @@ const time = (t) => {
 };
 
 const stopRow = (s) => `
-	<li class="stop ${s.state}${s.first || s.last ? ' end' : ''}${s.cancelled ? ' cancelled' : ''}">
+	<li class="stop ${s.state}${s.first || s.last ? ' end' : ''}${s.cancelled ? ' cancelled' : ''}${s.added ? ' added' : ''}">
 		${time(s.shown)}
 		<span class="dot"></span>
-		<span class="name">${esc(s.name)}${s.cancelled ? ' <em>entfällt</em>' : ''}</span>
+		<span class="name">${esc(s.name)}${s.cancelled ? ' <em>entfällt</em>' : ''}${s.added ? ' <em>zusätzlicher Halt</em>' : ''}</span>
 		<span class="pf${s.platformChanged ? ' changed' : ''}">${s.platform ? `Gl. ${esc(s.platform)}` : ''}</span>
 	</li>`;
 
@@ -42,11 +42,12 @@ const legBlock = (leg, ui) => `
 			<span class="line">${esc(leg.name)}</span>
 			${leg.direction ? `<span class="dir">Richtung ${esc(leg.direction)}</span>` : ''}
 			${leg.replacement ? '<span class="tag sev">Ersatzverkehr</span>' : ''}
-			${leg.cancelled ? '<span class="tag bad">fällt aus</span>' : ''}
+			${leg.cancelled ? '<span class="tag bad">fällt aus</span>' : leg.diversion ? '<span class="tag bad">Laufweg geändert</span>' : ''}
 		</div>
 		${seatPart(leg, ui)}
 		${leg.pending ? '<div class="remark pending">Zwischenhalte und Echtzeit folgen, sobald der Fahrplan dafür bereitsteht (etwa einen Tag vorher).</div>' : ''}
 		${leg.planned ? `<div class="remark pending">${leg.rail ? 'Zwischenhalte laut Fahrplan; Echtzeit folgt etwa einen Tag vorher.' : 'Zwischenhalte laut Fahrplan, ohne Echtzeit.'}</div>` : ''}
+		${leg.diversion && !leg.cancelled ? `<div class="remark">${esc(diversionNote(leg))}</div>` : ''}
 		${leg.remarks.map(r => `<div class="remark">${esc(r)}</div>`).join('')}
 		<ol class="stops">${leg.stops.map(stopRow).join('')}</ol>
 		${leg.transfer ? `
@@ -54,6 +55,18 @@ const legBlock = (leg, ui) => `
 			Umstieg ${esc(leg.transfer.station)}${leg.transfer.minutes !== null ? ` · ${leg.transfer.minutes} min` : ''}${platforms(leg.transfer)}${leg.transfer.risky ? ' · Anschluss gefährdet' : ''}
 		</div>` : ''}
 	</section>`;
+
+// Umleitung oder vorzeitiges Ende laut Bahn, in einem Satz. Die Karte zeigt den neuen Weg;
+// zwischen den Halten sucht ihn das Gleisnetz, die Bahn nennt nur die Bahnhöfe.
+const names = (list) => list.length > 3 ? `${list.slice(0, 3).join(', ')} und ${list.length - 3} weitere` : list.join(', ');
+const diversionNote = (leg) => {
+	const d = leg.diversion;
+	const parts = [];
+	if (d.cancelled.length) parts.push(`${d.cancelled.length === 1 ? 'Halt entfällt' : 'Halte entfallen'}: ${names(d.cancelled)}`);
+	if (d.added.length) parts.push(`zusätzlich: ${names(d.added)}`);
+	const end = d.endCancelled ? ` Der Zug fährt nicht bis ${leg.stops.at(-1).name}.` : '';
+	return `Geänderter Laufweg. ${parts.join('; ')}.${end}`;
+};
 
 // Gleise beim Umstieg: beide bekannt „Gl. 8 → 5“, sonst nur das bekannte (Bus, Tram: kein Gleis)
 const platforms = (t) => {

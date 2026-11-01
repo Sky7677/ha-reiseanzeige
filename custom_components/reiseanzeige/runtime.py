@@ -170,8 +170,9 @@ class Reiseanzeige:
         t["ownerCanLocate"] = bool(owner.get("tracker") and owner.get("notify"))
         if light:
             for leg in t["snapshot"]["legs"]:
-                if leg.get("polyline"):
-                    leg["hasPolyline"], leg["polyline"] = True, None
+                for part in (leg, leg.get("diversion")):
+                    if part and part.get("polyline"):
+                        part["hasPolyline"], part["polyline"] = True, None
         return t
 
     # --- Teilen ---
@@ -233,10 +234,13 @@ class Reiseanzeige:
                     continue
                 snapshot = copy.deepcopy(trip["snapshot"])
                 created = snapshot.get("createdAt")
+                # Umleitungen laut letzter Echtzeit je Abschnitt (fehlt ein Abschnitt, bleibt es, wie es ist)
+                diversions = {int(k): copy.deepcopy(v.get("diversion"))
+                              for k, v in ((trip.get("realtime") or {}).get("legs") or {}).items()}
                 try:
                     changed = await self.hass.async_add_executor_job(
                         apply_geometry, snapshot, self.railnet.net, self.railnet.places,
-                        self.stations.coords, self.railnet.version or "", self.timetable.timetable)
+                        self.stations.coords, self.railnet.version or "", self.timetable.timetable, diversions)
                 except Exception:  # noqa: BLE001 – ohne Verlauf geht es auch
                     _LOGGER.exception("Streckenverlauf für Reise %s nicht berechnet", trip["id"])
                     continue
@@ -293,7 +297,19 @@ class Reiseanzeige:
             except TimetablesError as err:
                 _LOGGER.warning("Echtzeit Abschnitt %s (%s): %s", index, leg["line"]["name"], err)
                 results.append({"legIndex": index, "status": "error", "error": err.code})
-        for ev in await self.trips.apply_realtime(trip["id"], results):
+        events = await self.trips.apply_realtime(trip["id"], results)
+        # Laufweg geändert (Umleitung, Zug endet früher) oder wieder wie geplant: Halte und Verlauf neu
+        legs = trip["snapshot"].get("legs", [])
+        for r in results:
+            if r["status"] != "ok" or not 0 <= r["legIndex"] < len(legs):
+                continue
+            new = (r["realtime"].get("diversion") or {}).get("path")
+            if new != (legs[r["legIndex"]].get("diversion") or {}).get("path"):
+                _LOGGER.info("Reise %s, Abschnitt %s: %s", trip["id"], r["legIndex"],
+                             f"geänderter Laufweg {' – '.join(new)}" if new else "Laufweg wieder wie geplant")
+                self._spawn(self.update_geometry([trip["id"]]))
+                break
+        for ev in events:
             if ev["type"] == "realtime_unavailable":
                 self.hass.bus.async_fire(DOMAIN, {"type": ev["type"], "trip_id": ev["tripId"], "user_id": ev["ownerId"]})
                 await self.notify(ev["ownerId"], realtime_unavailable(ev))

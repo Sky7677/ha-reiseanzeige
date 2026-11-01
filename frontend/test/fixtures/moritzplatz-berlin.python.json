@@ -443,7 +443,7 @@
     "legIndex": 2,
     "tripId": "-222-2611011636",
     "origin": "timetables",
-    "fetchedAt": "2026-11-01T16:42:18.294552+01:00",
+    "fetchedAt": "2026-11-01T22:08:54.248227+01:00",
     "cancelled": false,
     "hasRealtime": true,
     "stopovers": [
@@ -520,7 +520,8 @@
       "source": "propagated"
      }
     ],
-    "remarks": []
+    "remarks": [],
+    "diversion": null
    }
   }
  }

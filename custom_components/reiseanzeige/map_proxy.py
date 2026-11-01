@@ -1,7 +1,7 @@
 """Kartenproxy: Vektor- und Rasterkacheln sowie Schriften der OpenStreetMap
 Foundation für die Dashboard-Karte.
 
-Gründe wie beim Kartenproxy, den Home Assistant ab 2026.11 selbst mitbringt:
+Gründe wie beim Kartenproxy, den Home Assistant seit 2026.9 selbst mitbringt:
 Die OSMF verlangt erkennbare Anfragen (User-Agent), die ein Browser nicht
 senden kann, und Kacheln sollen mindestens eine Woche zwischengespeichert
 werden. Sobald Home Assistants eigener Proxy verfügbar ist, kann dieser hier

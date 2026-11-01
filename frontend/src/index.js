@@ -20,7 +20,7 @@ import {createTripMap} from './map.js';
 import {STYLE} from './styles.js';
 import {esc} from './format.js';
 
-export const CARD_VERSION = '0.7.5';
+export const CARD_VERSION = '0.8.0';
 const POLL_MS = 60 * 1000;
 const SESSION_CHECK_MS = 60 * 1000;
 const field = (form, name) => form.elements.namedItem(name);
@@ -259,9 +259,11 @@ class ReiseanzeigeCard extends HTMLElement {
 		}
 	}
 
-	// Vollständige Reise (mit Streckenverläufen) nur für die angezeigte Reise holen
+	// Vollständige Reise (mit Streckenverläufen) nur für die angezeigte Reise holen – erneut,
+	// sobald die Integration einen Verlauf neu berechnet hat (Gleisnetz geladen, Umleitung)
 	async _fullTrip (trip) {
-		const key = `${trip.id}|${trip.snapshot.createdAt}`;
+		const routes = trip.snapshot.legs.map(l => `${l.geometry?.key ?? ''}/${l.diversion?.geometry?.key ?? ''}`).join(',');
+		const key = `${trip.id}|${trip.snapshot.createdAt}|${routes}`;
 		if (this._full?.key !== key) {
 			this._full = {key, trip: await this._client.request(`api/trips/${encodeURIComponent(trip.id)}`)};
 		}

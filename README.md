@@ -43,6 +43,7 @@ Im DB Navigator eine Verbindung öffnen → **Teilen** → **Home Assistant**. D
 - **Fahrplanabgleich:** Die Integration sucht die Züge im Fahrplan der Timetables-API, um Zwischenhalte und Echtzeit zu bekommen. Weil die API ihren Fahrplan nur kurz im Voraus liefert, geschieht das ab etwa einem Tag vor der Abfahrt.
 - **Zwischenhalte im Voraus:** Bis dahin kommen die Zwischenhalte mit Planzeiten aus dem GTFS-Fahrplan, für Reisen bis 30 Tage im Voraus. Die freien Daten haben keine Zugnummern; die Integration findet die Fahrt über Einstiegsbahnhof, Abfahrtsminute, Linie und Ausstieg.
 - **Echtzeit:** Abgefragt werden nur die nächsten Halte des laufenden Zuges, sein Ausstieg und der Einstieg des nächsten Zuges, eng getaktet nur kurz vor Abfahrt, Umstieg und Ankunft.
+- **Umleitungen:** Meldet die Bahn einen geänderten Laufweg, folgen Haltliste und Karte: Entfallene Halte sind durchgestrichen, neue Halte stehen mit Hinweis in der Liste, die Strecke führt über die angefahrenen Halte. Das gilt auch, wenn ein Zug früher endet. Die Bahn nennt nur Bahnhöfe, keine Gleise: Fährt ein Zug ohne Halt über eine andere Strecke, kann die Karte trotzdem den üblichen Weg zeigen.
 - **Tram und U-Bahn** kennt die Timetables-API nicht. Ihre Zwischenhalte kommen aus dem GTFS-Fahrplan, Echtzeit gibt es dafür nicht. **Busse** erscheinen nur mit Ein- und Ausstieg aus dem Text.
 - **Streckenverlauf:** Die Integration lädt beim ersten Start das Gleisnetz (einige Dutzend MB, gespeichert in `.storage`) und prüft wöchentlich auf eine neue Fassung. Züge laufen damit auf den Gleisen von Halt zu Halt, ohne an Weichen umzukehren. Güterstrecken nimmt die Berechnung nur, wenn der Umweg sonst deutlich länger wäre. Straßenbahn und U-Bahn folgen der OSM-Linie mit derselben Nummer. Die Lage der Halte kommt über die Bahnhofsnummer aus OpenStreetMap. Fehlt die Nummer, sucht die Integration nach dem Namen und nimmt bei mehrdeutigen Namen den Halt nahe der übrigen Reise. In den Optionen lässt sich das Gleisnetz abschalten.
 - **Ohne Einrichtung je Person:** Beim ersten Teilen erkennt die Integration das Handy, also Benachrichtigungsdienst und `device_tracker`. Darüber laufen Bestätigungen, die GPS-Korrektur der Zugposition und der Knopf „Standort anfordern“.
@@ -53,7 +54,7 @@ Zur Fehlersuche: Geräte & Dienste → Reiseanzeige → ⋮ → **Diagnose herun
 
 ## Grenzen und Pläne
 
-- **Streckenverlauf:** Bahn-Abschnitte vor dem Fahrplanabgleich, also mehr als einen Tag vor Abfahrt, kennen nur Ein- und Ausstieg. Bis dahin zeigt die Karte den kürzesten Weg auf den Gleisen. Fährt ein Zug eine Umleitung, zeigt die Karte noch den geplanten Weg.
+- **Streckenverlauf:** Bahn-Abschnitte mehr als 30 Tage vor Abfahrt kennen nur Ein- und Ausstieg; bis dahin zeigt die Karte den kürzesten Weg auf den Gleisen. Umleitungen ohne Zwischenhalt auf der neuen Strecke erkennt die Karte nicht (siehe oben).
 - **Gleisnetz:** nur Deutschland. Lücken oder Fehler in OpenStreetMap führen stellenweise zu geraden Linien.
 - **Textformat:** Ändert die Bahn das Format des geteilten Textes, muss das Auslesen angepasst werden.
 - **Ersatzverkehr:** Ausfälle sind sichtbar, Ersatzbusse kaum.

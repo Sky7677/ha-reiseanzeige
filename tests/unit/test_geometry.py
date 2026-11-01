@@ -124,6 +124,46 @@ async def test_verlauf_je_verkehrsmittel(net, places):
     assert apply_geometry(snap, net, places, version="2026-12-02")
 
 
+async def test_umleitung_ueber_andere_halte(net, places):
+    """ICE 1004 fährt ab Erfurt über Leipzig statt Halle (Meldung aus der Echtzeit)."""
+    from core.realtime import compare_paths
+    client = TimetablesClient(november_world(), "cid", "key", limiter=RateLimiter(limit=1000))
+    snap = await build_snapshot(journey(), client, NOW)
+    apply_geometry(snap, net, places, version="v")
+    ice = snap["legs"][2]
+    planned_line = ice["polyline"]
+    div = compare_paths([so["station"]["name"] for so in ice["stopovers"]],
+                        ["Nürnberg Hbf", "Erfurt Hbf", "Leipzig Hbf", "Berlin Südkreuz", "Berlin Hbf"])
+    assert apply_geometry(snap, net, places, version="v", diversions={2: div})
+    d = ice["diversion"]
+    assert [so["station"]["name"] for so in d["stopovers"]] == ["Nürnberg Hbf", "Erfurt Hbf", "Halle (Saale) Hbf", "Leipzig Hbf", "Berlin Südkreuz"]
+    assert [bool(so.get("cancelled")) for so in d["stopovers"]] == [False, False, True, False, False]
+    leipzig = d["stopovers"][3]
+    assert leipzig["added"] and km((leipzig["station"]["lat"], leipzig["station"]["lon"]), P["Leipzig Hbf"]) < 0.1, "Lage aus dem Gleisnetz"
+    assert d["geometry"]["source"] == "tracks" and d["geometry"]["routed"] == 3
+    assert near(d["polyline"], P["Leipzig Hbf"], 0.05) and not near(d["polyline"], P["Halle (Saale) Hbf"], 5)
+    assert ice["polyline"] == planned_line, "geplanter Verlauf bleibt daneben erhalten"
+
+    assert not apply_geometry(snap, net, places, version="v", diversions={2: div}), "gleicher Laufweg: nichts zu tun"
+    assert not apply_geometry(snap, net, places, version="v"), "ohne Echtzeit bleibt die Umleitung stehen"
+    assert apply_geometry(snap, net, places, version="v", diversions={2: None}) and "diversion" not in ice, "Umleitung aufgehoben"
+
+
+def test_umleitung_ohne_gleisnetz_nur_haltliste(places):
+    from core.geometry import apply_diversion
+    leg = {"index": 0, "line": {"name": "ICE 1004", "product": "longdistance"}, "stopovers": [
+        {"station": {"id": "8010101", "name": "Erfurt Hbf", "lat": P["Erfurt Hbf"][0], "lon": P["Erfurt Hbf"][1]}},
+        {"station": {"id": "8010159", "name": "Halle (Saale) Hbf", "lat": P["Halle (Saale) Hbf"][0], "lon": P["Halle (Saale) Hbf"][1]}},
+        {"station": {"id": "8011113", "name": "Berlin Südkreuz", "lat": P["Berlin Südkreuz"][0], "lon": P["Berlin Südkreuz"][1]}}]}
+    div = {"path": ["Erfurt Hbf", "Leipzig Hbf", "Berlin Südkreuz"], "stops": [
+        {"kind": "served", "index": 0}, {"kind": "cancelled", "index": 1}, {"kind": "added", "name": "Leipzig Hbf"},
+        {"kind": "served", "index": 2}]}
+    assert apply_diversion(leg, div, None, places)
+    assert leg["diversion"]["polyline"] is None and leg["diversion"]["stopovers"][2]["station"]["lat"] is not None
+    assert apply_diversion(leg, {"path": [], "stops": [{"kind": "served", "index": 7}]}, None, places)
+    assert "diversion" not in leg, "passt nicht zum Abschnitt: verworfen"
+
+
 def test_ohne_gleise_bleibt_es_bei_geraden_linien(net, places):
     snap = draft_snapshot(parse_share_text(fixture_text("share", "augsburg-berlin-2026-10-08.txt")), NOW)
     apply_geometry(snap, net, places, version="v")

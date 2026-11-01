@@ -8,6 +8,7 @@ import '@maplibre/maplibre-gl-leaflet';
 // MapLibres Hintergrundprozess, beim Bauen zu einem Stück gebündelt (scripts/build-card.mjs),
 // damit die Karte eine einzige Datei bleibt
 import workerCode from 'virtual:maplibre-worker';
+import {legCoords, legStopovers} from './legs.js';
 
 let workerReady = false;
 const ensureWorker = () => {
@@ -34,12 +35,6 @@ const COLORS = {
 const DRIVEN_OPACITY = 0.3;
 const IDLE_RESET_MS = 90 * 1000;   // nach Berührung: so lange bis zur automatischen Ansicht
 const FOLLOW_MAX_ZOOM = 11;
-
-const coordsOf = (leg) => {
-	if (Array.isArray(leg.polyline) && leg.polyline.length >= 2) return leg.polyline;
-	// Rückfallebene ohne Streckenverlauf: gerade Linien zwischen den Halten
-	return leg.stopovers.map(s => [s.station?.lat, s.station?.lon]).filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b));
-};
 
 export const createTripMap = (container, {base, dark = false, theme = 'muted', forceRaster = false, follow = true}) => {
 	const abs = new URL(base, location.origin).href;
@@ -153,14 +148,14 @@ export const createTripMap = (container, {base, dark = false, theme = 'muted', f
 		current.lines = rides.map((leg) => {
 			const dash = leg.replacementService ? '8 6' : null;
 			return {
-				coords: coordsOf(leg),
+				coords: legCoords(leg),
 				driven: L.polyline([], {color: c.route, weight: 4, opacity: DRIVEN_OPACITY, dashArray: dash, interactive: false}).addTo(routeLayer),
-				ahead: L.polyline(coordsOf(leg), {color: c.route, weight: 4, opacity: 0.95, dashArray: dash, interactive: false}).addTo(routeLayer),
+				ahead: L.polyline(legCoords(leg), {color: c.route, weight: 4, opacity: 0.95, dashArray: dash, interactive: false}).addTo(routeLayer),
 			};
 		});
 		for (const leg of rides) {
-			for (const s of leg.stopovers.slice(1, -1)) {
-				if (!Number.isFinite(s.station?.lat)) continue;
+			for (const s of legStopovers(leg).slice(1, -1)) {
+				if (s.cancelled || !Number.isFinite(s.station?.lat)) continue;   // entfallene Halte nicht zeigen
 				L.circleMarker([s.station.lat, s.station.lon], {radius: 3, color: c.route, weight: 2, fillColor: c.stopFill, fillOpacity: 1, interactive: false}).addTo(routeLayer);
 			}
 		}
@@ -220,7 +215,7 @@ export const createTripMap = (container, {base, dark = false, theme = 'muted', f
 			const key = `${trip.id}|${trip.snapshot.createdAt}`;
 			if (current?.key === key) return;
 			const bounds = L.latLngBounds([]);
-			for (const leg of trip.snapshot.legs) if (leg.kind === 'ride') coordsOf(leg).forEach(p => bounds.extend(p));
+			for (const leg of trip.snapshot.legs) if (leg.kind === 'ride') legCoords(leg).forEach(p => bounds.extend(p));
 			const isNewTrip = current?.trip.id !== trip.id;
 			current = {key, trip, bounds, split: current?.split};
 			if (isNewTrip) { pos = null; current.split = null; resetView(); }

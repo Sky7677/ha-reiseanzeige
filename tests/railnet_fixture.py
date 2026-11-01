@@ -5,7 +5,8 @@ OpenStreetMap. Hier genügt ein vereinfachter Bau: jeder Weg ist eine Kante,
 Wege hängen an gleichen Endpunkten zusammen (Weichen also selbst teilen).
 
 world() folgt der Testreise vom 01.11.2026 (Tram 1 in Augsburg, RE1,
-ICE 1004, S41, U3 in Berlin) mit Lockvögeln gleichen Namens in anderen Städten.
+ICE 1004, S41, U3 in Berlin) mit Lockvögeln gleichen Namens in anderen Städten
+und einer Umleitungsstrecke über Leipzig.
 """
 
 from __future__ import annotations
@@ -26,6 +27,7 @@ P = {
     "Nürnberg Hbf": (49.4456, 11.0825),
     "Erfurt Hbf": (50.9725, 11.0380),
     "Halle (Saale) Hbf": (51.4776, 11.9870),
+    "Leipzig Hbf": (51.3455, 12.3821),           # Umleitungsstrecke Erfurt – Leipzig – Berlin
     "Berlin Südkreuz": (52.4753, 13.3655),
     "Berlin Hbf": (52.5251, 13.3694),
     "Berlin Südkreuz (S)": (52.4758, 13.3650),
@@ -117,6 +119,8 @@ def world() -> bytes:
         (ff.MAIN, [P["Nürnberg Hbf"], P["Erfurt Hbf"]]),
         (ff.MAIN, [P["Erfurt Hbf"], P["Halle (Saale) Hbf"]]),
         (ff.MAIN, [P["Halle (Saale) Hbf"], P["Berlin Südkreuz"]]),
+        (ff.MAIN, [P["Erfurt Hbf"], P["Leipzig Hbf"]]),
+        (ff.MAIN, [P["Leipzig Hbf"], P["Berlin Südkreuz"]]),
         (ff.MAIN, [P["Berlin Südkreuz"], P["Berlin Hbf"]]),
         (ff.LIGHT_RAIL, [P[n] for n in ("Berlin Südkreuz (S)", "Berlin-Schöneberg", "Berlin Innsbrucker Platz", "Berlin Heidelberger Platz")]),
         (ff.TRAM, [P[n] for n in ("Moritzplatz", "Königsplatz", "Hauptbahnhof (Tram)")]),
@@ -129,6 +133,7 @@ def world() -> bytes:
         ["Nürnberg Hbf", "8000284", "NN", *P["Nürnberg Hbf"], "rail"],
         ["Erfurt Hbf", "8010101", "UE", *P["Erfurt Hbf"], "rail"],
         ["Halle (Saale) Hbf", "8010159", "LH", *P["Halle (Saale) Hbf"], "rail"],
+        ["Leipzig Hbf", "8010205", "LL", *P["Leipzig Hbf"], "rail"],
         ["Berlin Südkreuz", "8011113", "BPAF", *P["Berlin Südkreuz"], "rail"],
         ["Berlin Hbf", "8011160", "BLS", *P["Berlin Hbf"], "rail"],
         ["Berlin Südkreuz", "8089110", None, *P["Berlin Südkreuz (S)"], "light_rail"],

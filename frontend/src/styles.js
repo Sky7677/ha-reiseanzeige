@@ -99,6 +99,7 @@ input {
 .stop.next .name { font-weight: 600; }
 .stop.cancelled .name { text-decoration: line-through; }
 .stop.cancelled em { font-style: normal; text-decoration: none; color: var(--ra-late); font-size: 12px; }
+.stop.added em { font-style: normal; color: var(--ra-late); font-size: 12px; }
 
 .transfer { margin: 8px 0 0 82px; font-size: 12.5px; padding: 5px 9px; border-radius: 6px; background: var(--secondary-background-color); color: var(--secondary-text-color); }
 .transfer.risky { color: var(--ra-late); background: rgba(227, 0, 27, .1); }

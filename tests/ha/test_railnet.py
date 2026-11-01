@@ -72,6 +72,46 @@ async def test_gleisnetz_wird_geladen_und_zeichnet_die_strecke(hass, iris, railn
     assert railnet_release.mock.call_count == 0
 
 
+async def test_umleitung_aus_der_echtzeit(hass, iris, railnet_release, hass_admin_user, freezer):
+    """Der ICE fährt ab Erfurt über Leipzig: Haltliste und Verlauf folgen der Meldung."""
+    freezer.move_to("2026-11-01T12:00:00+01:00")
+    rt = (await setup(hass)).runtime_data
+    await share(hass, hass_admin_user)
+    trip_id = rt.trips.list()[0]["id"]
+
+    iris.changes["8010101"] = """<timetable station="Erfurt Hbf"><s id="-222-2611011636-2">
+      <dp ct="2611011752" cpth="Leipzig Hbf|Berlin Südkreuz|Berlin Hbf"/></s></timetable>"""
+    freezer.move_to("2026-11-01T17:30:00+01:00")
+    await rt.tick()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    trip = rt.trips.get(trip_id)
+    ice = trip["snapshot"]["legs"][2]
+    assert [so["station"]["name"] for so in ice["diversion"]["stopovers"]] == [
+        "Nürnberg Hbf", "Erfurt Hbf", "Halle (Saale) Hbf", "Leipzig Hbf", "Berlin Südkreuz"]
+    assert ice["diversion"]["geometry"]["source"] == "tracks" and len(ice["diversion"]["polyline"]) >= 4
+    assert trip["realtime"]["legs"]["2"]["stopovers"][2]["cancelled"], "Halle entfällt"
+    light = rt.trip_view(trip, light=True)["snapshot"]["legs"][2]["diversion"]
+    assert light["polyline"] is None and light["hasPolyline"] and light["stopovers"][3]["added"]
+
+    # Keine neue Meldung: Umleitung bleibt (nur Abfragen, keine Neuberechnung; Abfrage alle 5 min)
+    iris.changes["8010101"] = '<timetable station="Erfurt Hbf"/>'
+    rt.client.clear_changes()
+    key = ice["diversion"]["geometry"]["key"]
+    freezer.move_to("2026-11-01T17:36:00+01:00")
+    await rt.tick()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert rt.trips.get(trip_id)["snapshot"]["legs"][2]["diversion"]["geometry"]["key"] == key
+
+    # Bahn meldet wieder den geplanten Laufweg: Umleitung aufgehoben
+    iris.changes["8010101"] = """<timetable station="Erfurt Hbf"><s id="-222-2611011636-2">
+      <dp cpth="Halle (Saale) Hbf|Berlin Südkreuz|Berlin Hbf"/></s></timetable>"""
+    rt.client.clear_changes()
+    freezer.move_to("2026-11-01T17:42:00+01:00")
+    await rt.tick()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert "diversion" not in rt.trips.get(trip_id)["snapshot"]["legs"][2]
+
+
 async def test_falsche_pruefsumme_wird_verworfen(hass, iris, railnet_release, freezer):
     freezer.move_to("2026-11-01T12:00:00+01:00")
     railnet_release.publish(corrupt=True)
