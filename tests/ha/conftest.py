@@ -34,6 +34,41 @@ async def http_like_home_assistant(hass):
     yield
 
 
+@pytest.fixture(autouse=True)
+def no_railnet_download(request):
+    """Kein Gleisnetz aus dem Netz laden – außer in Tests mit railnet_release."""
+    if "railnet_release" in request.fixturenames:
+        yield
+        return
+    with patch("custom_components.reiseanzeige.railnet_store.RailNetStore.refresh_if_due", return_value=False):
+        yield
+
+
+@pytest.fixture
+def railnet_release(hass, aioclient_mock, tmp_path):
+    """Release des Gleisnetzes wie auf GitHub: manifest.json und die gepackte Datei."""
+    from types import SimpleNamespace
+
+    from custom_components.reiseanzeige.railnet_store import MANIFEST_URL, RELEASES
+    from railnet_fixture import release, world
+
+    hass.config.config_dir = str(tmp_path)  # Datei landet in tmp_path/.storage
+    rel = SimpleNamespace(mock=aioclient_mock, path=tmp_path / ".storage" / "reiseanzeige.gleisnetz.bin.gz")
+
+    def publish(version="2026-11-02", corrupt=False):
+        gz, manifest = release(world(), version)
+        if corrupt:
+            manifest["sha256"] = "0" * 64
+        aioclient_mock.clear_requests()
+        aioclient_mock.get(MANIFEST_URL, json=manifest)
+        aioclient_mock.get(RELEASES + manifest["file"], content=gz)
+        rel.manifest = manifest
+
+    rel.publish = publish
+    publish()
+    return rel
+
+
 @pytest.fixture
 def iris():
     """Nachgebaute Timetables-API statt echter Anfragen."""

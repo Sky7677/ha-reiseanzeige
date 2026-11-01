@@ -1,16 +1,18 @@
 """Konstanten der Integration Reiseanzeige."""
 
 DOMAIN = "reiseanzeige"
-VERSION = "0.1.3"
+VERSION = "0.2.0"
 
 CONF_CLIENT_ID = "client_id"
 CONF_API_KEY = "api_key"
 CONF_STATION = "station"            # Standard-Bahnhof der Abfahrtstafel
 CONF_GRACE_MINUTES = "grace_minutes"
 CONF_REFRESH_SECONDS = "refresh_seconds"
+CONF_RAILNET = "railnet"            # Streckenverlauf aus dem Gleisnetz (OpenStreetMap)
 
 DEFAULT_GRACE_MINUTES = 60
 DEFAULT_REFRESH_SECONDS = 90
+DEFAULT_RAILNET = True
 
 SHARE_EVENT = "mobile_app.share"
 SIGNAL_TRIPS_CHANGED = f"{DOMAIN}_trips_changed"

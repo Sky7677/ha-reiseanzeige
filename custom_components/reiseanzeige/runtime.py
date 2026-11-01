@@ -3,7 +3,10 @@ Timetables-API, Benachrichtigungen und die Karte.
 
   mobile_app.share  → Text auslesen, Entwurf speichern, Bestätigung ans Handy,
                       im Hintergrund Züge im Fahrplan suchen
-  alle 15 s         → Abgelaufene entfernen, fällige Echtzeit holen
+  Reise gespeichert/abgeglichen → Lage der Halte und Streckenverlauf aus dem
+                      Gleisnetz (im Executor, siehe core/geometry.py)
+  alle 15 s         → Abgelaufene entfernen, fällige Echtzeit holen; Gleisnetz
+                      wöchentlich auf neue Fassung prüfen
   Echtzeit fehlt    → einmalige Nachricht, Ereignis "reiseanzeige"
 """
 
@@ -26,10 +29,11 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
-    CONF_API_KEY, CONF_CLIENT_ID, CONF_GRACE_MINUTES, CONF_REFRESH_SECONDS, CONF_STATION,
-    DEFAULT_GRACE_MINUTES, DEFAULT_REFRESH_SECONDS, DOMAIN, NOTIFY_TITLE, SHARE_EVENT,
+    CONF_API_KEY, CONF_CLIENT_ID, CONF_GRACE_MINUTES, CONF_RAILNET, CONF_REFRESH_SECONDS, CONF_STATION,
+    DEFAULT_GRACE_MINUTES, DEFAULT_RAILNET, DEFAULT_REFRESH_SECONDS, DOMAIN, NOTIFY_TITLE, SHARE_EVENT,
     SIGNAL_NEW_OWNER, SIGNAL_TRIPS_CHANGED, STORAGE_KEY_TRIPS, STORAGE_VERSION, TICK_SECONDS,
 )
+from .core.geometry import apply_geometry
 from .core.journey import build_snapshot, draft_snapshot
 from .core.realtime import leg_realtime, stations_to_poll
 from .core.share_text import ShareTextError, looks_like_share, parse_share_text
@@ -38,6 +42,7 @@ from .core.trips import (
     ENRICH_WINDOW, TripError, TripManager, realtime_unavailable, share_confirmation, share_error,
 )
 from .owners import Owners
+from .railnet_store import RailNetStore
 from .stations import StationDirectory
 
 _LOGGER = logging.getLogger(__name__)
@@ -57,6 +62,18 @@ class HaTripStore:
         await self._store.async_save({"trips": trips})
 
 
+class Coordinates:
+    """Lage eines Bahnhofs über seine Nummer: Gleisnetz (OSM), sonst StaDa.
+    Suche über den Namen übernimmt core/geometry.py mit Anker."""
+
+    def __init__(self, railnet: RailNetStore, stations: StationDirectory) -> None:
+        self.railnet, self.stations = railnet, stations
+
+    def coords(self, eva: str | None, name: str) -> tuple[float, float] | None:
+        places = self.railnet.places
+        return (places.by_eva(eva) if places else None) or self.stations.coords(eva, name)
+
+
 class Reiseanzeige:
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         self.hass = hass
@@ -66,6 +83,8 @@ class Reiseanzeige:
         session = async_get_clientsession(hass)
         self.client = TimetablesClient(aiohttp_fetch(session), entry.data[CONF_CLIENT_ID], entry.data[CONF_API_KEY])
         self.stations = StationDirectory(hass, entry.data[CONF_CLIENT_ID], entry.data[CONF_API_KEY])
+        self.railnet = RailNetStore(hass, enabled=opts.get(CONF_RAILNET, DEFAULT_RAILNET))
+        self.coords = Coordinates(self.railnet, self.stations)
         self.trips = TripManager(
             HaTripStore(hass),
             clock=dt_util.now,
@@ -81,6 +100,8 @@ class Reiseanzeige:
         self._tasks: set[asyncio.Task] = set()
         self._unsubs: list = []
         self._ticking = False
+        self._railnet_busy = False
+        self._geo_lock = asyncio.Lock()
         self.sensor_owners: set[str] = set()
 
     # --- Start/Stopp ---
@@ -89,11 +110,14 @@ class Reiseanzeige:
         await self.owners.load()
         await self.trips.init()
         await self.stations.load()
+        await self.railnet.load()
+        self.railnet.listeners.append(self.update_geometry)
         await self._load_names()
         self.trips.listeners.append(self._trips_changed)
         self._unsubs.append(self.hass.bus.async_listen(SHARE_EVENT, self._on_share))
         self._unsubs.append(async_track_time_interval(self.hass, self._on_tick, timedelta(seconds=TICK_SECONDS)))
         self._spawn(self.stations.refresh_if_due())
+        self._spawn(self.update_geometry())  # gespeicherte Reisen, z. B. nach einem Update
         self._spawn(self.tick())
 
     async def async_stop(self) -> None:
@@ -130,7 +154,7 @@ class Reiseanzeige:
         for leg in snapshot.get("legs", []):
             for s in [leg.get("origin"), leg.get("destination")] + [so.get("station") for so in leg.get("stopovers", [])]:
                 if s and s.get("lat") is None:
-                    c = self.stations.coords(s.get("id"), s.get("name") or "")
+                    c = self.coords.coords(s.get("id"), s.get("name") or "")
                     if c:
                         s["lat"], s["lon"] = c
 
@@ -170,20 +194,21 @@ class Reiseanzeige:
             return {"ok": False, "code": err.code, "message": share_error(err.code)}
         now = dt_util.now()
         try:
-            result = await self.trips.add_from_share(user_id, journey, draft_snapshot(journey, now, self.stations), text)
+            result = await self.trips.add_from_share(user_id, journey, draft_snapshot(journey, now, self.coords), text)
         except TripError as err:
             return {"ok": False, "code": err.code, "message": share_error(err.code)}
         message = share_confirmation(result)
         _LOGGER.info("%s: %s", self.name_of(user_id) or user_id, message)
         trip_id = result["trip"]["id"]
-        # Auch bei erneutem Teilen derselben Verbindung: Fahrplan neu abgleichen
+        # Erst Lage und Verlauf aus dem Text, dann (auch bei erneutem Teilen) Fahrplan abgleichen
+        self._spawn(self.update_geometry([trip_id]))
         self._spawn(self._enrich(trip_id, journey))
         return {"ok": True, "status": result["status"], "message": message, "trip": self.trip_view(self.trips.get(trip_id))}
 
     async def _enrich(self, trip_id: str, journey) -> None:
         await self.trips.mark_enrich_attempt(trip_id)
         try:
-            snapshot = await build_snapshot(journey, self.client, dt_util.now(), self.stations, horizon=ENRICH_WINDOW)
+            snapshot = await build_snapshot(journey, self.client, dt_util.now(), self.coords, horizon=ENRICH_WINDOW)
         except TimetablesError as err:
             _LOGGER.warning("Reise %s: Züge nicht im Fahrplan gesucht: %s", trip_id, err)
             return
@@ -192,7 +217,37 @@ class Reiseanzeige:
         _LOGGER.info("Reise %s: %s von %s Bahn-Abschnitten im Fahrplan gefunden (%s Abfragen bisher)",
                      trip_id, matched, rail, self.client.calls)
         if await self.trips.set_snapshot(trip_id, snapshot):
+            await self.update_geometry([trip_id])
             await self.tick()
+
+    # --- Lage der Halte und Streckenverlauf ---
+
+    async def update_geometry(self, trip_ids: list[str] | None = None) -> None:
+        """Koordinaten und Verlauf ergänzen – im Executor, nacheinander."""
+        async with self._geo_lock:
+            for trip in list(self.trips.trips):
+                if trip_ids is not None and trip["id"] not in trip_ids:
+                    continue
+                snapshot = copy.deepcopy(trip["snapshot"])
+                created = snapshot.get("createdAt")
+                try:
+                    changed = await self.hass.async_add_executor_job(
+                        apply_geometry, snapshot, self.railnet.net, self.railnet.places,
+                        self.stations.coords, self.railnet.version or "")
+                except Exception:  # noqa: BLE001 – ohne Verlauf geht es auch
+                    _LOGGER.exception("Streckenverlauf für Reise %s nicht berechnet", trip["id"])
+                    continue
+                if changed and await self.trips.set_geometry(trip["id"], created, snapshot):
+                    legs = snapshot.get("legs", [])
+                    _LOGGER.debug("Reise %s: Verlauf für %s von %s Abschnitten", trip["id"],
+                                  sum(1 for l in legs if l.get("polyline")), len(legs))
+
+    async def _refresh_railnet(self) -> None:
+        self._railnet_busy = True
+        try:
+            await self.railnet.refresh_if_due()
+        finally:
+            self._railnet_busy = False
 
     # --- Echtzeit ---
 
@@ -214,6 +269,10 @@ class Reiseanzeige:
             for trip in self.trips.due_for_refresh():
                 await self._refresh(trip)
             await self.stations.refresh_if_due()  # fragt höchstens alle 7 Tage wirklich ab
+            if not self._railnet_busy and self.railnet.due(dt_util.now()):
+                # Download kann dauern: eigene Aufgabe, damit die Echtzeit weiterläuft
+                self._railnet_busy = True
+                self._spawn(self._refresh_railnet())
         except Exception:  # noqa: BLE001 – ein Durchlauf darf die Integration nicht stoppen
             _LOGGER.exception("Durchlauf fehlgeschlagen")
         finally:

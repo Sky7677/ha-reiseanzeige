@@ -180,7 +180,8 @@ async def test_diagnose_ohne_zugangsdaten(hass, iris):
     entry = await setup(hass)
     diag = await async_get_config_entry_diagnostics(hass, entry)
     assert diag["data"] == {"client_id": "**REDACTED**", "api_key": "**REDACTED**"}
-    assert diag["trips"] == [] and diag["version"] == "0.1.3"
+    assert diag["trips"] == [] and diag["version"] == "0.2.0"
+    assert diag["railnet"]["enabled"] is True and diag["railnet"]["loaded"] is False
 
 
 async def test_reise_im_voraus_wird_am_reisetag_abgeglichen(hass, iris, hass_admin_user, hass_ws_client, freezer):

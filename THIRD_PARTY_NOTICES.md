@@ -5,7 +5,9 @@ Die ausgelieferte Kartendatei `custom_components/reiseanzeige/frontend/reiseanze
 
 Die Kartenstile in `custom_components/reiseanzeige/map_styles/` wurden mit VersaTiles Style erzeugt und stehen laut ihren Metadaten unter CC0 1.0 (gemeinfrei).
 
-Laufzeitdaten, die nicht im Repository liegen: Kartendaten © OpenStreetMap-Mitwirkende (ODbL), Fahrplan- und Echtzeitdaten der Deutschen Bahn AG (CC BY 4.0). Beide werden in der Karte mit Quellenangabe angezeigt.
+Der Ordner `custom_components/reiseanzeige/core/railnet/` (Dateiformat und Routing des Gleisnetzes) stammt aus [reiseanzeige-gleisnetz](https://github.com/Sky7677/reiseanzeige-gleisnetz), ebenfalls MIT.
+
+Laufzeitdaten, die nicht im Repository liegen: Kartendaten und das Gleisnetz © OpenStreetMap-Mitwirkende (ODbL 1.0), Fahrplan- und Echtzeitdaten der Deutschen Bahn AG (CC BY 4.0). Die Karte zeigt beide Quellen an.
 
 ## Leaflet 1.9.4 (BSD-2-Clause)
 

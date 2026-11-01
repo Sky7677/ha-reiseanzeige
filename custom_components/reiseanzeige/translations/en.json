@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Set up Reiseanzeige",
-        "description": "Credentials for the Timetables API from the DB API Marketplace (developers.deutschebahn.com, free plan). Every installation needs its own credentials. Optional: also subscribe the same application to “StaDa – Station Data” (Free4All) so the map can draw the route.",
+        "description": "Credentials for the Timetables API from the DB API Marketplace (developers.deutschebahn.com, free plan). Every installation needs its own credentials. The route on the map comes from a rail network based on OpenStreetMap (a one-time download of a few dozen MB, can be switched off in the options).",
         "data": {
           "client_id": "Client ID",
           "api_key": "API key",
@@ -34,7 +34,11 @@
         "data": {
           "station": "Station for the departure board",
           "grace_minutes": "Keep showing a trip after arrival (minutes)",
-          "refresh_seconds": "Shortest refresh interval during a trip (seconds)"
+          "refresh_seconds": "Shortest refresh interval during a trip (seconds)",
+          "railnet": "Load route geometry from the rail network (OpenStreetMap)"
+        },
+        "data_description": {
+          "railnet": "Draws the route along the tracks and locates the stops. One-time download of a few dozen MB, then a new edition monthly. Without it: straight lines, if StaDa is subscribed."
         }
       }
     }

@@ -23,6 +23,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
         "options": dict(entry.options),
         "timetables_calls_since_start": rt.client.calls,
         "station_coordinates": sum(1 for k in rt.stations._coords if not k.startswith("name:")),
+        "railnet": rt.railnet.status(),
         "phones": {uid: {k: v for k, v in o.items() if k in ("notify", "tracker", "deviceName")} for uid, o in rt.owners.data.items()},
         "trips": rt.trips.trips,
     }

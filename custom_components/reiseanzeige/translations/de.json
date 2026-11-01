@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Reiseanzeige einrichten",
-        "description": "Zugangsdaten der Timetables-API aus dem DB API Marketplace (developers.deutschebahn.com, kostenloser Plan „Free“). Jede Installation braucht eigene Zugangsdaten. Optional: Abonniere für dieselbe Anwendung auch „StaDa – Station Data“ (Free4All), dann zeigt die Karte die Strecke.",
+        "description": "Zugangsdaten der Timetables-API aus dem DB API Marketplace (developers.deutschebahn.com, kostenloser Plan „Free“). Jede Installation braucht eigene Zugangsdaten. Den Streckenverlauf holt die Integration aus einem Gleisnetz auf Basis von OpenStreetMap (einmalig ein Download von einigen Dutzend MB, abschaltbar in den Optionen).",
         "data": {
           "client_id": "Client-ID",
           "api_key": "API-Schlüssel",
@@ -34,7 +34,11 @@
         "data": {
           "station": "Bahnhof für die Abfahrtstafel",
           "grace_minutes": "Reise nach Ankunft noch so lange anzeigen (Minuten)",
-          "refresh_seconds": "Kürzester Abfrageabstand während der Reise (Sekunden)"
+          "refresh_seconds": "Kürzester Abfrageabstand während der Reise (Sekunden)",
+          "railnet": "Streckenverlauf aus dem Gleisnetz (OpenStreetMap) laden"
+        },
+        "data_description": {
+          "railnet": "Zeichnet den Weg auf den Gleisen und findet die Lage der Halte. Lädt einmalig einige Dutzend MB, danach monatlich eine neue Fassung. Ohne Gleisnetz: gerade Linien, sofern StaDa abonniert ist."
         }
       }
     }

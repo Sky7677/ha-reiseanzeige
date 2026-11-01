@@ -11,8 +11,8 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, TextSelectorType
 
 from .const import (
-    CONF_API_KEY, CONF_CLIENT_ID, CONF_GRACE_MINUTES, CONF_REFRESH_SECONDS, CONF_STATION,
-    DEFAULT_GRACE_MINUTES, DEFAULT_REFRESH_SECONDS, DOMAIN,
+    CONF_API_KEY, CONF_CLIENT_ID, CONF_GRACE_MINUTES, CONF_RAILNET, CONF_REFRESH_SECONDS, CONF_STATION,
+    DEFAULT_GRACE_MINUTES, DEFAULT_RAILNET, DEFAULT_REFRESH_SECONDS, DOMAIN,
 )
 from .core.timetables import RateLimiter, TimetablesClient, TimetablesError, aiohttp_fetch
 
@@ -87,5 +87,6 @@ class ReiseanzeigeOptionsFlow(config_entries.OptionsFlow):
             vol.Optional(CONF_STATION, default=o.get(CONF_STATION, "")): str,
             vol.Required(CONF_GRACE_MINUTES, default=o.get(CONF_GRACE_MINUTES, DEFAULT_GRACE_MINUTES)): vol.All(vol.Coerce(int), vol.Range(min=10, max=240)),
             vol.Required(CONF_REFRESH_SECONDS, default=o.get(CONF_REFRESH_SECONDS, DEFAULT_REFRESH_SECONDS)): vol.All(vol.Coerce(int), vol.Range(min=60, max=600)),
+            vol.Required(CONF_RAILNET, default=o.get(CONF_RAILNET, DEFAULT_RAILNET)): bool,
         })
         return self.async_show_form(step_id="init", data_schema=schema)

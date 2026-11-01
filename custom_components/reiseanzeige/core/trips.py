@@ -266,10 +266,24 @@ class TripManager:
                 prev = old.get(leg.get("index"))
                 if prev and prev.get("matched") and not leg.get("matched"):
                     snapshot["legs"][i] = prev
+                elif prev and prev.get("geometry") and not leg.get("geometry"):
+                    # Verlauf übernehmen; geometry.key entscheidet, ob er neu berechnet wird
+                    leg["polyline"], leg["geometry"] = prev.get("polyline"), prev["geometry"]
             trip["snapshot"] = snapshot
             trip["enriched"] = True
             trip["realtime"] = None
             trip["lastRefreshAt"] = None
+            return True
+        return await self._mutate(run)
+
+    async def set_geometry(self, trip_id: str, created_at: str | None, snapshot: dict) -> bool:
+        """Snapshot mit ergänzten Koordinaten und Streckenverlauf übernehmen – nur,
+        wenn er inzwischen nicht durch einen neueren Abgleich ersetzt wurde."""
+        def run():
+            trip = next((t for t in self.trips if t["id"] == trip_id), None)
+            if trip is None or trip["snapshot"].get("createdAt") != created_at:
+                return False
+            trip["snapshot"] = snapshot
             return True
         return await self._mutate(run)
 
