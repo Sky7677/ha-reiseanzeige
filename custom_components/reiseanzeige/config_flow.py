@@ -1,4 +1,9 @@
-"""Einrichtung über die Oberfläche: Zugangsdaten der Timetables-API und Optionen."""
+"""Einrichtung über die Oberfläche: Zugangsdaten der Timetables-API (optional) und Optionen.
+
+Ohne Zugangsdaten läuft die Reiseanzeige nach Fahrplan: Teilen, Zwischenhalte
+aus dem GTFS-Fahrplan, Karte aus dem Gleisnetz – ohne Echtzeit und
+Abfahrtstafel. Zugangsdaten lassen sich später über „Neu konfigurieren“
+eintragen oder wieder entfernen."""
 
 from __future__ import annotations
 
@@ -17,6 +22,8 @@ from .const import (
 from .core.timetables import RateLimiter, TimetablesClient, TimetablesError, aiohttp_fetch
 
 TEST_QUERY = "Frankfurt(Main)Hbf"
+GUIDE_URL = "https://github.com/Sky7677/ha-reiseanzeige#zugangsdaten-der-bahn-optional"
+PLACEHOLDERS = {"guide": GUIDE_URL}
 
 
 async def validate(hass, client_id: str, api_key: str) -> str | None:
@@ -29,15 +36,33 @@ async def validate(hass, client_id: str, api_key: str) -> str | None:
     return None
 
 
+async def credentials(hass, user_input: dict[str, Any]) -> tuple[dict[str, str], str | None]:
+    """Zugangsdaten aus dem Formular: beide leer → ohne (Fahrplanmodus), beide
+    ausgefüllt → mit einer Testanfrage geprüft. Ergebnis: (data, Fehlerschlüssel)."""
+    client_id = (user_input.get(CONF_CLIENT_ID) or "").strip()
+    api_key = (user_input.get(CONF_API_KEY) or "").strip()
+    if not client_id and not api_key:
+        return {}, None
+    if not client_id or not api_key:
+        return {}, "incomplete_credentials"
+    error = await validate(hass, client_id, api_key)
+    return ({CONF_CLIENT_ID: client_id, CONF_API_KEY: api_key}, None) if error is None else ({}, error)
+
+
+def _credential_fields(client_id: str = "") -> dict:
+    return {
+        vol.Optional(CONF_CLIENT_ID, description={"suggested_value": client_id}): str,
+        vol.Optional(CONF_API_KEY): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
+    }
+
+
 class ReiseanzeigeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
         if user_input is not None:
-            client_id = user_input[CONF_CLIENT_ID].strip()
-            api_key = user_input[CONF_API_KEY].strip()
-            error = await validate(self.hass, client_id, api_key)
+            data, error = await credentials(self.hass, user_input)
             if error:
                 errors["base"] = error
             else:
@@ -45,31 +70,26 @@ class ReiseanzeigeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._abort_if_unique_id_configured()
                 return self.async_create_entry(
                     title="Reiseanzeige",
-                    data={CONF_CLIENT_ID: client_id, CONF_API_KEY: api_key},
+                    data=data,
                     options={CONF_STATION: (user_input.get(CONF_STATION) or "").strip()},
                 )
-        schema = vol.Schema({
-            vol.Required(CONF_CLIENT_ID): str,
-            vol.Required(CONF_API_KEY): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
-            vol.Optional(CONF_STATION, default=""): str,
-        })
-        return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+        schema = vol.Schema({**_credential_fields(), vol.Optional(CONF_STATION, default=""): str})
+        return self.async_show_form(step_id="user", data_schema=schema, errors=errors,
+                                    description_placeholders=PLACEHOLDERS)
 
     async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
+        """Zugangsdaten eintragen, ändern oder (beide Felder leer) entfernen."""
         errors: dict[str, str] = {}
         entry = self._get_reconfigure_entry()
         if user_input is not None:
-            client_id, api_key = user_input[CONF_CLIENT_ID].strip(), user_input[CONF_API_KEY].strip()
-            error = await validate(self.hass, client_id, api_key)
+            data, error = await credentials(self.hass, user_input)
             if error:
                 errors["base"] = error
             else:
-                return self.async_update_reload_and_abort(entry, data={CONF_CLIENT_ID: client_id, CONF_API_KEY: api_key})
-        schema = vol.Schema({
-            vol.Required(CONF_CLIENT_ID, default=entry.data.get(CONF_CLIENT_ID, "")): str,
-            vol.Required(CONF_API_KEY): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
-        })
-        return self.async_show_form(step_id="reconfigure", data_schema=schema, errors=errors)
+                return self.async_update_reload_and_abort(entry, data=data)
+        schema = vol.Schema(_credential_fields(entry.data.get(CONF_CLIENT_ID, "")))
+        return self.async_show_form(step_id="reconfigure", data_schema=schema, errors=errors,
+                                    description_placeholders=PLACEHOLDERS)
 
     @staticmethod
     @callback

@@ -58,6 +58,8 @@ def ws_me(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None:
         "canAdd": bool(owner.get("notify")),
         "hasPhone": bool(owner.get("notify")),
         "station": rt.default_station,
+        # Ohne Zugangsdaten der Bahn: keine Echtzeit, keine Abfahrtstafel
+        "realtime": rt.client is not None,
     })
 
 
@@ -145,6 +147,9 @@ async def ws_board(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None
         rt = _runtime(hass)
     except TripError as err:
         return _error(connection, msg["id"], err)
+    if rt.client is None:
+        connection.send_result(msg["id"], {"status": "no-credentials"})
+        return
     station = msg.get("station") or rt.default_station
     if not station:
         connection.send_result(msg["id"], {"status": "no-station"})

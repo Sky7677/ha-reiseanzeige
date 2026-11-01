@@ -8,6 +8,9 @@ Timetables-API, Benachrichtigungen und die Karte.
   alle 15 s         → Abgelaufene entfernen, fällige Echtzeit holen; Gleisnetz
                       wöchentlich auf neue Fassung prüfen
   Echtzeit fehlt    → einmalige Nachricht, Ereignis "reiseanzeige"
+
+Ohne Zugangsdaten der Bahn (client None) läuft alles nach Fahrplan: kein
+Abgleich mit der Timetables-API, keine Echtzeit, keine Abfahrtstafel, kein StaDa.
 """
 
 from __future__ import annotations
@@ -82,8 +85,11 @@ class Reiseanzeige:
         opts = {**entry.data, **entry.options}
         self.default_station: str | None = opts.get(CONF_STATION) or None
         session = async_get_clientsession(hass)
-        self.client = TimetablesClient(aiohttp_fetch(session), entry.data[CONF_CLIENT_ID], entry.data[CONF_API_KEY])
-        self.stations = StationDirectory(hass, entry.data[CONF_CLIENT_ID], entry.data[CONF_API_KEY])
+        client_id, api_key = entry.data.get(CONF_CLIENT_ID), entry.data.get(CONF_API_KEY)
+        # Ohne Zugangsdaten: Fahrplanmodus (siehe oben)
+        self.client: TimetablesClient | None = (
+            TimetablesClient(aiohttp_fetch(session), client_id, api_key) if client_id and api_key else None)
+        self.stations = StationDirectory(hass, client_id or "", api_key or "")
         self.railnet = RailNetStore(hass, enabled=opts.get(CONF_RAILNET, DEFAULT_RAILNET))
         self.timetable = TimetableStore(hass, enabled=opts.get(CONF_TIMETABLE, DEFAULT_TIMETABLE))
         self.coords = Coordinates(self.railnet, self.stations)
@@ -119,7 +125,10 @@ class Reiseanzeige:
         self.trips.listeners.append(self._trips_changed)
         self._unsubs.append(self.hass.bus.async_listen(SHARE_EVENT, self._on_share))
         self._unsubs.append(async_track_time_interval(self.hass, self._on_tick, timedelta(seconds=TICK_SECONDS)))
-        self._spawn(self.stations.refresh_if_due())
+        if self.client is None:
+            _LOGGER.info("Ohne Zugangsdaten der Bahn: Reisen nach Fahrplan, ohne Echtzeit und Abfahrtstafel")
+        else:
+            self._spawn(self.stations.refresh_if_due())
         self._spawn(self.update_geometry())  # gespeicherte Reisen, z. B. nach einem Update
         self._spawn(self.tick())
 
@@ -206,7 +215,8 @@ class Reiseanzeige:
         trip_id = result["trip"]["id"]
         # Erst Lage und Verlauf aus dem Text, dann (auch bei erneutem Teilen) Fahrplan abgleichen
         self._spawn(self.update_geometry([trip_id]))
-        self._spawn(self._enrich(trip_id, journey))
+        if self.client is not None:
+            self._spawn(self._enrich(trip_id, journey))
         return {"ok": True, "status": result["status"], "message": message, "trip": self.trip_view(self.trips.get(trip_id))}
 
     async def _enrich(self, trip_id: str, journey) -> None:
@@ -267,14 +277,15 @@ class Reiseanzeige:
         try:
             for removed in await self.trips.cleanup():
                 _LOGGER.info("Reise %s → %s entfernt", removed["originName"], removed["destinationName"])
-            for trip in self.trips.due_for_enrichment():
-                try:
-                    await self._enrich(trip["id"], parse_share_text(trip["shareText"]))
-                except ShareTextError:
-                    pass
-            for trip in self.trips.due_for_refresh():
-                await self._refresh(trip)
-            await self.stations.refresh_if_due()  # fragt höchstens alle 7 Tage wirklich ab
+            if self.client is not None:
+                for trip in self.trips.due_for_enrichment():
+                    try:
+                        await self._enrich(trip["id"], parse_share_text(trip["shareText"]))
+                    except ShareTextError:
+                        pass
+                for trip in self.trips.due_for_refresh():
+                    await self._refresh(trip)
+                await self.stations.refresh_if_due()  # fragt höchstens alle 7 Tage wirklich ab
             for store in (self.railnet, self.timetable):
                 if store.label not in self._busy and store.due(dt_util.now()):
                     # Download kann dauern: eigene Aufgabe, damit die Echtzeit weiterläuft

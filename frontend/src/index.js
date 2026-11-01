@@ -20,7 +20,7 @@ import {createTripMap} from './map.js';
 import {STYLE} from './styles.js';
 import {esc} from './format.js';
 
-export const CARD_VERSION = '0.8.0';
+export const CARD_VERSION = '0.9.0';
 const POLL_MS = 60 * 1000;
 const SESSION_CHECK_MS = 60 * 1000;
 const field = (form, name) => form.elements.namedItem(name);
@@ -213,7 +213,9 @@ class ReiseanzeigeCard extends HTMLElement {
 		const sameTrip = this._shownId === trip.id;
 		this._shownId = trip.id;
 		// Bearbeiten und Löschen darf jeder Benutzer (die App lässt es zu)
-		info.innerHTML = renderInfo(buildTripView(trip), {...this._ui, owned: true, canLocate: Boolean(trip.ownerCanLocate && trip.status === 'running')});
+		info.innerHTML = renderInfo(buildTripView(trip), {...this._ui, owned: true, canLocate: Boolean(trip.ownerCanLocate && trip.status === 'running'),
+			// ohne Zugangsdaten der Bahn keine Echtzeit (ältere Integrationen melden nichts: mit)
+			realtime: this._me?.realtime !== false});
 		this._keepScroll(sameTrip ? previousScroll : 0, trip);
 		this._showSpeed();
 		this._showLocate();

@@ -3,28 +3,34 @@
     "step": {
       "user": {
         "title": "Set up Reiseanzeige",
-        "description": "Credentials for the Timetables API from the DB API Marketplace (developers.deutschebahn.com, free plan). Every installation needs its own credentials. Optional: also subscribe the same application to “StaDa – Station Data” (Free4All) so the map can draw the route.",
+        "description": "The Deutsche Bahn credentials are optional. Without them, Reiseanzeige works from the timetable: sharing trips, intermediate stops and the route on the map, but no real-time data and no departure board. With your own credentials for the Timetables API (DB API Marketplace, free plan “Free”) you also get delays, platform changes, cancellations, diversions and the departure board. How to get them: [guide]({guide}) (German). You can also add them later via “Reconfigure”.\n\nThe route on the map comes from a rail network based on OpenStreetMap (a one-time download of a few dozen MB, can be switched off in the options).",
         "data": {
-          "client_id": "Client ID",
-          "api_key": "API key",
+          "client_id": "Client ID (optional)",
+          "api_key": "API key / client secret (optional)",
           "station": "Station for the departure board (optional)"
+        },
+        "data_description": {
+          "client_id": "Leave both fields empty to start without real-time data.",
+          "api_key": "Called “Client Secret” in the DB API Marketplace; only shown when the application is created."
         }
       },
       "reconfigure": {
-        "title": "Change credentials",
+        "title": "Deutsche Bahn credentials",
+        "description": "Add or change credentials for the Timetables API. Clear both fields to remove them – Reiseanzeige then works from the timetable, without real-time data and departure board. [Guide]({guide}) (German)",
         "data": {
           "client_id": "Client ID",
-          "api_key": "API key"
+          "api_key": "API key / client secret"
         }
       }
     },
     "error": {
       "invalid_auth": "The Timetables API does not accept these credentials. Is the application subscribed to “Timetables”?",
-      "cannot_connect": "The Timetables API is not reachable right now."
+      "cannot_connect": "The Timetables API is not reachable right now.",
+      "incomplete_credentials": "Please fill in both fields – or leave both empty to start without real-time data."
     },
     "abort": {
       "already_configured": "Reiseanzeige is already set up.",
-      "reconfigure_successful": "Credentials changed."
+      "reconfigure_successful": "Credentials saved."
     }
   },
   "options": {
@@ -34,7 +40,13 @@
         "data": {
           "station": "Station for the departure board",
           "grace_minutes": "Keep showing a trip after arrival (minutes)",
-          "refresh_seconds": "Shortest refresh interval during a trip (seconds)"
+          "refresh_seconds": "Shortest refresh interval during a trip (seconds)",
+          "railnet": "Load route geometry from the rail network (OpenStreetMap)",
+          "timetable": "Load intermediate stops from the timetable (gtfs.de)"
+        },
+        "data_description": {
+          "railnet": "Draws the route along the tracks and locates the stops. One-time download of a few dozen MB, then a new edition monthly. Without it: straight lines, if StaDa is subscribed.",
+          "timetable": "Shows intermediate stops with scheduled times for trains up to 30 days ahead and for trams and subways. Downloads a few MB daily. Timetable data: DELFI e.V., CC BY 4.0."
         }
       }
     }

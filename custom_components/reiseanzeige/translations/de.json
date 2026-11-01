@@ -3,28 +3,34 @@
     "step": {
       "user": {
         "title": "Reiseanzeige einrichten",
-        "description": "Zugangsdaten der Timetables-API aus dem DB API Marketplace (developers.deutschebahn.com, kostenloser Plan „Free“). Jede Installation braucht eigene Zugangsdaten. Den Streckenverlauf holt die Integration aus einem Gleisnetz auf Basis von OpenStreetMap (einmalig ein Download von einigen Dutzend MB, abschaltbar in den Optionen).",
+        "description": "Die Zugangsdaten der Bahn sind optional. Ohne sie läuft die Reiseanzeige nach Fahrplan: Reisen teilen, Zwischenhalte und Strecke auf der Karte, aber ohne Echtzeit und ohne Abfahrtstafel. Mit eigenen Zugangsdaten für die Timetables-API (DB API Marketplace, kostenloser Plan „Free“) kommen Verspätungen, Gleiswechsel, Ausfälle, Umleitungen und die Abfahrtstafel dazu. Wie du sie bekommst: [Anleitung]({guide}). Eintragen lassen sie sich auch später über „Neu konfigurieren“.\n\nDen Streckenverlauf holt die Integration aus einem Gleisnetz auf Basis von OpenStreetMap (einmalig ein Download von einigen Dutzend MB, abschaltbar in den Optionen).",
         "data": {
-          "client_id": "Client-ID",
-          "api_key": "API-Schlüssel",
+          "client_id": "Client-ID (optional)",
+          "api_key": "API-Schlüssel / Client Secret (optional)",
           "station": "Bahnhof für die Abfahrtstafel (optional)"
+        },
+        "data_description": {
+          "client_id": "Beide Felder leer lassen, um ohne Echtzeit zu starten.",
+          "api_key": "Im DB API Marketplace „Client Secret“ genannt; wird nur beim Anlegen der Anwendung angezeigt."
         }
       },
       "reconfigure": {
-        "title": "Zugangsdaten ändern",
+        "title": "Zugangsdaten der Bahn",
+        "description": "Zugangsdaten für die Timetables-API eintragen oder ändern. Beide Felder leeren, um sie zu entfernen – die Reiseanzeige läuft dann nach Fahrplan, ohne Echtzeit und Abfahrtstafel. [Anleitung]({guide})",
         "data": {
           "client_id": "Client-ID",
-          "api_key": "API-Schlüssel"
+          "api_key": "API-Schlüssel / Client Secret"
         }
       }
     },
     "error": {
       "invalid_auth": "Die Zugangsdaten werden von der Timetables-API nicht akzeptiert. Ist die Anwendung für „Timetables“ freigeschaltet?",
-      "cannot_connect": "Die Timetables-API ist gerade nicht erreichbar."
+      "cannot_connect": "Die Timetables-API ist gerade nicht erreichbar.",
+      "incomplete_credentials": "Bitte beide Felder ausfüllen – oder beide leer lassen, um ohne Echtzeit zu starten."
     },
     "abort": {
       "already_configured": "Die Reiseanzeige ist bereits eingerichtet.",
-      "reconfigure_successful": "Zugangsdaten geändert."
+      "reconfigure_successful": "Zugangsdaten gespeichert."
     }
   },
   "options": {

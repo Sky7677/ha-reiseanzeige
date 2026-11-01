@@ -3,8 +3,8 @@
 import {clock, esc} from './format.js';
 
 const HINTS = {
-	'no-station': 'Für diesen Benutzer ist kein Bahnhof eingestellt (App-Einstellungen → Personen → station).',
-	'no-credentials': 'Für die Abfahrtstafel fehlen die Zugangsdaten der Timetables-API in den App-Einstellungen.',
+	'no-station': 'Kein Bahnhof für die Abfahrtstafel eingestellt (Optionen der Integration oder „station“ an der Karte).',
+	'no-credentials': 'Die Abfahrtstafel braucht Zugangsdaten der Bahn für die Timetables-API. Eintragen: Einstellungen → Geräte & Dienste → Reiseanzeige → ⋮ → Neu konfigurieren.',
 };
 
 // Farbe der Prognose: pünktlich grün, bis einschließlich 3 Minuten gelb, darüber rot
