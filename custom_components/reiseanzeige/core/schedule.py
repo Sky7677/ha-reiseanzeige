@@ -3,7 +3,8 @@
 Für Abschnitte, die nur aus dem geteilten Text bestehen (source "text"):
   * Züge, solange die Timetables-API ihren Fahrplan noch nicht liefert
     (mehr als etwa einen Tag vor Abfahrt) – bis 30 Tage im Voraus,
-  * Straßenbahn und U-Bahn, die die Timetables-API gar nicht kennt.
+  * Straßenbahn und U-Bahn, die die Timetables-API gar nicht kennt,
+  * Ersatzbusse („Bus RE80“); andere Busse stehen nicht im Fahrplan.
 Gesucht wird die Fahrt über Einstiegs-Station, Abfahrtsminute, Linie und
 Ausstieg (die freien Feeds haben keine Zugnummern). Treffer → alle Halte mit
 Planzeiten und Lage; der Abschnitt bekommt source "gtfs". Findet die
@@ -20,9 +21,9 @@ from .places import name_keys
 from .railnet.plan import Timetable, line_score
 
 TZ = ZoneInfo("Europe/Berlin")
-NEAR_KM = {"tram": 0.3, "subway": 0.3}   # so weit darf die Station im Fahrplan von der bekannten Lage abweichen
+NEAR_KM = {"tram": 0.3, "subway": 0.3, "bus": 0.4}   # so weit darf die Station im Fahrplan von der bekannten Lage abweichen
 NEAR_KM_RAIL = 0.6                        # Bahnhöfe sind groß, ihr Punkt liegt mal am Gebäude, mal am Gleis
-MODES = {"longdistance", "regional", "suburban", "tram", "subway"}
+MODES = {"longdistance", "regional", "suburban", "tram", "subway", "bus"}
 
 
 def _dt(iso: str | None) -> datetime | None:

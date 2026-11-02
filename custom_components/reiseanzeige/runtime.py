@@ -20,7 +20,8 @@ import copy
 import logging
 import secrets
 import time
-from datetime import timedelta
+from datetime import datetime, time as dtime, timedelta
+from zoneinfo import ZoneInfo
 
 from homeassistant.components import persistent_notification
 from homeassistant.config_entries import ConfigEntry
@@ -54,6 +55,7 @@ from .stations import StationDirectory
 _LOGGER = logging.getLogger(__name__)
 
 LOCATE_COOLDOWN = 30  # Sekunden je Person (Companion-App rät von häufigen Anforderungen ab)
+REPLACEMENT_RADIUS_KM = 0.5   # Ersatzbus-Haltestellen so nah am Bahnhof gehören zur Tafel
 
 
 class HaTripStore:
@@ -333,6 +335,23 @@ class Reiseanzeige:
             if ev["type"] == "realtime_unavailable":
                 self.hass.bus.async_fire(DOMAIN, {"type": ev["type"], "trip_id": ev["tripId"], "user_id": ev["ownerId"]})
                 await self.notify(ev["ownerId"], realtime_unavailable(ev))
+
+    # --- Abfahrtstafel: Ersatzbusse laut Fahrplan (core/board.py) ---
+
+    def board_replacements(self, station, now, minutes: int) -> list[dict]:
+        """Ersatzbusse an Haltestellen rund um den Bahnhof laut Fahrplan (GTFS)."""
+        tt = self.timetable.timetable
+        c = self.coords.coords(station.eva, station.name) if tt else None
+        if c is None:
+            return []
+        tz = ZoneInfo("Europe/Berlin")
+        local = now.astimezone(tz)
+        day = local.date()
+        start = local.hour * 60 + local.minute
+        deps = tt.departures(tt.near(c[0], c[1], REPLACEMENT_RADIUS_KM), day, start - 1, minutes + 1, modes={"replacement"})
+        midnight = datetime.combine(day, dtime(0), tz)
+        return [{"line": d.line, "planned": midnight + timedelta(minutes=d.minute), "destination": d.to,
+                 "via": d.via, "stop": d.stop} for d in deps]
 
     # --- Umleitungen per GPS (core/gpsroute.py) ---
 

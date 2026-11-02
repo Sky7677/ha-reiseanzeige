@@ -32,6 +32,16 @@ class PlanStop:
 
 
 @dataclass
+class PlanDeparture:
+    minute: int             # Minuten ab Mitternacht des abgefragten Tags (auch < 0 oder > 1440)
+    mode: str
+    line: str
+    stop: str               # Haltestelle der Abfahrt
+    to: str                 # letzter Halt der Fahrt
+    via: list[str]          # nächste Halte (höchstens drei)
+
+
+@dataclass
 class PlanTrip:
     day: date               # Betriebstag
     mode: str
@@ -150,11 +160,45 @@ class Timetable:
         return best
 
 
+    def departures(self, places: list[int], day: date, start: int, minutes: int,
+                   modes: set[str] | None = None, limit: int = 50) -> list[PlanDeparture]:
+        """Abfahrten an places zwischen start und start + minutes (Minuten ab Mitternacht
+        von day; Fahrten des Vor- und Folgetags, die in dieses Fenster fallen, zählen mit).
+        Endhalte sind keine Abfahrten."""
+        out: list[PlanDeparture] = []
+        for service_day, shift in ((day - timedelta(days=1), -1440), (day, 0), (day + timedelta(days=1), 1440)):
+            off = (service_day - self.window_start).days
+            if not 0 <= off < self.window_days:
+                continue
+            bit = 1 << off
+            for place in set(places):
+                for k in range(self.place_start[place], self.place_start[place + 1]):
+                    pat, pos = self.place_pat[k], self.place_pos[k]
+                    a, b = self.pat_start[pat], self.pat_start[pat + 1]
+                    if a + pos >= b - 1:
+                        continue
+                    mode, line = self.routes[self.pat_route[pat]]
+                    if modes and mode not in modes:
+                        continue
+                    dep_off = self.pat_dep[a + pos]
+                    for t in range(self.pat_trip_start[pat], self.pat_trip_start[pat + 1]):
+                        if not self.trip_days[t] & bit:
+                            continue
+                        m = self.trip_start[t] + dep_off + shift
+                        if start <= m <= start + minutes:
+                            nxt = [self.places[self.pat_place[i]][0] for i in range(a + pos + 1, b)]
+                            out.append(PlanDeparture(m, mode, line, self.places[place][0], nxt[-1], nxt[:-1][:3]))
+        out.sort(key=lambda d: (d.minute, d.line))
+        return out[:limit]
+
+
 def line_score(leg_mode: str, leg_line: str, leg_category: str | None = None) -> Callable[[str, str], float | None]:
     """Bewertung für find(). Gleiche Linie oder Gattung zählt viel: „RE1“ = „RE 1“,
     „ICE 1004“ passt zu „ICE“, „STR 1“ zu „1“. Sonst passt jede Fahrt desselben
     Verkehrsmittels; Station und Minute entscheiden. Tram und U-Bahn werden je nach
-    Quelle verschieden eingeordnet (Stadtbahn), daher gegenseitig mit Abschlag."""
+    Quelle verschieden eingeordnet (Stadtbahn), daher gegenseitig mit Abschlag. Ein Bus
+    passt zum Ersatzverkehr nur über die Linie („Bus RE80“ zu „RE80“) oder wenn er als
+    SEV gekennzeichnet ist – sonst nie ein Stadtbus, der zufällig zur selben Minute fährt."""
     import re
 
     norm = lambda s: "".join((s or "").upper().split())
@@ -171,6 +215,10 @@ def line_score(leg_mode: str, leg_line: str, leg_category: str | None = None) ->
         if leg_mode in RAIL:
             if mode not in RAIL:
                 return None
+        elif {mode, leg_mode} == {"bus", "replacement"}:
+            if norm(line) in refs:
+                return 95.0
+            return 10.0 if refs & {"SEV", "EV", "BUSSEV", "BUSEV"} else None
         elif mode != leg_mode and {mode, leg_mode} != {"tram", "subway"}:
             return None
         base = 100.0 if norm(line) in refs else 10.0

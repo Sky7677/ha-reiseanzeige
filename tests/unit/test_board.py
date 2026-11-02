@@ -32,3 +32,44 @@ async def test_unbekannter_bahnhof():
     with pytest.raises(TimetablesError) as e:
         await departures(client, "Atlantis", datetime(2026, 11, 1, 14, 30, tzinfo=TZ))
     assert e.value.code == "NOT_FOUND"
+
+
+# --- Ersatzbusse laut Fahrplan ---------------------------------------------------------
+
+def _replacements(tt, near):
+    """Wie Reiseanzeige.board_replacements, mit fester Lage des Bahnhofs."""
+    from datetime import time, timedelta
+
+    def fn(station, now, minutes):
+        local = now.astimezone(TZ)
+        deps = tt.departures(tt.near(*near, 0.5), local.date(), local.hour * 60 + local.minute - 1, minutes + 1, modes={"replacement"})
+        midnight = datetime.combine(local.date(), time(0), TZ)
+        return [{"line": d.line, "planned": midnight + timedelta(minutes=d.minute), "destination": d.to, "via": d.via, "stop": d.stop}
+                for d in deps]
+    return fn
+
+
+async def test_ersatzbusse_laut_fahrplan():
+    from core.railnet.plan import Timetable
+    from timetable_fixture import build
+    tt = Timetable(build())
+    client = TimetablesClient(november_world(), "cid", "key", limiter=RateLimiter(limit=1000))
+    board = await departures(client, "Augsburg Hbf", datetime(2026, 11, 1, 14, 30, tzinfo=TZ),
+                             replacements=_replacements(tt, (48.3655, 10.8856)))
+    rows = [(d["line"], d["planned"][11:16], d.get("replacement", False)) for d in board["departures"]]
+    assert rows == [("RE1", "14:37", False), ("Bus RE80", "14:50", True), ("RE1", "15:37", False)], \
+        "Ersatzbus RE1 um 14:41 entfällt: der Zug RE1 fährt laut Bahn um 14:37"
+    bus = board["departures"][1]
+    assert (bus["destination"], bus["via"], bus["stop"], bus["prognosed"]) == ("Bahnhof, Donauwörth", ["Ersatzhalt Mitte"], "Hauptbahnhof, Augsburg", None)
+
+
+def test_ersatzbus_den_die_bahn_selbst_kennt():
+    from core.board import replacement_rows
+    now = datetime(2026, 11, 1, 23, 30, tzinfo=TZ)
+    bus = {"line": "RE80", "planned": datetime(2026, 11, 1, 23, 41, tzinfo=TZ), "destination": "X", "via": [], "stop": "S"}
+    iris_bus = {"line": "Bus SEV", "planned": "2026-11-01T23:42:00+01:00", "prognosed": None, "cancelled": False}
+    assert replacement_rows([iris_bus], [bus], now, 90) == [], "Bahn kennt den Bus: ihre Fassung gilt"
+    cancelled_train = {"line": "RE80", "planned": "2026-11-01T23:44:00+01:00", "prognosed": None, "cancelled": True}
+    assert len(replacement_rows([cancelled_train], [bus], now, 90)) == 1, "Zug fällt aus: Ersatzbus bleibt"
+    assert replacement_rows([], [bus, dict(bus)], now, 90)[0]["line"] == "Bus RE80" and len(replacement_rows([], [bus, dict(bus)], now, 90)) == 1
+    assert replacement_rows([], [bus], now, 5) == [], "außerhalb des Zeitfensters"

@@ -16,11 +16,19 @@ const row = (d) => {
 	<tr class="${d.cancelled ? 'cancelled' : ''}">
 		<td class="time">${esc(clock(d.planned))}${late ? `<span class="rt ${delayClass(d.delayMin)}">${esc(clock(d.prognosed))}</span>` : ''}</td>
 		<td><span class="linebadge">${esc(d.line)}</span></td>
-		<td class="dest">${esc(d.destination ?? '')}${d.cancelled ? ' <em>fällt aus</em>' : ''}${d.added ? ' <em class="add">Zusatzzug</em>' : ''}
-			${d.via.length ? `<div class="via">über ${d.via.map(esc).join(', ')}</div>` : ''}
+		<td class="dest">${esc(d.destination ?? '')}${d.cancelled ? ' <em>fällt aus</em>' : ''}${d.added ? ' <em class="add">Zusatzzug</em>' : ''}${d.replacement ? ' <em class="sev">Ersatzbus, laut Fahrplan</em>' : ''}
+			${via(d)}
 			${d.messages.length && !d.cancelled ? `<div class="msg">${esc(d.messages[0])}</div>` : ''}</td>
 		<td class="pf${d.platformChanged ? ' changed' : ''}">${d.platform ? esc(d.platform) : ''}</td>
 	</tr>`;
+};
+
+// Unterzeile: bei Ersatzbussen zuerst die Haltestelle (sie liegt oft vor dem Bahnhof)
+const via = (d) => {
+	const parts = [];
+	if (d.replacement && d.stop) parts.push(`ab ${esc(d.stop)}`);
+	if (d.via.length) parts.push(`über ${d.via.map(esc).join(', ')}`);
+	return parts.length ? `<div class="via">${parts.join(' · ')}</div>` : '';
 };
 
 export const renderBoard = (board) => {
@@ -33,7 +41,7 @@ export const renderBoard = (board) => {
 		<div class="board-wrap"><table>
 			<thead><tr><th>Zeit</th><th>Zug</th><th>Ziel</th><th>Gl.</th></tr></thead>
 			<tbody>${board.departures.map(row).join('')}</tbody>
-		</table></div>` : '<div class="board-note">In den nächsten 90 Minuten keine Abfahrten.</div>'}
-		<div class="board-foot">Stand ${esc(clock(board.fetchedAt))} · Daten: Deutsche Bahn, CC BY 4.0</div>
+		</table></div>` : '<div class="board-note">In den nächsten 90 Minuten keine Abfahrten. Kurzfristiger Ersatzverkehr kann fehlen.</div>'}
+		<div class="board-foot">Stand ${esc(clock(board.fetchedAt))} · Daten: Deutsche Bahn${board.departures.some(d => d.replacement) ? ', DELFI e.V./gtfs.de' : ''}, CC BY 4.0</div>
 	</section>`;
 };

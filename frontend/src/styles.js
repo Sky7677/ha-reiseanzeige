@@ -130,6 +130,7 @@ input {
 .board tr.cancelled .dest { text-decoration: line-through; }
 .board em { font-style: normal; text-decoration: none; display: inline-block; font-size: 12px; color: var(--ra-late); }
 .board em.add { color: var(--ra-ok); }
+.board em.sev { color: var(--warning-color, #e68a00); }
 .linebadge { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 4px; border: 1px solid var(--divider-color); white-space: nowrap; }
 .board-note { padding: 8px 16px 16px; text-align: center; font-size: 13px; color: var(--secondary-text-color); }
 .board-foot { font-size: 11px; color: var(--secondary-text-color); margin-top: 8px; }

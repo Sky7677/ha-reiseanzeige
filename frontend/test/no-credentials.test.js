@@ -37,3 +37,17 @@ test('Noch ohne Zwischenhalte: Hinweis auf den Fahrplan statt auf die Bahn-API',
 test('Abfahrtstafel ohne Zugangsdaten sagt, wo man sie einträgt', () => {
 	assert.match(renderBoard({status: 'no-credentials'}), /Neu konfigurieren/);
 });
+
+test('Ersatzbus laut Fahrplan: gekennzeichnet, mit Haltestelle und Quelle', () => {
+	const bus = {id: 'g', line: 'Bus RE80', destination: 'Bahnhof, Donauwörth', via: ['Ersatzhalt Mitte'], planned: '2026-11-01T14:50:00+01:00',
+		prognosed: null, delayMin: null, platform: null, plannedPlatform: null, platformChanged: false, cancelled: false, added: false,
+		messages: [], replacement: true, stop: 'Hauptbahnhof, Augsburg'};
+	const html = renderBoard({status: 'ok', station: {name: 'Augsburg Hbf'}, fetchedAt: '2026-11-01T13:30:00Z', departures: [bus]});
+	assert.match(html, /Bus RE80/);
+	assert.match(html, /Ersatzbus, laut Fahrplan/);
+	assert.match(html, /ab Hauptbahnhof, Augsburg · über Ersatzhalt Mitte/);
+	assert.match(html, /Daten: Deutsche Bahn, DELFI e\.V\.\/gtfs\.de, CC BY 4\.0/);
+	const empty = renderBoard({status: 'ok', station: {name: 'X'}, fetchedAt: '2026-11-01T13:30:00Z', departures: []});
+	assert.match(empty, /keine Abfahrten\. Kurzfristiger Ersatzverkehr kann fehlen\./);
+	assert.doesNotMatch(empty, /DELFI/);
+});

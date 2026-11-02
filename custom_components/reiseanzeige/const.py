@@ -1,7 +1,7 @@
 """Konstanten der Integration Reiseanzeige."""
 
 DOMAIN = "reiseanzeige"
-VERSION = "0.6.0"
+VERSION = "0.7.0"
 
 CONF_CLIENT_ID = "client_id"
 CONF_API_KEY = "api_key"

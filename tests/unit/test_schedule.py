@@ -92,3 +92,21 @@ def test_lage_aus_dem_fahrplan_ohne_gleisnetz(tt):
     assert fill_from_timetable(snap, tt), "Namen reichen für Augsburg, Nürnberg, Erfurt"
     re16 = snap["legs"][0]
     assert km((re16["stopovers"][0]["station"]["lat"], re16["stopovers"][0]["station"]["lon"]), P["Augsburg Hbf"]) < 0.01
+
+
+def test_ersatzbus_bekommt_zwischenhalte(tt):
+    """Abschnitt „Bus RE80“ aus dem geteilten Text: Halte laut Fahrplan, auch über Mitternacht."""
+    leg = {"index": 0, "kind": "ride", "source": "text", "line": {"name": "Bus RE80", "productName": "Bus", "product": "bus"},
+           "stopovers": [
+               {"station": {"id": None, "name": "Hauptbahnhof, Augsburg", "lat": 48.3652, "lon": 10.8861},
+                "plannedArrival": None, "plannedDeparture": "2026-10-10T23:41:00+02:00", "plannedPlatform": None},
+               {"station": {"id": None, "name": "Bahnhof, Donauwörth", "lat": None, "lon": None},
+                "plannedArrival": "2026-10-11T00:36:00+02:00", "plannedDeparture": None, "plannedPlatform": None}]}
+    assert fill_from_timetable({"legs": [leg]}, tt)
+    assert [s["station"]["name"] for s in leg["stopovers"]] == ["Hauptbahnhof, Augsburg", "Ersatzhalt Mitte", "Bahnhof, Donauwörth"]
+    assert leg["source"] == "gtfs" and leg["plan"]["mode"] == "replacement"
+    assert leg["stopovers"][1]["plannedDeparture"] == "2026-10-11T00:07:00+02:00"
+    # Ein gewöhnlicher Stadtbus steht nicht im Fahrplan: bleibt, wie er ist
+    city = {**leg, "source": "text", "line": {"name": "Bus 32", "productName": "Bus", "product": "bus"},
+            "stopovers": [dict(s) for s in leg["stopovers"][::2]]}
+    assert not fill_from_timetable({"legs": [city]}, tt)

@@ -26,3 +26,16 @@ async def test_reise_im_voraus_mit_zwischenhalten_aus_dem_fahrplan(hass, iris, t
         "Augsburg Hbf", "Donauwörth", "Treuchtlingen", "Nürnberg Hbf"]
     assert ice["source"] == "gtfs" and len(ice["stopovers"]) == 3
     assert all(s["station"]["lat"] is not None for leg in (re16, ice) for s in leg["stopovers"]), "Lage aus dem Fahrplan"
+
+
+async def test_abfahrtstafel_mit_ersatzbus_laut_fahrplan(hass, iris, railnet_release, timetable_release, hass_ws_client, freezer):
+    ws = await hass_ws_client(hass)
+    freezer.move_to("2026-11-01T14:30:00+01:00")
+    entry = MockConfigEntry(domain=DOMAIN, data={"client_id": "cid", "api_key": "key"}, options={"station": "Augsburg Hbf"})
+    entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    await ws.send_json({"id": 1, "type": f"{DOMAIN}/board"})
+    board = (await ws.receive_json())["result"]
+    assert [(d["line"], d["planned"][11:16]) for d in board["departures"]] == [("RE1", "14:37"), ("Bus RE80", "14:50"), ("RE1", "15:37")]
+    assert board["departures"][1]["replacement"] and board["departures"][1]["stop"] == "Hauptbahnhof, Augsburg"
