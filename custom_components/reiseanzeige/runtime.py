@@ -33,17 +33,19 @@ from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_API_KEY, CONF_CLIENT_ID, CONF_GRACE_MINUTES, CONF_RAILNET, CONF_REFRESH_SECONDS, CONF_STATION,
-    CONF_TIMETABLE, DEFAULT_GRACE_MINUTES, DEFAULT_RAILNET, DEFAULT_REFRESH_SECONDS, DEFAULT_TIMETABLE, DOMAIN,
+    CONF_GPS_ROUTE, CONF_TIMETABLE, DEFAULT_GPS_ROUTE, DEFAULT_GRACE_MINUTES, DEFAULT_RAILNET, DEFAULT_REFRESH_SECONDS,
+    DEFAULT_TIMETABLE, DOMAIN,
     NOTIFY_TITLE, SHARE_EVENT,
     SIGNAL_NEW_OWNER, SIGNAL_TRIPS_CHANGED, STORAGE_KEY_TRIPS, STORAGE_VERSION, TICK_SECONDS,
 )
 from .core.geometry import apply_geometry
+from .core.gpsroute import Watch, read_fix, step as gps_step
 from .core.journey import build_snapshot, draft_snapshot
 from .core.realtime import leg_realtime, stations_to_poll
 from .core.share_text import ShareTextError, looks_like_share, parse_share_text
 from .core.timetables import TimetablesClient, TimetablesError, aiohttp_fetch
 from .core.trips import (
-    ENRICH_WINDOW, TripError, TripManager, realtime_unavailable, share_confirmation, share_error,
+    ENRICH_WINDOW, RUNNING, TripError, TripManager, realtime_unavailable, share_confirmation, share_error, trip_status,
 )
 from .owners import Owners
 from .railnet_store import DataStore, RailNetStore, TimetableStore
@@ -92,6 +94,7 @@ class Reiseanzeige:
         self.stations = StationDirectory(hass, client_id or "", api_key or "")
         self.railnet = RailNetStore(hass, enabled=opts.get(CONF_RAILNET, DEFAULT_RAILNET))
         self.timetable = TimetableStore(hass, enabled=opts.get(CONF_TIMETABLE, DEFAULT_TIMETABLE))
+        self.gps_route: bool = opts.get(CONF_GPS_ROUTE, DEFAULT_GPS_ROUTE)
         self.coords = Coordinates(self.railnet, self.stations)
         self.trips = TripManager(
             HaTripStore(hass),
@@ -110,6 +113,7 @@ class Reiseanzeige:
         self._ticking = False
         self._busy: set[str] = set()   # gerade ladende Datenquellen
         self._geo_lock = asyncio.Lock()
+        self._gps: dict[str, Watch] = {}   # je laufender Reise: Stand der GPS-Auswertung
         self.sensor_owners: set[str] = set()
 
     # --- Start/Stopp ---
@@ -182,6 +186,9 @@ class Reiseanzeige:
                 for part in (leg, leg.get("diversion")):
                     if part and part.get("polyline"):
                         part["hasPolyline"], part["polyline"] = True, None
+        for leg in t["snapshot"]["legs"]:
+            if (leg.get("diversion") or {}).get("gps"):
+                leg["diversion"]["gps"] = {"active": True}   # Standortpunkte bleiben in Home Assistant
         return t
 
     # --- Teilen ---
@@ -250,7 +257,8 @@ class Reiseanzeige:
                 try:
                     changed = await self.hass.async_add_executor_job(
                         apply_geometry, snapshot, self.railnet.net, self.railnet.places,
-                        self.stations.coords, self.railnet.version or "", self.timetable.timetable, diversions)
+                        self.stations.coords, self.railnet.version or "", self.timetable.timetable, diversions,
+                        copy.deepcopy(trip.get("realtime")))
                 except Exception:  # noqa: BLE001 – ohne Verlauf geht es auch
                     _LOGGER.exception("Streckenverlauf für Reise %s nicht berechnet", trip["id"])
                     continue
@@ -286,6 +294,7 @@ class Reiseanzeige:
                 for trip in self.trips.due_for_refresh():
                     await self._refresh(trip)
                 await self.stations.refresh_if_due()  # fragt höchstens alle 7 Tage wirklich ab
+            await self._gps_tick()
             for store in (self.railnet, self.timetable):
                 if store.label not in self._busy and store.due(dt_util.now()):
                     # Download kann dauern: eigene Aufgabe, damit die Echtzeit weiterläuft
@@ -324,6 +333,46 @@ class Reiseanzeige:
             if ev["type"] == "realtime_unavailable":
                 self.hass.bus.async_fire(DOMAIN, {"type": ev["type"], "trip_id": ev["tripId"], "user_id": ev["ownerId"]})
                 await self.notify(ev["ownerId"], realtime_unavailable(ev))
+
+    # --- Umleitungen per GPS (core/gpsroute.py) ---
+
+    async def _gps_tick(self) -> None:
+        """Neue Standorte der Reisenden auswerten – nur während laufender Reisen, mit
+        Gleisnetz und eingetragenem Handy. Rechnet im Executor."""
+        now = dt_util.now()
+        running = {t["id"] for t in self.trips.trips if trip_status(t, now, self.trips.grace) == RUNNING}
+        for trip_id in list(self._gps):
+            if trip_id not in running:
+                del self._gps[trip_id]
+        if not self.gps_route or self.railnet.net is None:
+            return
+        for trip_id in running:
+            trip = next((t for t in self.trips.trips if t["id"] == trip_id), None)
+            tracker = (self.owners.get(trip["ownerId"]) or {}).get("tracker") if trip else None
+            fix = read_fix(self.hass.states.get(tracker), now) if tracker else None
+            if fix is None:
+                continue
+            watch = self._gps.setdefault(trip_id, Watch())
+            if watch.last_at and fix.at <= watch.last_at:
+                continue
+            async with self._geo_lock:
+                trip = next((t for t in self.trips.trips if t["id"] == trip_id), None)
+                if trip is None:
+                    continue
+                snapshot, created = copy.deepcopy(trip["snapshot"]), trip["snapshot"].get("createdAt")
+                had = {l["index"] for l in snapshot["legs"] if (l.get("diversion") or {}).get("gps")}
+                try:
+                    changed = await self.hass.async_add_executor_job(
+                        gps_step, snapshot, copy.deepcopy(trip.get("realtime")), watch, fix, self.railnet.net,
+                        self.railnet.places, self.stations.coords, self.railnet.version or "")
+                except Exception:  # noqa: BLE001 – ohne GPS-Auswertung geht es auch
+                    _LOGGER.exception("Standort für Reise %s nicht ausgewertet", trip_id)
+                    continue
+                if changed and await self.trips.set_geometry(trip_id, created, snapshot):
+                    for leg in snapshot["legs"]:
+                        if (leg.get("diversion") or {}).get("gps") and leg["index"] not in had:
+                            _LOGGER.info("Reise %s, Abschnitt %s (%s): Zug weicht von der Strecke ab – Linie folgt den Standorten",
+                                         trip_id, leg["index"], leg["line"].get("name"))
 
     # --- Benachrichtigungen ---
 

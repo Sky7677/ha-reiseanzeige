@@ -52,9 +52,12 @@ export const readFix = (state) => {
 	};
 };
 
-// Kürzester Abstand eines Punkts zur Linie: Lage entlang der Strecke (km) und Abstand (m)
-export const projectOnto = (g, [lat, lon]) => {
-	let best = null;
+// Kürzester Abstand eines Punkts zur Linie: Lage entlang der Strecke (km) und Abstand (m).
+// Mit near ({along, tolM}): unter den Stellen höchstens tolM neben der Linie die, die
+// entlang der Strecke am nächsten an near.along liegt – fährt der Zug ein Stück doppelt
+// (Umkehr, Rückfahrt bei einer Umleitung), zählt die Stelle, die zur Uhrzeit passt.
+export const projectOnto = (g, [lat, lon], near = null) => {
+	let best = null, fit = null;
 	const k = Math.cos(lat * Math.PI / 180);
 	for (let i = 0; i < g.coords.length - 1; i++) {
 		const [ay, ax] = g.coords[i], [by, bx] = g.coords[i + 1];
@@ -65,9 +68,11 @@ export const projectOnto = (g, [lat, lon]) => {
 		const t = len2 > 0 ? Math.min(1, Math.max(0, (px * dx + py * dy) / len2)) : 0;
 		const proj = [ay + dy * t, ax + (bx - ax) * t];
 		const d = dist([lat, lon], proj) * 1000;
-		if (!best || d < best.distM) best = {distM: d, along: g.cum[i] + dist(g.coords[i], proj), point: proj, vertex: i};
+		const hit = {distM: d, along: g.cum[i] + dist(g.coords[i], proj), point: proj, vertex: i};
+		if (!best || d < best.distM) best = hit;
+		if (near && d <= near.tolM && (!fit || Math.abs(hit.along - near.along) < Math.abs(fit.along - near.along))) fit = hit;
 	}
-	return best;
+	return fit ?? best;
 };
 
 // Mittlere Geschwindigkeit des Abschnitts in km/min (für den zeitlichen Test)
@@ -100,7 +105,7 @@ export const evaluateFix = ({fix, view, geometry, computeAt, now, rules = GPS_RU
 	const then = computeAt(fix.at);
 	if (!then) return {ok: false, reason: 'not-running'};
 	const g = geometry[then.leg];
-	const proj = projectOnto(g, [fix.lat, fix.lon]);
+	const proj = projectOnto(g, [fix.lat, fix.lon], {along: then.along, tolM: Math.max(rules.MIN_TOLERANCE_M, fix.accuracy)});
 	if (!proj) return {ok: false, reason: 'no-route'};
 	if (proj.distM > Math.max(rules.MIN_TOLERANCE_M, fix.accuracy)) return {ok: false, reason: 'off-route'};
 

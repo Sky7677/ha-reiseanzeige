@@ -76,6 +76,8 @@ export const buildTripView = (trip, now = Date.now()) => {
 				cancelled: stops.filter(s => s.cancelled).map(s => s.name),
 				added: stops.filter(s => s.added).map(s => s.name),
 				endCancelled: stops.at(-1).cancelled,
+				reported: Boolean(leg.diversion.path?.length),   // von der Bahn gemeldet
+				gps: Boolean(leg.diversion.gps),                 // Strecke laut Standort des Handys
 			} : null,
 			cancelled: Boolean(rt?.cancelled),
 			hasRealtime: Boolean(rt?.hasRealtime),

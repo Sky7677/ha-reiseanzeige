@@ -42,7 +42,7 @@ const legBlock = (leg, ui) => `
 			<span class="line">${esc(leg.name)}</span>
 			${leg.direction ? `<span class="dir">Richtung ${esc(leg.direction)}</span>` : ''}
 			${leg.replacement ? '<span class="tag sev">Ersatzverkehr</span>' : ''}
-			${leg.cancelled ? '<span class="tag bad">fällt aus</span>' : leg.diversion ? '<span class="tag bad">Laufweg geändert</span>' : ''}
+			${leg.cancelled ? '<span class="tag bad">fällt aus</span>' : leg.diversion ? `<span class="tag bad">${leg.diversion.reported ? 'Laufweg geändert' : 'Strecke laut GPS'}</span>` : ''}
 		</div>
 		${seatPart(leg, ui)}
 		${leg.pending ? `<div class="remark pending">${ui.realtime === false
@@ -58,16 +58,20 @@ const legBlock = (leg, ui) => `
 		</div>` : ''}
 	</section>`;
 
-// Umleitung oder vorzeitiges Ende laut Bahn, in einem Satz. Die Karte zeigt den neuen Weg;
-// zwischen den Halten sucht ihn das Gleisnetz, die Bahn nennt nur die Bahnhöfe.
+// Umleitung oder vorzeitiges Ende, in einem Satz. Die Bahn nennt nur die Bahnhöfe; den Weg
+// dazwischen sucht das Gleisnetz, ohne neue Halte folgt er den Standorten des Handys (GPS).
 const names = (list) => list.length > 3 ? `${list.slice(0, 3).join(', ')} und ${list.length - 3} weitere` : list.join(', ');
 const diversionNote = (leg) => {
 	const d = leg.diversion;
 	const parts = [];
 	if (d.cancelled.length) parts.push(`${d.cancelled.length === 1 ? 'Halt entfällt' : 'Halte entfallen'}: ${names(d.cancelled)}`);
 	if (d.added.length) parts.push(`zusätzlich: ${names(d.added)}`);
-	const end = d.endCancelled ? ` Der Zug fährt nicht bis ${leg.stops.at(-1).name}.` : '';
-	return `Geänderter Laufweg. ${parts.join('; ')}.${end}`;
+	const out = [];
+	if (d.reported) out.push(`Geänderter Laufweg. ${parts.join('; ')}.`);
+	else if (parts.length) out.push(`${parts.join('; ')}.`);
+	if (d.endCancelled) out.push(`Der Zug fährt nicht bis ${leg.stops.at(-1).name}.`);
+	if (d.gps) out.push('Der Zug fährt eine andere Strecke als geplant; die Karte folgt dem Standort des Handys.');
+	return out.join(' ');
 };
 
 // Gleise beim Umstieg: beide bekannt „Gl. 8 → 5“, sonst nur das bekannte (Bus, Tram: kein Gleis)

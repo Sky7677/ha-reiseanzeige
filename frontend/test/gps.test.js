@@ -143,3 +143,17 @@ test('Geschwindigkeitsanzeige: frisch kräftig, danach „zuletzt … · vor x m
 	assert.deepEqual(speedLabel({kmh: 150, at: now - 3 * MIN, approx: true}, now), {text: 'zuletzt ≈ 150 km/h · vor 3 min', stale: true});
 	assert.equal(speedLabel(null, now), null);
 });
+
+test('Doppelt befahrenes Stück (Umkehr): der GPS-Abgleich nimmt die Stelle, die zur Uhrzeit passt', async () => {
+	const {projectOnto} = await import('../src/gps.js');
+	const {dist} = await import('../src/position.js');
+	// Hin nach Norden, Umkehr, zurück nach Süden auf denselben Gleisen
+	const coords = [[48.70, 10.80], [48.80, 10.80], [48.90, 10.80], [48.80, 10.80], [48.70, 10.80]];
+	const cum = [0];
+	for (let i = 1; i < coords.length; i++) cum.push(cum[i - 1] + dist(coords[i - 1], coords[i]));
+	const g = {coords, cum};
+	const p = [48.75, 10.8002];
+	assert.ok(projectOnto(g, p).along < 10, 'ohne Zeitbezug: der Hinweg');
+	const back = projectOnto(g, p, {along: cum[3] + 4, tolM: 175});
+	assert.ok(Math.abs(back.along - (cum[3] + dist(coords[3], [48.75, 10.80]))) < 0.5, 'mit Zeitbezug: die Rückfahrt');
+});

@@ -42,11 +42,13 @@
           "grace_minutes": "Keep showing a trip after arrival (minutes)",
           "refresh_seconds": "Shortest refresh interval during a trip (seconds)",
           "railnet": "Load route geometry from the rail network (OpenStreetMap)",
-          "timetable": "Load intermediate stops from the timetable (gtfs.de)"
+          "timetable": "Load intermediate stops from the timetable (gtfs.de)",
+          "gps_route": "Detect diversions via GPS and redraw the route"
         },
         "data_description": {
           "railnet": "Draws the route along the tracks and locates the stops. One-time download of a few dozen MB, then a new edition monthly. Without it: straight lines, if StaDa is subscribed.",
-          "timetable": "Shows intermediate stops with scheduled times for trains up to 30 days ahead and for trams and subways. Downloads a few MB daily. Timetable data: DELFI e.V., CC BY 4.0."
+          "timetable": "Shows intermediate stops with scheduled times for trains up to 30 days ahead and for trams and subways. Downloads a few MB daily. Timetable data: DELFI e.V., CC BY 4.0.",
+          "gps_route": "If a train takes another route without Deutsche Bahn reporting new stops, the line follows the location of the traveller's phone – snapped to the tracks, never as raw positions. Needs the rail network and a phone with location in Home Assistant. The points stay in Home Assistant."
         }
       }
     }

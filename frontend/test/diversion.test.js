@@ -22,7 +22,7 @@ test('Haltliste folgt dem neuen Laufweg: Halle entfällt, Leipzig kommt dazu', (
 	assert.deepEqual(ice.stops.map(s => s.name), ['Nürnberg Hbf', 'Erfurt Hbf', 'Halle (Saale) Hbf', 'Leipzig Hbf', 'Berlin Südkreuz']);
 	assert.deepEqual(ice.stops.map(s => s.cancelled), [false, false, true, false, false]);
 	assert.deepEqual(ice.stops.map(s => s.added), [false, false, false, true, false]);
-	assert.deepEqual(ice.diversion, {cancelled: ['Halle (Saale) Hbf'], added: ['Leipzig Hbf'], endCancelled: false});
+	assert.deepEqual(ice.diversion, {cancelled: ['Halle (Saale) Hbf'], added: ['Leipzig Hbf'], endCancelled: false, reported: true, gps: false});
 	assert.equal(ice.stops[1].dep.delayMin, 5, 'Echtzeit bleibt beim richtigen Halt');
 	assert.equal(ice.stops[3].shown, null, 'neuer Halt ohne Zeit');
 	assert.equal(ice.stops[4].arr.delayMin, 5, 'Südkreuz bekommt seine Echtzeit, nicht der neue Halt davor');
@@ -61,4 +61,19 @@ test('Zug endet vorzeitig: Hinweis nennt den nicht erreichten Ausstieg', () => {
 	ice.diversion.polyline = null;
 	const html = renderInfo(buildTripView(trip(snap), at('17:30')), {});
 	assert.match(html, /Halte entfallen: Halle \(Saale\) Hbf, Berlin Südkreuz\. Der Zug fährt nicht bis Berlin Südkreuz\./);
+});
+
+test('Strecke laut GPS: eigener Hinweis, Haltliste wie geplant', () => {
+	const snap = structuredClone(snapshot);
+	const ice = snap.legs[2];
+	ice.diversion = {path: null, stops: null, gps: {active: true}, stopovers: structuredClone(ice.stopovers),
+		polyline: ice.diversion.polyline, geometry: {key: 'g', gps: true}};
+	const view = buildTripView(trip(snap), at('17:30')).legs[2];
+	assert.equal(view.diversion.gps, true);
+	assert.equal(view.diversion.reported, false);
+	assert.deepEqual(view.stops.map(s => s.name), ['Nürnberg Hbf', 'Erfurt Hbf', 'Halle (Saale) Hbf', 'Berlin Südkreuz']);
+	const html = renderInfo(buildTripView(trip(snap), at('17:30')), {});
+	assert.match(html, /Strecke laut GPS/);
+	assert.match(html, /Der Zug fährt eine andere Strecke als geplant; die Karte folgt dem Standort des Handys\./);
+	assert.doesNotMatch(html, /Geänderter Laufweg/);
 });

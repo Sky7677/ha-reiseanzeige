@@ -42,11 +42,13 @@
           "grace_minutes": "Reise nach Ankunft noch so lange anzeigen (Minuten)",
           "refresh_seconds": "Kürzester Abfrageabstand während der Reise (Sekunden)",
           "railnet": "Streckenverlauf aus dem Gleisnetz (OpenStreetMap) laden",
-          "timetable": "Zwischenhalte aus dem Fahrplan laden (gtfs.de)"
+          "timetable": "Zwischenhalte aus dem Fahrplan laden (gtfs.de)",
+          "gps_route": "Umleitungen per GPS erkennen und neu zeichnen"
         },
         "data_description": {
           "railnet": "Zeichnet den Weg auf den Gleisen und findet die Lage der Halte. Lädt einmalig einige Dutzend MB, danach monatlich eine neue Fassung. Ohne Gleisnetz: gerade Linien, sofern StaDa abonniert ist.",
-          "timetable": "Zeigt Zwischenhalte mit Planzeiten für Züge bis 30 Tage im Voraus und für Straßenbahn und U-Bahn. Lädt täglich wenige MB. Fahrplandaten: DELFI e.V., CC BY 4.0."
+          "timetable": "Zeigt Zwischenhalte mit Planzeiten für Züge bis 30 Tage im Voraus und für Straßenbahn und U-Bahn. Lädt täglich wenige MB. Fahrplandaten: DELFI e.V., CC BY 4.0.",
+          "gps_route": "Fährt ein Zug eine andere Strecke, ohne dass die Bahn neue Halte meldet, folgt die Linie den Standorten des Handys der reisenden Person – auf die Gleise gesetzt, nicht als rohe Standorte. Braucht das Gleisnetz und ein Handy mit Standort in Home Assistant. Die Punkte bleiben in Home Assistant."
         }
       }
     }
