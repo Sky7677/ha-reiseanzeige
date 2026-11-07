@@ -44,8 +44,8 @@ def _replacements(tt, near):
         local = now.astimezone(TZ)
         deps = tt.departures(tt.near(*near, 0.5), local.date(), local.hour * 60 + local.minute - 1, minutes + 1, modes={"replacement"})
         midnight = datetime.combine(local.date(), time(0), TZ)
-        return [{"line": d.line, "planned": midnight + timedelta(minutes=d.minute), "destination": d.to, "via": d.via, "stop": d.stop}
-                for d in deps]
+        return [{"line": d.line, "planned": midnight + timedelta(minutes=d.minute), "destination": d.to, "via": d.via, "stop": d.stop,
+                 "to_at": d.to_at} for d in deps]
     return fn
 
 
@@ -73,3 +73,37 @@ def test_ersatzbus_den_die_bahn_selbst_kennt():
     assert len(replacement_rows([cancelled_train], [bus], now, 90)) == 1, "Zug fällt aus: Ersatzbus bleibt"
     assert replacement_rows([], [bus, dict(bus)], now, 90)[0]["line"] == "Bus RE80" and len(replacement_rows([], [bus, dict(bus)], now, 90)) == 1
     assert replacement_rows([], [bus], now, 5) == [], "außerhalb des Zeitfensters"
+
+
+def test_zug_der_gleichen_linie_in_die_andere_richtung():
+    """Nürnberg Hbf, 07.11.2026: Ersatzbus S2 nach Roth um 23:35; die S-Bahn S2 um 23:34
+    fährt nach Altdorf, also in die andere Richtung – der Bus bleibt."""
+    from core.board import replacement_rows, same_way
+    now = datetime(2026, 11, 7, 23, 5, tzinfo=TZ)
+    bus = {"line": "S2", "planned": datetime(2026, 11, 7, 23, 35, tzinfo=TZ), "destination": "Bahnhof, Roth (Mittelfranken)",
+           "via": ["Eibach Bahnhof Hafenstraße, Nürnberg", "Reichelsdorf Bahnhof, Nürnberg", "Limbach Bahnhof, Schwabach"],
+           "stop": "Nürnberg Hbf (Nelson-Mandela-Platz)", "to_at": (49.2462, 11.0921)}
+    altdorf = {"id": "a", "line": "S2", "planned": "2026-11-07T23:34:00+01:00", "prognosed": None, "cancelled": False,
+               "destination": "Altdorf(b Nürnberg)", "via": ["Nürnberg-Dürrenhof", "Nürnberg-Gleißhammer", "Nürnberg-Dutzendteich"]}
+    altdorf_path = ["Nürnberg-Dürrenhof", "Nürnberg-Gleißhammer", "Nürnberg-Dutzendteich", "Nürnberg-Fischbach",
+                    "Feucht", "Winkelhaid", "Ludersheim", "Altdorf West", "Altdorf(b Nürnberg)"]
+    rows = replacement_rows([altdorf], [bus], now, 90, {"a": altdorf_path})
+    assert [(r["line"], r["destination"]) for r in rows] == [("Bus S2", "Bahnhof, Roth (Mittelfranken)")]
+    assert len(replacement_rows([altdorf], [bus], now, 90)) == 1, "nur mit den drei Halten der Zeile: ebenso"
+
+    roth = {**altdorf, "id": "r", "destination": "Roth", "via": ["Nürnberg-Steinbühl", "Nürnberg-Sandreuth", "Nürnberg-Eibach"]}
+    roth_path = ["Nürnberg-Steinbühl", "Nürnberg-Sandreuth", "Nürnberg-Eibach", "Nürnberg-Reichelsdorf", "Schwabach-Limbach",
+                 "Schwabach", "Rednitzhembach", "Büchenbach", "Roth"]
+    assert replacement_rows([roth], [bus], now, 90, {"r": roth_path}) == [], "S2 nach Roth fährt: Plan überholt"
+    short = {**roth, "id": "s", "destination": "Schwabach"}
+    assert len(replacement_rows([short], [bus], now, 90, {"s": roth_path[:6]})) == 1, \
+        "Zug endet vor dem Ziel des Busses: der Bus bleibt"
+
+    # Namen, die sich nicht decken, entscheidet die Lage
+    ost = {"destination": "Ostbahnhof, München", "to_at": (48.1273, 11.6047)}
+    assert not same_way(["München Ost"], ost)
+    assert same_way(["München Ost"], ost, [(48.1270, 11.6050)])
+    assert not same_way(["München Ost"], ost, [None])
+    assert same_way(["Fürth(Bay)Hbf"], {"destination": "Hauptbahnhof, Fürth"})
+    assert same_way(["Hersbruck(r Pegnitz)"], {"destination": "Bahnhof (rechts Pegnitz), Hersbruck"})
+    assert not same_way(["Nürnberg-Dürrenhof"], {"destination": "Eibach Bahnhof Hafenstraße, Nürnberg"})

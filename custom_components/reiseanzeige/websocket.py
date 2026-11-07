@@ -155,7 +155,7 @@ async def ws_board(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None
         connection.send_result(msg["id"], {"status": "no-station"})
         return
     try:
-        board = await departures(rt.client, station, dt_util.now(), replacements=rt.board_replacements)
+        board = await departures(rt.client, station, dt_util.now(), replacements=rt.board_replacements, locate=rt.locate_path)
         connection.send_result(msg["id"], {"status": "ok", **board})
     except TimetablesError as err:
         connection.send_result(msg["id"], {"status": "error", "code": err.code, "message": str(err)})

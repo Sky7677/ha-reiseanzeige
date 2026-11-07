@@ -39,6 +39,7 @@ class PlanDeparture:
     stop: str               # Haltestelle der Abfahrt
     to: str                 # letzter Halt der Fahrt
     via: list[str]          # nächste Halte (höchstens drei)
+    to_at: tuple[float, float] | None = None   # Lage des letzten Halts
 
 
 @dataclass
@@ -187,7 +188,8 @@ class Timetable:
                         m = self.trip_start[t] + dep_off + shift
                         if start <= m <= start + minutes:
                             nxt = [self.places[self.pat_place[i]][0] for i in range(a + pos + 1, b)]
-                            out.append(PlanDeparture(m, mode, line, self.places[place][0], nxt[-1], nxt[:-1][:3]))
+                            _n, lat, lon = self.places[self.pat_place[b - 1]]
+                            out.append(PlanDeparture(m, mode, line, self.places[place][0], nxt[-1], nxt[:-1][:3], (lat, lon)))
         out.sort(key=lambda d: (d.minute, d.line))
         return out[:limit]
 

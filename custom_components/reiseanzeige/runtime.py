@@ -351,7 +351,20 @@ class Reiseanzeige:
         deps = tt.departures(tt.near(c[0], c[1], REPLACEMENT_RADIUS_KM), day, start - 1, minutes + 1, modes={"replacement"})
         midnight = datetime.combine(day, dtime(0), tz)
         return [{"line": d.line, "planned": midnight + timedelta(minutes=d.minute), "destination": d.to,
-                 "via": d.via, "stop": d.stop} for d in deps]
+                 "via": d.via, "stop": d.stop, "to_at": d.to_at} for d in deps]
+
+    def locate_path(self, names: list[str], station) -> list:
+        """Lage der weiteren Halte eines Zuges ab dem Bahnhof (Namen der Bahn); jeder
+        Halt wird nahe dem vorigen gesucht. Unbekannte Halte: None."""
+        places = self.railnet.places
+        anchor = self.coords.coords(station.eva, station.name)
+        out = []
+        for name in names:
+            c = (places.find(name, near=anchor) if places else None) or self.stations.coords(None, name)
+            if c:
+                anchor = c
+            out.append(c)
+        return out
 
     # --- Umleitungen per GPS (core/gpsroute.py) ---
 
