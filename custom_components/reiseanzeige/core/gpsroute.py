@@ -202,6 +202,14 @@ def step(snapshot: dict, realtime: dict | None, watch: Watch, fix: Fix, net: Rai
     states = stop_states(stopovers, rt_leg)
     gps = copy.deepcopy(div["gps"]) if div.get("gps") else None
 
+    if gps and div.get("path") is None:
+        # Laut neuer Echtzeit war der Zug noch gar nicht am Halt, ab dem neu gezeichnet
+        # wurde (Verspätung erst später bekannt): keine Umleitung, sondern Verspätung
+        k = next((i for i, so in enumerate(stopovers) if so["station"].get("id") == gps["after"].get("id")), None)
+        if k is not None and states[k][0] is not None and states[k][0] > fix.at:
+            leg.pop("diversion", None)
+            watch.reset(leg["index"])
+            return True
     if gps:
         chain, start = gps["points"], tuple(gps["anchor"])
     else:

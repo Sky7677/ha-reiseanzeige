@@ -41,6 +41,27 @@ def _leg_times(leg: dict) -> tuple[datetime | None, datetime | None]:
     return _dt(leg.get("plannedDeparture")), _dt(leg.get("plannedArrival"))
 
 
+def expected_arrivals(stops: list[dict], rt: dict | None, fallback: datetime | None) -> list[datetime | None]:
+    """Erwartete Zeit je Halt: Prognose, sonst Plan. Ist eine Verspätung erst an
+    einem späteren Halt bekannt, gilt sie auch für die Halte davor ohne Angabe –
+    sonst gälten Halte nach Plan als vorbei, an denen der Zug noch gar nicht war
+    (Verspätung entsteht unterwegs, die Halte dazwischen wurden nicht abgefragt)."""
+    rt_stops = (rt or {}).get("stopovers") or []
+    times = []
+    for i, so in enumerate(stops):
+        r = rt_stops[i] if i < len(rt_stops) and rt_stops[i].get("stationId") == so["station"].get("id") else {}
+        planned = _dt(so.get("plannedArrival")) or _dt(so.get("plannedDeparture")) or (fallback if i else None)
+        prog = _dt((r.get("arrival") or {}).get("prognosed")) or _dt((r.get("departure") or {}).get("prognosed"))
+        times.append([planned, prog])
+    later = None
+    for t in reversed(times):
+        if t[0] is not None and t[1] is not None:
+            later = max(t[1] - t[0], timedelta(0))
+        elif t[0] is not None and later:
+            t[1] = t[0] + later
+    return [q or p for p, q in times]
+
+
 def stations_to_poll(snapshot: dict, realtime: dict | None, now: datetime) -> dict[int, list[str]]:
     """Welche Bahnhöfe (EVA) je Abschnitt jetzt abgefragt werden sollen."""
     out: dict[int, list[str]] = {}
@@ -63,7 +84,9 @@ def stations_to_poll(snapshot: dict, realtime: dict | None, now: datetime) -> di
             evas.append(stops[0]["station"]["id"])
         else:
             # Entfallene Halte einer Umleitung werden weiter abgefragt: Dort zeigt sich, wenn sie zurückgenommen wird
-            upcoming = [s for s in stops[1:] if (_dt(s.get("plannedArrival")) or arr) >= now - timedelta(minutes=5)]
+            # nach erwarteter Zeit, nicht nach Plan: bei Verspätung sind die Halte noch nicht vorbei
+            expected = expected_arrivals(stops, rt, arr)
+            upcoming = [s for s, t in zip(stops[1:], expected[1:]) if t is None or t >= now - timedelta(minutes=5)]
             evas += [s["station"]["id"] for s in upcoming[:RUNNING_AHEAD]]
             evas.append(stops[-1]["station"]["id"])
         evas = [e for i, e in enumerate(evas) if e and e not in evas[:i]]

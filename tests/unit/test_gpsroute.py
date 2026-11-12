@@ -127,3 +127,22 @@ def test_standort_aus_dem_zustand():
     assert read_fix(S("not_home", {"latitude": 51.0, "longitude": 11.5}, now - timedelta(minutes=11)), now) is None, "zu alt"
     assert read_fix(S("unavailable", {}, now), now) is None
     assert read_fix(None, now) is None
+
+
+async def test_keine_umleitung_wenn_der_zug_nur_verspaetet_ist(net, places):
+    """Verspätung erst später bekannt: Die Linie wurde ab einem Halt neu gezeichnet, an
+    dem der Zug laut neuer Echtzeit noch gar nicht war – die Umleitung entfällt."""
+    snap = await trip(net, places)
+    ice = snap["legs"][2]
+    erf, lei = P["Erfurt Hbf"], P["Leipzig Hbf"]
+    w = Watch()
+    go = lambda p, t, rt=None: step(snap, rt, w, Fix(p[0], p[1], 20.0, t), net, places, version="v")  # noqa: E731
+    go(between(erf, lei, 0.25), at(18, 0))
+    assert go(between(erf, lei, 0.5), at(18, 10)) and ice["diversion"]["gps"]["after"]["name"] == "Erfurt Hbf"
+    def part(t=None):
+        return {"planned": None, "prognosed": t, "delay": None}
+    stops = [{"stationId": so["station"]["id"], "arrival": part(), "departure": part()} for so in ice["stopovers"]]
+    stops[1]["departure"] = part("2026-11-01T18:30:00+01:00")     # Erfurt ab 18:30 statt 17:44
+    rt = {"legs": {"2": {"stopovers": stops}}}
+    assert go(between(erf, lei, 0.6), at(18, 20), rt), "Zug noch vor Erfurt: Umleitung entfällt"
+    assert "diversion" not in ice

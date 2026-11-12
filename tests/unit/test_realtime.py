@@ -35,6 +35,22 @@ async def test_abgefragte_bahnhoefe_je_lage():
     assert stations_to_poll(snap, None, at(21, 0)) == {}
 
 
+async def test_verspaetung_erst_spaeter_bekannt():
+    """Verspätung entsteht unterwegs und ist nur am Ausstieg bekannt (+45 min): Die
+    Halte davor sind nach Plan vorbei, der Zug war aber noch nicht dort – sie werden
+    weiter abgefragt (12.11.2026: RE16 nach Treuchtlingen)."""
+    _, _, snap = await world()
+    ice = snap["legs"][2]
+    def part(t=None):
+        return {"planned": None, "prognosed": t, "delay": None}
+    stops = [{"stationId": so["station"]["id"], "arrival": part(), "departure": part()} for so in ice["stopovers"]]
+    stops[-1]["arrival"] = part("2026-11-01T20:25:00+01:00")      # Südkreuz geplant 19:40
+    rt = {"legs": {"2": {"stopovers": stops}}}
+    assert stations_to_poll(snap, None, at(18, 40))[2] == ["8011113"], "nach Plan: Halle (18:20) vorbei"
+    assert stations_to_poll(snap, rt, at(18, 40))[2] == ["8010159", "8011113"], "Halle erwartet 19:05: noch abfragen"
+    assert stations_to_poll(snap, rt, at(19, 20))[2] == ["8011113"]
+
+
 async def test_verspaetung_gleiswechsel_und_fortschreibung():
     iris, client, snap = await world()
     iris.changes["8010101"] = """<timetable station="Erfurt Hbf">
