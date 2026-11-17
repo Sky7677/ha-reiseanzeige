@@ -1,0 +1,40 @@
+{
+  "format": 1,
+  "sentAt": "2026-10-08T08:21:40+02:00",
+  "app": {"name": "Reiseanzeige", "version": "0.8.0"},
+  "messages": [
+    {
+      "type": "trip.upsert",
+      "tripId": "5f0c2a9e1b7d4c3a",
+      "revision": 4,
+      "connection": {
+        "origin": "Augsburg Hbf",
+        "destination": "Berlin Südkreuz",
+        "day": "2026-10-08",
+        "vbid": "00000000-0000-4000-8000-000000000002",
+        "link": "https://www.bahn.de/buchung/start?vbid=00000000-0000-4000-8000-000000000002",
+        "legs": [
+          {
+            "line": "RE16", "number": "59116", "category": "RE", "mode": "regional", "direction": "Nürnberg Hbf",
+            "dep": {"name": "Augsburg Hbf", "time": "2026-10-08T05:57:00+02:00", "platform": "5", "platformNote": null},
+            "arr": {"name": "Nürnberg Hbf", "time": "2026-10-08T07:30:00+02:00", "platform": "9", "platformNote": null},
+            "extra": []
+          },
+          {
+            "line": "ICE 1604", "number": "1604", "category": "ICE", "mode": "longdistance", "direction": "Berlin Hbf",
+            "dep": {"name": "Nürnberg Hbf", "time": "2026-10-08T07:36:00+02:00", "platform": "6", "platformNote": null},
+            "arr": {"name": "Erfurt Hbf", "time": "2026-10-08T08:44:00+02:00", "platform": "2", "platformNote": null},
+            "extra": []
+          },
+          {
+            "line": "ICE 1006", "number": "1006", "category": "ICE", "mode": "longdistance", "direction": "Berlin Gesundbrunnen",
+            "dep": {"name": "Erfurt Hbf", "time": "2026-10-08T09:13:00+02:00", "platform": "3", "platformNote": null},
+            "arr": {"name": "Berlin Südkreuz", "time": "2026-10-08T10:52:00+02:00", "platform": "8", "platformNote": null},
+            "extra": []
+          }
+        ]
+      },
+      "seats": {"1": {"coach": "7", "seat": "45"}}
+    }
+  ]
+}

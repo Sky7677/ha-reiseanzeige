@@ -1,0 +1,15 @@
+{
+  "format": 1,
+  "sentAt": "2026-10-07T21:15:00+02:00",
+  "app": {
+    "name": "Reiseanzeige",
+    "version": "0.8.0"
+  },
+  "messages": [
+    {
+      "type": "link.hello",
+      "device": "Nokia 8.3 5G",
+      "appInstance": "3b0e5a7c9d2f4e1a8b6c0d4f2a9e7c51"
+    }
+  ]
+}
