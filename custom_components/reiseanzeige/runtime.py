@@ -8,6 +8,8 @@ Timetables-API, Benachrichtigungen und die Karte.
   alle 15 s         → Abgelaufene entfernen, fällige Echtzeit holen; Gleisnetz
                       wöchentlich auf neue Fassung prüfen
   Echtzeit fehlt    → einmalige Nachricht, Ereignis "reiseanzeige"
+  Android-App       → Reisen, Standort und Umleitungen per Webhook (links.py,
+                      Format v1); für verbundene Personen ist die App die Quelle
 
 Ohne Zugangsdaten der Bahn (client None) läuft alles nach Fahrplan: kein
 Abgleich mit der Timetables-API, keine Echtzeit, keine Abfahrtstafel, kein StaDa.
@@ -33,21 +35,23 @@ from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
 from .const import (
-    CONF_API_KEY, CONF_CLIENT_ID, CONF_GRACE_MINUTES, CONF_RAILNET, CONF_REFRESH_SECONDS, CONF_STATION,
+    CONF_API_KEY, CONF_APP_LOCAL_ONLY, CONF_APP_URL, CONF_CLIENT_ID, DEFAULT_APP_LOCAL_ONLY, CONF_GRACE_MINUTES, CONF_RAILNET, CONF_REFRESH_SECONDS, CONF_STATION,
     CONF_GPS_ROUTE, CONF_TIMETABLE, DEFAULT_GPS_ROUTE, DEFAULT_GRACE_MINUTES, DEFAULT_RAILNET, DEFAULT_REFRESH_SECONDS,
     DEFAULT_TIMETABLE, DOMAIN,
     NOTIFY_TITLE, SHARE_EVENT,
     SIGNAL_NEW_OWNER, SIGNAL_TRIPS_CHANGED, STORAGE_KEY_TRIPS, STORAGE_VERSION, TICK_SECONDS,
 )
 from .core.geometry import apply_geometry
-from .core.gpsroute import Watch, read_fix, step as gps_step
-from .core.journey import build_snapshot, draft_snapshot
+from .core.gpsroute import Watch, apply_route, read_fix, step as gps_step
+from .core.journey import build_snapshot, draft_snapshot, norm_line
+from .core.link_format import DELETED, IGNORED, OK, UNKNOWN, deep_link, journey_from_dict, parse_pairing
 from .core.realtime import leg_realtime, stations_to_poll
 from .core.share_text import ShareTextError, looks_like_share, parse_share_text
 from .core.timetables import TimetablesClient, TimetablesError, aiohttp_fetch
 from .core.trips import (
     ENRICH_WINDOW, RUNNING, TripError, TripManager, realtime_unavailable, share_confirmation, share_error, trip_status,
 )
+from .links import Links
 from .owners import Owners
 from .railnet_store import DataStore, RailNetStore, TimetableStore
 from .stations import StationDirectory
@@ -55,6 +59,9 @@ from .stations import StationDirectory
 _LOGGER = logging.getLogger(__name__)
 
 LOCATE_COOLDOWN = 30  # Sekunden je Person (Companion-App rät von häufigen Anforderungen ab)
+LINKED_HINT = ("Deine Reiseanzeige-App ist mit Home Assistant verbunden. Bitte teile Reisen dort; "
+               "Home Assistant übernimmt sie von selbst.")
+PAIRING_MESSAGE = "Tippen, um die Reiseanzeige-App mit Home Assistant zu verbinden (gilt 10 Minuten)."
 REPLACEMENT_RADIUS_KM = 0.5   # Ersatzbus-Haltestellen so nah am Bahnhof gehören zur Tafel
 
 
@@ -105,6 +112,8 @@ class Reiseanzeige:
             running=timedelta(seconds=opts.get(CONF_REFRESH_SECONDS, DEFAULT_REFRESH_SECONDS)),
         )
         self.owners = Owners(hass)
+        self.links = Links(hass, self, local_only=opts.get(CONF_APP_LOCAL_ONLY, DEFAULT_APP_LOCAL_ONLY),
+                           app_url=opts.get(CONF_APP_URL))
         # Zufälliger Schlüssel für die Kartenkacheln (wie das access_token bei Kamerabildern):
         # die Karte bekommt ihn über die angemeldete WebSocket-Verbindung
         self.map_token = secrets.token_urlsafe(24)
@@ -122,6 +131,7 @@ class Reiseanzeige:
 
     async def async_start(self) -> None:
         await self.owners.load()
+        await self.links.load()
         await self.trips.init()
         await self.stations.load()
         for store in (self.railnet, self.timetable):
@@ -129,6 +139,7 @@ class Reiseanzeige:
             store.listeners.append(self.update_geometry)
         await self._load_names()
         self.trips.listeners.append(self._trips_changed)
+        self.links.start()
         self._unsubs.append(self.hass.bus.async_listen(SHARE_EVENT, self._on_share))
         self._unsubs.append(async_track_time_interval(self.hass, self._on_tick, timedelta(seconds=TICK_SECONDS)))
         if self.client is None:
@@ -142,6 +153,7 @@ class Reiseanzeige:
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
+        self.links.stop()
         for task in list(self._tasks):
             task.cancel()
 
@@ -180,9 +192,18 @@ class Reiseanzeige:
         t = copy.deepcopy(trip)
         self._with_coords(t["snapshot"])
         owner = self.owners.get(t["ownerId"]) or {}
+        app = t.get("app")
         t["ownerName"] = self.name_of(t["ownerId"])
-        t["ownerLocation"] = owner.get("tracker")
-        t["ownerCanLocate"] = bool(owner.get("tracker") and owner.get("notify"))
+        t["fromApp"] = bool(app)
+        if self.links.linked(t["ownerId"]):
+            # Verbundene Person: Standort nur von der App, kein Anfordern über die Companion-App
+            t["ownerLocation"] = (self.links.tracker_entity(app["linkId"]) if app
+                                  else self.links.tracker_of_user(t["ownerId"]))
+            t["ownerCanLocate"] = False
+        else:
+            t["ownerLocation"] = owner.get("tracker")
+            t["ownerCanLocate"] = bool(owner.get("tracker") and owner.get("notify"))
+        t.pop("connection", None)
         if light:
             for leg in t["snapshot"]["legs"]:
                 for part in (leg, leg.get("diversion")):
@@ -199,16 +220,46 @@ class Reiseanzeige:
         data = event.data or {}
         text = data.get("text") or data.get("url") or ""
         user_id = event.context.user_id
-        if not user_id or not looks_like_share(text):
+        pairing = parse_pairing(text)
+        if not user_id or not (pairing or looks_like_share(text)):
             return  # Teilen aus anderen Apps (YouTube …) stillschweigend ignorieren
         if user_id not in self._names:
             await self._load_names()  # neuer Benutzer seit dem Start
         await self.owners.learn(user_id, data)
+        if pairing:
+            await self._pair_from_share(user_id, *pairing)
+            return
         result = await self.add_text(user_id, text)
-        await self.notify(user_id, result["message"])
+        # Rückmeldung auf das eigene Teilen, auch an verbundene Personen (Hinweis auf die App)
+        await self.notify(user_id, result["message"], force=True)
+
+    async def _pair_from_share(self, user_id: str, pair_id: str, token: str) -> None:
+        """Kopplungsanfrage der App, geteilt an die Companion-App: Einmal-Schlüssel
+        anmelden und dem Handy, von dem sie kam, den Deep Link zum Abschließen schicken."""
+        base = self.links.base_url()
+        if base is None:
+            await self.notify(user_id, "Die Adresse von Home Assistant ist unbekannt. Bitte in den Optionen der "
+                                       "Reiseanzeige „Adresse für die Android-App“ eintragen.", force=True)
+            return
+        try:
+            self.links.begin(user_id, token=token, pair_id=pair_id)
+        except ValueError:
+            _LOGGER.warning("Kopplungsanfrage mit fremdem Schlüssel ignoriert")
+            return
+        link = f"deep-link://{deep_link(base, name=self.hass.config.location_name, user=self.name_of(user_id) or '', pair=pair_id)}"
+        service = self.owners.notify_service(user_id)
+        if service:
+            await self.hass.services.async_call("notify", service, {
+                "title": NOTIFY_TITLE, "message": PAIRING_MESSAGE,
+                "data": {"clickAction": link, "tag": "reiseanzeige-verbinden",
+                         "actions": [{"action": "URI", "title": "Verbinden", "uri": link}]}})
+        else:
+            persistent_notification.async_create(self.hass, f"{PAIRING_MESSAGE}\n\n{link}", title=NOTIFY_TITLE)
 
     async def add_text(self, user_id: str, text: str) -> dict:
         """Geteilten Text speichern. Ergebnis: {ok, message, trip?}."""
+        if self.links.linked(user_id):
+            return {"ok": False, "code": "LINKED", "message": LINKED_HINT}
         try:
             journey = parse_share_text(text)
         except ShareTextError as err:
@@ -227,6 +278,92 @@ class Reiseanzeige:
         if self.client is not None:
             self._spawn(self._enrich(trip_id, journey))
         return {"ok": True, "status": result["status"], "message": message, "trip": self.trip_view(self.trips.get(trip_id))}
+
+    def journey_of(self, trip: dict):
+        """Verbindung einer Reise für den Abgleich: aus der App oder aus dem geteilten Text."""
+        if trip.get("connection"):
+            return journey_from_dict(trip["connection"])
+        return parse_share_text(trip["shareText"])
+
+    async def delete_trip(self, trip_id: str) -> dict:
+        """Reise löschen (Karte). Eine Reise aus der App bekommt diese Instanz danach nicht mehr."""
+        trip = self.trips.get(trip_id)
+        result = await self.trips.delete_trip(trip_id)
+        if app := trip.get("app"):
+            await self.links.add_tombstone(app["linkId"], app["tripId"])
+            if (self.links.locations.get(app["linkId"]) or {}).get("tripId") == trip_id:
+                self.links.clear_location(app["linkId"])
+        return result
+
+    # --- Android-App (links.py, Format v1) ---
+
+    async def on_linked(self, link: dict) -> None:
+        """Neue Verbindung: Sensor der Person anlegen; die App schickt danach alle
+        laufenden und kommenden Reisen."""
+        self._trips_changed()
+
+    async def app_message(self, link: dict, msg: dict) -> str:
+        kind = msg["type"]
+        try:
+            if kind == "trip.upsert":
+                return await self._app_upsert(link, msg)
+            if kind == "trip.delete":
+                await self.trips.delete_app(link["id"], msg["tripId"])
+                return OK
+            trip = self.trips.find_app(link["id"], msg["tripId"])
+            if trip is None:
+                return DELETED if self.links.tombstoned(link["id"], msg["tripId"]) else UNKNOWN
+            if kind == "location":
+                if msg["fixes"]:
+                    self.links.set_location(link["id"], msg["fixes"][-1], trip["id"])
+                return OK
+            if kind == "sharing.stop":
+                self.links.clear_location(link["id"])
+                return OK
+            if kind == "route.gps":
+                return await self._app_route(trip["id"], msg)
+        except Exception:  # noqa: BLE001 – eine Nachricht darf die anderen nicht aufhalten
+            _LOGGER.exception("Nachricht %s der Android-App nicht verarbeitet", kind)
+        return IGNORED
+
+    async def _app_upsert(self, link: dict, msg: dict) -> str:
+        if self.links.tombstoned(link["id"], msg["tripId"]):
+            return DELETED
+        journey = msg["journey"]
+        draft = draft_snapshot(journey, dt_util.now(), self.coords)
+        res = await self.trips.upsert_from_app(link["userId"], link["id"], msg["tripId"], msg["revision"], journey,
+                                               draft, msg["connection"], msg["seats"])
+        if res["replaced"]:
+            _LOGGER.info("Reise aus der App ersetzt %s anders geteilte Reise(n)", len(res["replaced"]))
+        if res["change"] in ("new", "connection"):
+            self._spawn(self._prepare(res["tripId"], journey))
+        return OK
+
+    async def _prepare(self, trip_id: str, journey) -> None:
+        """Lage und Verlauf aus der Verbindung, danach Abgleich mit dem Fahrplan –
+        nacheinander, damit der Verlauf des Entwurfs den Abgleich nicht überschreibt."""
+        await self.update_geometry([trip_id])
+        if self.client is not None:
+            await self._enrich(trip_id, journey)
+
+    async def _app_route(self, trip_id: str, msg: dict) -> str:
+        async with self._geo_lock:
+            trip = next((t for t in self.trips.trips if t["id"] == trip_id), None)
+            if trip is None:
+                return UNKNOWN
+            legs = trip["snapshot"].get("legs") or []
+            i, key = msg["leg"], msg["legKey"]
+            if not 0 <= i < len(legs) or (key["line"] and norm_line(key["line"]) != norm_line(legs[i]["line"].get("name"))) \
+                    or (key["dep"] and legs[i].get("plannedDeparture")
+                        and datetime.fromisoformat(legs[i]["plannedDeparture"]) != key["dep"]):
+                return IGNORED
+            snapshot, created = copy.deepcopy(trip["snapshot"]), trip["snapshot"].get("createdAt")
+            changed = await self.hass.async_add_executor_job(
+                apply_route, snapshot, i, msg["gps"], copy.deepcopy(trip.get("realtime")), self.railnet.net,
+                self.railnet.places, self.stations.coords, self.railnet.version or "")
+            if changed:
+                await self.trips.set_geometry(trip_id, created, snapshot)
+        return OK
 
     async def _enrich(self, trip_id: str, journey) -> None:
         await self.trips.mark_enrich_attempt(trip_id)
@@ -290,13 +427,14 @@ class Reiseanzeige:
             if self.client is not None:
                 for trip in self.trips.due_for_enrichment():
                     try:
-                        await self._enrich(trip["id"], parse_share_text(trip["shareText"]))
-                    except ShareTextError:
+                        await self._enrich(trip["id"], self.journey_of(trip))
+                    except (ShareTextError, ValueError):
                         pass
                 for trip in self.trips.due_for_refresh():
                     await self._refresh(trip)
                 await self.stations.refresh_if_due()  # fragt höchstens alle 7 Tage wirklich ab
             await self._gps_tick()
+            await self.links.cleanup(dt_util.now())
             for store in (self.railnet, self.timetable):
                 if store.label not in self._busy and store.due(dt_util.now()):
                     # Download kann dauern: eigene Aufgabe, damit die Echtzeit weiterläuft
@@ -380,6 +518,8 @@ class Reiseanzeige:
             return
         for trip_id in running:
             trip = next((t for t in self.trips.trips if t["id"] == trip_id), None)
+            if trip is None or self.links.linked(trip["ownerId"]):
+                continue   # Umleitungen verbundener Personen wertet die App aus (route.gps)
             tracker = (self.owners.get(trip["ownerId"]) or {}).get("tracker") if trip else None
             fix = read_fix(self.hass.states.get(tracker), now) if tracker else None
             if fix is None:
@@ -408,7 +548,12 @@ class Reiseanzeige:
 
     # --- Benachrichtigungen ---
 
-    async def notify(self, user_id: str, message: str) -> None:
+    async def notify(self, user_id: str, message: str, *, force: bool = False) -> None:
+        """Nachricht an das Handy der Person. Verbundene Personen bekommen ihre
+        Meldungen von der App – außer der direkten Rückmeldung auf ihr Teilen (force)."""
+        if not force and self.links.linked(user_id):
+            _LOGGER.debug("Keine Nachricht an %s (App verbunden): %s", user_id, message)
+            return
         service = self.owners.notify_service(user_id)
         try:
             if service:
@@ -425,7 +570,8 @@ class Reiseanzeige:
         Befehl der Companion-App). {status: sent|cooldown|unavailable, retryInSec?}"""
         trip = self.trips.get(trip_id)
         owner = self.owners.get(trip["ownerId"]) or {}
-        if trip["status"] != "running" or not (owner.get("notify") and owner.get("tracker")):
+        if trip["status"] != "running" or not (owner.get("notify") and owner.get("tracker")) \
+                or self.links.linked(trip["ownerId"]):
             return {"status": "unavailable"}
         now = time.monotonic()
         last = self._locate_last.get(trip["ownerId"])

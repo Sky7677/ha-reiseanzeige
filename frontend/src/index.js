@@ -7,7 +7,8 @@
 // Zahl in px oder CSS-Wert, Standard fast bildschirmhoch), theme (muted | gray),
 // raster (true = sparsame Rasterkarte erzwingen), follow (false = auch während
 // der Fahrt die ganze Strecke statt dem Zug zu folgen), mode (board = nur die
-// Abfahrtstafel), station (Bahnhof der Tafel statt dem der Person)
+// Abfahrtstafel), station (Bahnhof der Tafel statt dem der Person), app (false =
+// Knopf „Android-App“ ausblenden, etwa auf dem Flurbildschirm)
 
 import {createHaClient} from './ha-client.js';
 import {selectTrip, switcherGroups, switcherLabels} from './select.js';
@@ -18,9 +19,10 @@ import {renderInfo, renderIdle} from './render-info.js';
 import {renderBoard} from './render-board.js';
 import {createTripMap} from './map.js';
 import {STYLE} from './styles.js';
-import {esc} from './format.js';
+import {dayTime, esc} from './format.js';
+import qrcode from 'qrcode-generator';
 
-export const CARD_VERSION = '0.11.0';
+export const CARD_VERSION = '0.12.0';
 const POLL_MS = 60 * 1000;
 const SESSION_CHECK_MS = 60 * 1000;
 const field = (form, name) => form.elements.namedItem(name);
@@ -36,7 +38,7 @@ const DEFAULT_HEIGHT = 'max(480px, calc(100vh - 150px))';
 
 class ReiseanzeigeCard extends HTMLElement {
 	setConfig (config) {
-		this._config = {height: 'auto', theme: 'muted', raster: false, follow: true, mode: 'trips', station: null, ...config};
+		this._config = {height: 'auto', theme: 'muted', raster: false, follow: true, mode: 'trips', station: null, app: true, ...config};
 		if (!['trips', 'board'].includes(this._config.mode)) throw new Error('mode muss "trips" oder "board" sein');
 		this._manualId = null;
 	}
@@ -89,7 +91,8 @@ class ReiseanzeigeCard extends HTMLElement {
 		if (!this.shadowRoot) this.attachShadow({mode: 'open'});
 		this.shadowRoot.innerHTML = `<style>${STYLE}</style>
 			<ha-card>
-				<div class="toolbar"><div class="switcher"></div><button type="button" class="btn add-toggle hidden">+ Reise</button></div>
+				<div class="toolbar"><div class="switcher"></div><button type="button" class="btn add-toggle hidden">+ Reise</button><button type="button" class="btn app-toggle hidden">Android-App</button></div>
+				<div class="app-panel hidden"></div>
 				<form class="add-form hidden">
 					<input name="link" placeholder="Geteilten Text aus dem DB Navigator einfügen" autocomplete="off">
 					<button type="submit" class="btn primary">Speichern</button>
@@ -102,7 +105,7 @@ class ReiseanzeigeCard extends HTMLElement {
 			</ha-card>`;
 		const $ = (s) => this.shadowRoot.querySelector(s);
 		this._el = {card: $('ha-card'), switcher: $('.switcher'), layout: $('.layout'), map: $('.map'), info: $('.info'), status: $('.status'),
-			addToggle: $('.add-toggle'), addForm: $('.add-form'), addMsg: $('.add-msg')};
+			addToggle: $('.add-toggle'), addForm: $('.add-form'), addMsg: $('.add-msg'), appToggle: $('.app-toggle'), appPanel: $('.app-panel')};
 		this._ui = {editLeg: null, confirmDelete: false, message: null};
 		this._wireActions();
 		const h = this._config.height;
@@ -134,6 +137,7 @@ class ReiseanzeigeCard extends HTMLElement {
 			if (open) { addMsg.textContent = ''; field(addForm, 'link').value = ''; field(addForm, 'link').focus(); }
 		};
 		addToggle.addEventListener('click', () => showAdd(true));
+		this._wireApp();
 		addForm.addEventListener('click', (e) => { if (e.target.dataset.action === 'add-cancel') showAdd(false); });
 		addForm.addEventListener('submit', async (e) => {
 			e.preventDefault();
@@ -213,7 +217,7 @@ class ReiseanzeigeCard extends HTMLElement {
 		const sameTrip = this._shownId === trip.id;
 		this._shownId = trip.id;
 		// Bearbeiten und Löschen darf jeder Benutzer (die App lässt es zu)
-		info.innerHTML = renderInfo(buildTripView(trip), {...this._ui, owned: true, canLocate: Boolean(trip.ownerCanLocate && trip.status === 'running'),
+		info.innerHTML = renderInfo(buildTripView(trip), {...this._ui, owned: true, fromApp: Boolean(trip.fromApp), canLocate: Boolean(trip.ownerCanLocate && trip.status === 'running'),
 			// ohne Zugangsdaten der Bahn keine Echtzeit (ältere Integrationen melden nichts: mit)
 			realtime: this._me?.realtime !== false});
 		this._keepScroll(sameTrip ? previousScroll : 0, trip);
@@ -222,6 +226,67 @@ class ReiseanzeigeCard extends HTMLElement {
 	}
 
 	get _boardOnly () { return this._config.mode === 'board'; }
+
+	// Android-App verbinden: verbundene Apps, neue Verbindung per Knopf (Android) oder QR-Code
+	_wireApp () {
+		const {appToggle, appPanel} = this._el;
+		appToggle.addEventListener('click', () => this._openApp());
+		appPanel.addEventListener('click', async (e) => {
+			const el = e.target.closest('[data-action]');
+			const action = el?.dataset.action;
+			if (action === 'app-close') {
+				appPanel.classList.add('hidden');
+				appPanel.innerHTML = '';
+				this._render();
+			} else if (action === 'app-start') {
+				await this._startPairing();
+			} else if (action === 'app-remove') {
+				if (el.dataset.confirm !== '1') { el.dataset.confirm = '1'; el.textContent = 'Wirklich aufheben?'; return; }
+				try {
+					await this._client.request(`api/links/${encodeURIComponent(el.dataset.id)}`, {method: 'DELETE'});
+					await this._openApp();
+					await this._load();
+				} catch (err) { this._appMessage(err.message, true); }
+			}
+		});
+	}
+
+	async _openApp () {
+		const {appToggle, appPanel} = this._el;
+		appToggle.classList.add('hidden');
+		appPanel.classList.remove('hidden');
+		appPanel.innerHTML = '<div class="app-msg">Wird geladen …</div>';
+		try {
+			const {links} = await this._client.request('api/links');
+			appPanel.innerHTML = renderAppPanel(links);
+		} catch (err) {
+			appPanel.innerHTML = renderAppPanel([]);
+			this._appMessage(err.message, true);
+		}
+	}
+
+	async _startPairing () {
+		const pair = this._el.appPanel.querySelector('.app-pair');
+		try {
+			const res = await this._client.request('api/links', {method: 'POST'});
+			const qr = qrcode(0, 'M');
+			qr.addData(res.link);
+			qr.make();
+			const android = /Android/i.test(navigator.userAgent ?? '');
+			pair.innerHTML = `
+				${android ? `<a class="btn primary app-open" href="${esc(res.intent)}">In der App öffnen</a>` : ''}
+				<div class="app-qr" title="Mit der Reiseanzeige-App scannen">${qr.createSvgTag({cellSize: 4, margin: 2, scalable: true})}</div>
+				<div class="app-hint">${android ? 'Auf diesem Handy: „In der App öffnen“. Sonst ' : ''}mit der Reiseanzeige-App scannen (Einstellungen → Ziele → Home Assistant). Gilt ${Math.round(res.expiresIn / 60)} Minuten. Ohne zweiten Bildschirm: in der App „Über die Companion-App verbinden“.</div>`;
+			pair.classList.remove('hidden');
+		} catch (err) { this._appMessage(err.message, true); }
+	}
+
+	_appMessage (text, error = false) {
+		const msg = this._el.appPanel.querySelector('.app-msg');
+		if (!msg) return;
+		msg.className = `app-msg${error ? ' error' : ''}`;
+		msg.textContent = text;
+	}
 
 	async _load () {
 		// Nur Abfahrtstafel: keine Reisen laden, Tafel nach eigenem Takt
@@ -288,6 +353,7 @@ class ReiseanzeigeCard extends HTMLElement {
 		}
 		if (!this._trips) return;
 		if (this._el.addForm.classList.contains('hidden')) this._el.addToggle.classList.toggle('hidden', !this._me?.canAdd);
+		this._el.appToggle.classList.toggle('hidden', !this._config.app || !this._el.appPanel.classList.contains('hidden'));
 
 		const trips = this._trips;
 		if (this._manualId && !trips.some(t => t.id === this._manualId)) this._manualId = null; // gewählte Reise entfernt
@@ -443,3 +509,18 @@ if (!customElements.get('reiseanzeige-card')) {
 	window.customCards.push({type: 'reiseanzeige-card', name: 'Reiseanzeige', description: 'Geteilte Bahnreisen mit Karte und Echtzeit'});
 	console.info(`%c REISEANZEIGE-KARTE %c ${CARD_VERSION} `, 'background:#ec0016;color:#fff', 'background:#333;color:#fff');
 }
+
+// Verbundene Apps des angemeldeten Benutzers; ohne Adressen (die kennt nur die App)
+const renderAppPanel = (links) => `
+	<h3>Android-App</h3>
+	${links.length ? `<ul class="app-links">${links.map(l => `
+		<li><span>${esc(l.device || 'Android-App')}</span>
+			<span class="when">${l.lastSeenAt ? `zuletzt ${esc(dayTime(l.lastSeenAt))}` : ''}</span>
+			<button type="button" class="link danger" data-action="app-remove" data-id="${esc(l.id)}">aufheben</button></li>`).join('')}</ul>`
+		: '<div class="app-hint">Noch keine Reiseanzeige-App verbunden. Verbunden wird einmal je Handy, danach kommen alle Reisen von selbst.</div>'}
+	<div class="app-pair hidden"></div>
+	<div class="app-actions">
+		<button type="button" class="btn primary" data-action="app-start">Neue Verbindung</button>
+		<button type="button" class="btn" data-action="app-close">Schließen</button>
+	</div>
+	<div class="app-msg"></div>`;

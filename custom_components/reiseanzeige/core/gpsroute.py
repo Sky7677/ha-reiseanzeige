@@ -29,7 +29,7 @@ import math
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 
-from .geometry import Fallback, _known, _project, leg_stopovers, set_gps, stop_states
+from .geometry import Fallback, _known, _project, apply_diversion, leg_stopovers, set_gps, stop_states
 from .places import Places, km
 from .railnet.router import COSTS, RailNet
 from .share_text import RAIL_MODES
@@ -261,3 +261,28 @@ def step(snapshot: dict, realtime: dict | None, watch: Watch, fix: Fix, net: Rai
             gps["points"] = gps["points"][:-1][::2] + gps["points"][-1:]
     # Teilstücke sind zwischengespeichert: neu zu suchen sind nur die zum neuen Punkt
     return set_gps(leg, gps, net, places, fallback, version, rt_leg, watch.cache)
+
+
+def apply_route(snapshot: dict, index: int, gps: dict | None, realtime: dict | None, net: RailNet | None,
+                places: Places | None = None, fallback: Fallback | None = None, version: str = "") -> bool:
+    """Umleitung per GPS aus der Android-App übernehmen (Format v1, route.gps): Die
+    App wertet die Standorte selbst aus und schickt das Ergebnis im Format von
+    leg.diversion.gps; hier wird nur die Linie mit dem eigenen Gleisnetz gelegt.
+    gps None beendet die Umleitung; eine von der Bahn gemeldete bleibt.
+    Ändert snapshot an Ort und Stelle; True bei Änderung."""
+    legs = snapshot.get("legs") or []
+    if not 0 <= index < len(legs):
+        return False
+    leg = legs[index]
+    rt_leg = ((realtime or {}).get("legs") or {}).get(str(index))
+    if gps is not None:
+        return set_gps(leg, copy.deepcopy(gps), net, places, fallback, version, rt_leg)
+    div = leg.get("diversion") or {}
+    if not div.get("gps"):
+        return False
+    if div.get("path"):
+        div["gps"] = None
+        apply_diversion(leg, {"path": div["path"], "stops": div.get("stops")}, net, places, fallback, version, rt_leg)
+        return True
+    leg.pop("diversion", None)
+    return True

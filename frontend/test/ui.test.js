@@ -12,7 +12,7 @@ const snap = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'fixtures
 const tick = (ms = 30) => new Promise(r => setTimeout(r, ms));
 
 // Attrappe der Schnittstelle mit Zustand (als HTTP-Pfade; callWS unten bildet die WebSocket-Befehle darauf ab)
-const api = {trips: [], calls: []};
+const api = {trips: [], calls: [], links: [{id: 'l1', device: 'Nokia 8.3 5G', lastSeenAt: '2026-10-08T05:40:00Z'}]};
 const makeTrip = (id, ownerId, ownerName) => ({id, ownerId, ownerName, status: 'upcoming', departure: snap.plannedDeparture, arrival: snap.plannedArrival, snapshot: snap, seats: {}, realtime: null, realtimeHealth: {failing: false}});
 const reply = (status, body) => ({ok: status < 300, status, json: async () => body});
 const fakeFetch = async (url, opts = {}) => {
@@ -32,6 +32,10 @@ const fakeFetch = async (url, opts = {}) => {
 		api.trips.push(t);
 		return reply(201, {status: 'saved', trip: t, replaced: [], message: 'Reise gespeichert.'});
 	}
+	if (pathName === 'api/links' && method === 'GET') return reply(200, {links: api.links});
+	if (pathName === 'api/links' && method === 'POST') return reply(200, {link: 'reiseanzeige://ziel/verbinden?v=1&url=http%3A%2F%2F192.168.178.10%3A8123&token=ab12&name=Zuhause&user=Max', intent: 'intent://ziel/verbinden?v=1#Intent;scheme=reiseanzeige;package=de.sky7677.reiseanzeige;end', expiresIn: 600});
+	const lm = /^api\/links\/([^/]+)$/.exec(pathName);
+	if (lm && method === 'DELETE') { api.links = api.links.filter(l => l.id !== lm[1]); return reply(200, {removed: true}); }
 	if (/^api\/trips\/[^/]+\/locate$/.test(pathName) && method === 'POST') return api.locateReply ?? reply(202, {status: 'sent'});
 	const m = /^api\/trips\/([^/]+)(?:\/seats\/(\d+))?$/.exec(pathName);
 	const trip = api.trips.find(t => t.id === m?.[1]);
@@ -51,6 +55,9 @@ const wsRoute = (m) => ({
 	'reiseanzeige/seat': ['PUT', `api/trips/${m.trip_id}/seats/${m.leg}`, {coach: m.coach, seat: m.seat}],
 	'reiseanzeige/locate': ['POST', `api/trips/${m.trip_id}/locate`],
 	'reiseanzeige/board': ['GET', `api/board${m.station ? `?station=${encodeURIComponent(m.station)}` : ''}`],
+	'reiseanzeige/links': ['GET', 'api/links'],
+	'reiseanzeige/link_start': ['POST', 'api/links'],
+	'reiseanzeige/link_remove': ['DELETE', `api/links/${m.link_id}`],
 })[m.type];
 const callWS = async (m) => {
 	if (m.type === 'reiseanzeige/map_base') return {base: '/api/reiseanzeige/T/'};
@@ -226,4 +233,44 @@ test('Laufende Reise, nur Bahnhöfe haben Koordinaten (Tram/U-Bahn nicht): Karte
 		Date.now = realNow;
 		api.trips = [];
 	}
+});
+
+test('Android-App: verbundene Apps, neue Verbindung mit QR-Code, aufheben mit Nachfrage', async () => {
+	$('.app-toggle').click();
+	await tick(60);
+	const panel = $('.app-panel');
+	assert.equal(panel.classList.contains('hidden'), false);
+	assert.ok($('.app-toggle').classList.contains('hidden'));
+	assert.match(panel.textContent, /Nokia 8\.3 5G/);
+	panel.querySelector('[data-action="app-start"]').click();
+	await tick(60);
+	assert.ok(panel.querySelector('.app-qr svg'), 'QR-Code');
+	assert.match(panel.querySelector('.app-hint').textContent, /Gilt 10 Minuten/);
+	assert.equal(panel.querySelector('.app-open'), null, 'Knopf „In der App öffnen“ nur auf Android');
+	const remove = panel.querySelector('[data-action="app-remove"]');
+	remove.click();
+	assert.equal(remove.textContent, 'Wirklich aufheben?');
+	assert.ok(!api.calls.includes('DELETE api/links/l1'));
+	remove.click();
+	await tick(60);
+	assert.ok(api.calls.includes('DELETE api/links/l1'));
+	assert.match($('.app-panel').textContent, /Noch keine Reiseanzeige-App verbunden/);
+	$('[data-action="app-close"]').click();
+	await tick(20);
+	assert.ok($('.app-panel').classList.contains('hidden'));
+	assert.equal($('.app-toggle').classList.contains('hidden'), false);
+});
+
+test('Reise aus der Android-App: Wagen und Platz nur anzeigen', async () => {
+	const t = makeTrip('app', 'max', 'Max');
+	t.fromApp = true;
+	t.seats = {2: {coach: '7', seat: '45'}};
+	api.trips = [t];
+	card._manualId = 'app';
+	await card._load();
+	await tick(60);
+	assert.equal($('[data-action="seat-edit"]'), null, 'kein Bearbeiten');
+	assert.match($('.info').textContent, /Wagen 7, Platz 45 · aus der App/);
+	api.trips = [];
+	await card._load();
 });

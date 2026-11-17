@@ -34,6 +34,8 @@ const apply = (f, now = at('08:00')) => applyGps({pos: computeAt(now), fix: f, v
 test('Standort lesen: Attribute der Companion-App, unbrauchbare Zustände', () => {
 	const f = readFix({state: 'not_home', last_updated: '2026-10-08T06:00:00Z', attributes: {latitude: 50.1, longitude: 10.9, gps_accuracy: 11, speed: 0, source_type: 'gps'}});
 	assert.deepEqual(f, {lat: 50.1, lon: 10.9, accuracy: 11, speed: 0, at: Date.parse('2026-10-08T06:00:00Z')});
+	// Android-Reiseanzeige: Messzeit statt Eingangszeit (im Hintergrund gesammelt geschickt)
+	assert.equal(readFix({state: 'not_home', last_updated: '2026-10-08T06:01:30Z', attributes: {latitude: 50.1, longitude: 10.9, gps_accuracy: 8, fix_time: '2026-10-08T08:00:31+02:00'}}).at, Date.parse('2026-10-08T06:00:31Z'));
 	assert.equal(readFix({state: 'unavailable', attributes: {}}), null);
 	assert.equal(readFix({state: 'home', attributes: {}}), null);
 });

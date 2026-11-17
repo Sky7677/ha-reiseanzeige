@@ -30,7 +30,7 @@ Die Dashboard-Karte wird mitgeliefert und automatisch geladen, eine Ressource mu
 type: custom:reiseanzeige-card
 ```
 
-Optionen der Karte: `height` (Höhe im Breitformat), `theme` (`muted` | `gray`), `raster` (sparsame Rasterkarte erzwingen), `follow` (`false` = ganze Strecke statt dem Zug folgen), `mode: board` (nur die Abfahrtstafel), `station` (Bahnhof der Tafel).
+Optionen der Karte: `height` (Höhe im Breitformat), `theme` (`muted` | `gray`), `raster` (sparsame Rasterkarte erzwingen), `follow` (`false` = ganze Strecke statt dem Zug folgen), `mode: board` (nur die Abfahrtstafel), `station` (Bahnhof der Tafel), `app` (`false` = Knopf „Android-App“ ausblenden, etwa auf dem Flurbildschirm).
 
 ## Zugangsdaten der Bahn (optional)
 
@@ -84,11 +84,35 @@ Im DB Navigator eine Verbindung öffnen → **Teilen** → **Home Assistant**. D
 - **Tram und U-Bahn** kennt die Timetables-API nicht. Ihre Zwischenhalte kommen aus dem GTFS-Fahrplan, Echtzeit gibt es dafür nicht. **Ersatzbusse** (Schienenersatzverkehr, im DB Navigator etwa „Bus RE80“) stehen ebenfalls im Fahrplan und bekommen so ihre Zwischenhalte; andere **Busse** erscheinen nur mit Ein- und Ausstieg aus dem Text.
 - **Ersatzbusse auf der Abfahrtstafel:** Geplanten Ersatzverkehr eines anderen Betreibers kennt die Timetables-API oft nicht. Die Tafel ergänzt ihn deshalb aus dem Fahrplan, gekennzeichnet als „Ersatzbus, laut Fahrplan“ und mit der Haltestelle, an der er abfährt. Meldet die Bahn den Zug derselben Linie zur selben Zeit in dieselbe Richtung als fahrend, entfällt der Ersatzbus; führt die Bahn den Bus selbst, gilt ihre Fassung mit Echtzeit. Kurzfristig eingerichteter Ersatzverkehr steht noch nicht im Fahrplan – dann zeigt die Tafel den Ausfall des Zuges mit dem Hinweis der Bahn.
 - **Streckenverlauf:** Die Integration lädt beim ersten Start das Gleisnetz (einige Dutzend MB, gespeichert in `.storage`) und prüft wöchentlich auf eine neue Fassung. Züge laufen damit auf den Gleisen von Halt zu Halt, ohne an Weichen umzukehren. Güterstrecken nimmt die Berechnung nur, wenn der Umweg sonst deutlich länger wäre. Straßenbahn und U-Bahn folgen der OSM-Linie mit derselben Nummer. Die Lage der Halte kommt über die Bahnhofsnummer aus OpenStreetMap. Fehlt die Nummer, sucht die Integration nach dem Namen und nimmt bei mehrdeutigen Namen den Halt nahe der übrigen Reise. In den Optionen lässt sich das Gleisnetz abschalten.
-- **Ohne Einrichtung je Person:** Beim ersten Teilen erkennt die Integration das Handy, also Benachrichtigungsdienst und `device_tracker`. Darüber laufen Bestätigungen, die GPS-Korrektur der Zugposition und der Knopf „Standort anfordern“.
+- **Ohne Einrichtung je Person:** Beim ersten Teilen erkennt die Integration das Handy, also Benachrichtigungsdienst und `device_tracker`. Darüber laufen Bestätigungen, die GPS-Korrektur der Zugposition und der Knopf „Standort anfordern“ (nicht für Personen mit verbundener Android-App, siehe unten).
 - **Neue Verbindung im selben Zeitraum:** Sie ersetzt die alte, zum Beispiel wenn man unterwegs umplant.
 - **Sensoren:** je Person `sensor.reiseanzeige_<name>` mit dem Zustand der wichtigsten Reise. Fällt die Echtzeit aus, gibt es einmalig eine Nachricht und das Ereignis `reiseanzeige`.
 
 Zur Fehlersuche: Geräte & Dienste → Reiseanzeige → ⋮ → **Diagnose herunterladen**. Die Datei enthält die gespeicherten Reisen, aber keine Zugangsdaten. Bevor du sie öffentlich teilst, etwa in einem Fehlerbericht: Die Reisen zeigen, wann du wo unterwegs bist.
+
+## Mit der Android-Reiseanzeige
+
+Die [Android-Reiseanzeige](https://github.com/Sky7677/android-reiseanzeige) läuft eigenständig auf dem Handy und kann ihre Reisen an Home Assistant weitergeben (ab 0.8.0). Wer sie nutzt, teilt dort; Home Assistant übernimmt die Reisen von selbst und zeigt sie wie gewohnt in der Karte, auf dem Flurbildschirm und im Sensor. Für alle anderen bleibt das Teilen über die Companion-App.
+
+**Verbinden** (einmal je Person und Handy):
+
+- In der Karte **Android-App** → **Neue Verbindung**: am Handy „In der App öffnen“, am PC den QR-Code mit der App scannen (Einstellungen → Ziele → Home Assistant).
+- Ohne zweiten Bildschirm: in der App „Über die Companion-App verbinden“ und an „Home Assistant“ teilen. Home Assistant schickt eine Benachrichtigung; ein Tipp darauf schließt das Verbinden ab.
+
+Der Schlüssel zum Verbinden gilt 10 Minuten und einmal. Die dauerhafte Adresse bekommt die App erst in der Antwort darauf; sie steht weder in einer Benachrichtigung noch im Protokoll.
+
+**Danach gilt für die verbundene Person:**
+
+- Neue, ersetzte und gelöschte Reisen kommen aus der App. Halte, Strecke und Echtzeit rechnet Home Assistant weiter selbst.
+- Mit „Standort senden“ in der App kommen die Standorte während der Fahrt in einen eigenen Tracker (`device_tracker.reiseanzeige_<person>_<handy>`), ohne Verlauf in Home Assistant. Die Karte zeigt wie bisher nur den Punkt auf der Strecke. Den Standort der Companion-App braucht die Reiseanzeige dann nicht mehr.
+- Umleitungen per GPS wertet die App aus; Home Assistant legt nur die Linie auf seine Gleise.
+- Wagen und Sitzplatz kommen aus der App; die Karte zeigt sie nur an.
+- Push-Nachrichten kommen von der App, nicht von Home Assistant. Das Ereignis `reiseanzeige` für Automationen bleibt.
+- Eine Reise in der Karte zu löschen, löscht sie nur in Home Assistant. Wird die Verbindung aufgehoben (in der Karte oder in der App), entfernt Home Assistant die Reisen dieser App sofort.
+
+**Erreichbarkeit:** Die App schickt an die interne Adresse von Home Assistant, etwa über ein VPN wie WireGuard (die Reiseanzeige muss dort zu den eingeschlossenen Apps gehören). Die Adresse lässt sich in den Optionen ändern („Adresse für die Android-App“). Standardmäßig nimmt Home Assistant Nachrichten der App nur aus privaten Netzen an; Adressen von Tailscale (100.x) zählen nicht dazu – dann die Option „Android-App nur aus dem lokalen Netz“ abschalten.
+
+Das Nachrichtenformat steht in [`docs/format-v1.md`](docs/format-v1.md), gleichlautend in beiden Repos.
 
 ## Grenzen und Pläne
 

@@ -17,6 +17,10 @@ const ROUTES = [
 	['PUT', /^api\/trips\/([^/]+)\/seats\/(\d+)$/, 'seat', (m, body) => ({trip_id: decodeURIComponent(m[1]), leg: Number(m[2]), coach: String(body?.coach ?? ''), seat: String(body?.seat ?? '')})],
 	['POST', /^api\/trips\/([^/]+)\/locate$/, 'locate', (m) => ({trip_id: decodeURIComponent(m[1])})],
 	['GET', /^api\/board$/, 'board', (m, body, q) => (q.get('station') ? {station: q.get('station')} : {})],
+	// Android-App verbinden
+	['GET', /^api\/links$/, 'links', () => ({})],
+	['POST', /^api\/links$/, 'link_start', () => ({})],
+	['DELETE', /^api\/links\/([^/]+)$/, 'link_remove', (m) => ({link_id: decodeURIComponent(m[1])})],
 ];
 
 export const createHaClient = ({hass}) => {

@@ -17,6 +17,7 @@ from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .core.board import departures
+from .core.link_format import deep_link, intent_link
 from .core.timetables import TimetablesError
 from .core.trips import TripError
 from .helpers import loaded_runtime
@@ -36,7 +37,8 @@ def _error(connection, msg_id: int, err: Exception) -> None:
 
 @callback
 def async_register(hass: HomeAssistant) -> None:
-    for handler in (ws_me, ws_trips, ws_trip, ws_add, ws_delete, ws_seat, ws_locate, ws_board, ws_map_base):
+    for handler in (ws_me, ws_trips, ws_trip, ws_add, ws_delete, ws_seat, ws_locate, ws_board, ws_map_base,
+                    ws_links, ws_link_start, ws_link_remove):
         websocket_api.async_register_command(hass, handler)
 
 
@@ -49,13 +51,16 @@ def ws_me(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None:
         return _error(connection, msg["id"], err)
     user = connection.user
     owner = rt.owners.get(user.id) or {}
+    linked = rt.links.linked(user.id)
     connection.send_result(msg["id"], {
         "id": user.id,
         "name": user.name,
         "configured": True,
         # "+ Reise" in der Karte nur für Personen mit Handy (wie bisher: der
         # Flurbildschirm teilt nicht). Das Handy wird beim ersten Teilen erkannt.
-        "canAdd": bool(owner.get("notify")),
+        # Mit verbundener Android-App kommen Reisen nur aus der App.
+        "canAdd": bool(owner.get("notify")) and not linked,
+        "linked": linked,
         "hasPhone": bool(owner.get("notify")),
         "station": rt.default_station,
         # Ohne Zugangsdaten der Bahn: keine Echtzeit, keine Abfahrtstafel
@@ -102,7 +107,7 @@ async def ws_add(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None:
 async def ws_delete(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None:
     try:
         rt = _runtime(hass)
-        connection.send_result(msg["id"], await rt.trips.delete_trip(msg["trip_id"]))
+        connection.send_result(msg["id"], await rt.delete_trip(msg["trip_id"]))
     except TripError as err:
         _error(connection, msg["id"], err)
 
@@ -169,3 +174,52 @@ def ws_map_base(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None:
     except TripError as err:
         return _error(connection, msg["id"], err)
     connection.send_result(msg["id"], {"base": f"/api/{DOMAIN}/{rt.map_token}/"})
+
+
+# --- Android-App verbinden (links.py) ---
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/links"})
+@callback
+def ws_links(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None:
+    """Verbundene Apps des angemeldeten Benutzers."""
+    try:
+        rt = _runtime(hass)
+    except TripError as err:
+        return _error(connection, msg["id"], err)
+    connection.send_result(msg["id"], {"links": [rt.links.public(l) for l in rt.links.for_user(connection.user.id)],
+                                       "base": rt.links.base_url()})
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/link_start"})
+@callback
+def ws_link_start(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None:
+    """Einmal-Schlüssel für den angemeldeten Benutzer: Link für den Knopf und den QR-Code."""
+    try:
+        rt = _runtime(hass)
+    except TripError as err:
+        return _error(connection, msg["id"], err)
+    base = rt.links.base_url()
+    if base is None:
+        connection.send_error(msg["id"], "no_url", "Die Adresse von Home Assistant ist unbekannt. Bitte in den "
+                                                   "Optionen der Reiseanzeige „Adresse für die Android-App“ eintragen.")
+        return
+    pending = rt.links.begin(connection.user.id)
+    link = deep_link(base, name=hass.config.location_name, user=connection.user.name or "", token=pending["token"])
+    connection.send_result(msg["id"], {"link": link, "intent": intent_link(link), "expiresIn": pending["expiresIn"],
+                                       "base": base})
+
+
+@websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/link_remove", vol.Required("link_id"): str})
+@websocket_api.async_response
+async def ws_link_remove(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None:
+    """Verbindung aufheben: eigene, als Administrator auch fremde."""
+    try:
+        rt = _runtime(hass)
+    except TripError as err:
+        return _error(connection, msg["id"], err)
+    link = rt.links.links.get(msg["link_id"])
+    if link is None or (link["userId"] != connection.user.id and not connection.user.is_admin):
+        connection.send_error(msg["id"], "not_found", "Verbindung nicht gefunden")
+        return
+    await rt.links.remove(link["id"], reason="in Home Assistant aufgehoben")
+    connection.send_result(msg["id"], {"removed": True})
