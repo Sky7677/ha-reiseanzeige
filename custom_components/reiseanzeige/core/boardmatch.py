@@ -304,10 +304,11 @@ def pending(snapshot: dict) -> bool:
 
 
 async def match_snapshot(snapshot: dict, source: BoardSource, places: Places | None, directory: StationList | None = None,
-                         log: Log | None = None) -> dict | None:
+                         log: Log | None = None,
+                         on_error: Callable[[dict, OpenBoardsError], None] | None = None) -> dict | None:
     """Alle noch nicht zugeordneten Bahn-Abschnitte einer Reise; None, wenn sich nichts
     geändert hat. Zugangs- und Kontingentfehler gehen weiter, andere Fehler lassen nur
-    den einen Abschnitt, wie er ist."""
+    den einen Abschnitt, wie er ist (on_error erfährt sie)."""
     log = log or (lambda m: _LOGGER.info("%s", m))
     changed = False
     legs = []
@@ -318,6 +319,8 @@ async def match_snapshot(snapshot: dict, source: BoardSource, places: Places | N
             if err.code in ("BAD_CREDENTIALS", "RATE_LIMITED"):
                 raise
             log(f"{(leg.get('line') or {}).get('name')}: {err}")
+            if on_error is not None:
+                on_error(leg, err)
             m = None
         if m is not None:
             changed = True

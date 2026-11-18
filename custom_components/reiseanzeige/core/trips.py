@@ -42,6 +42,10 @@ ENRICH_STEPS = (
     (timedelta(hours=24), timedelta(hours=2)),
 )
 ENRICH_FAR = timedelta(hours=12)
+# Nach einem vorübergehenden Fehler (zu viele Anfragen, Bahn nicht erreichbar) bald neu:
+# nach 2 Minuten, dann doppelt so lange, höchstens bis zum üblichen Abstand
+ENRICH_RETRY = timedelta(minutes=2)
+TRANSIENT_ONLY = "RATE_LIMITED"   # zählt nicht als Ausfall der Echtzeit
 
 
 def enrich_interval(until: timedelta) -> timedelta:
@@ -419,8 +423,13 @@ class TripManager:
         for t in self.trips:
             if not pending(t["snapshot"]) or effective_arrival(t) < now:
                 continue
+            retry = _dt(t.get("enrichRetryAt"))
             last = _dt(t.get("enrichAttemptAt"))
-            if last is None or now - last >= enrich_interval(effective_departure(t) - now):
+            if retry is not None:
+                due = now >= retry
+            else:
+                due = last is None or now - last >= enrich_interval(effective_departure(t) - now)
+            if due:
                 out.append(copy.deepcopy(t))
         return out
 
@@ -429,13 +438,29 @@ class TripManager:
         der Zeitpunkt des letzten Versuchs ist nur ein Merker)."""
         for t in self.trips:
             if pending(t["snapshot"]):
-                t["enrichAttemptAt"] = None
+                t["enrichAttemptAt"], t["enrichRetryAt"] = None, None
 
     async def mark_enrich_attempt(self, trip_id: str) -> None:
         def run():
             trip = next((t for t in self.trips if t["id"] == trip_id), None)
             if trip is not None:
                 trip["enrichAttemptAt"] = self.clock().isoformat()
+        await self._mutate(run)
+
+    async def mark_enrich_result(self, trip_id: str, transient: bool) -> None:
+        """Ausgang des Versuchs: nach einem vorübergehenden Fehler bald neu (ENRICH_RETRY,
+        verdoppelt), sonst im üblichen Abstand."""
+        def run():
+            trip = next((t for t in self.trips if t["id"] == trip_id), None)
+            if trip is None:
+                return
+            if not transient:
+                trip["enrichErrors"], trip["enrichRetryAt"] = 0, None
+                return
+            now = self.clock()
+            n = (trip.get("enrichErrors") or 0) + 1
+            wait = min(ENRICH_RETRY * 2 ** min(n - 1, 10), enrich_interval(effective_departure(trip) - now))
+            trip["enrichErrors"], trip["enrichRetryAt"] = n, (now + wait).isoformat()
         await self._mutate(run)
 
     def due_for_refresh(self) -> list[dict]:
@@ -469,6 +494,10 @@ class TripManager:
             h = trip["realtimeHealth"]
             if not failed:
                 h.update(consecutiveFailures=0, failing=False, lastSuccessAt=now.isoformat(), lastError=None)
+                return events
+            if all(r.get("error") == TRANSIENT_ONLY for r in failed):
+                # Zu viele Anfragen: kurze Pause, kein Ausfall der Echtzeit (keine Meldung)
+                h["lastError"] = TRANSIENT_ONLY
                 return events
             h["consecutiveFailures"] += 1
             h["lastError"] = failed[0].get("error")
