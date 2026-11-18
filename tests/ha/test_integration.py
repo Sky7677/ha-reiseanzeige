@@ -185,7 +185,7 @@ async def test_diagnose_ohne_zugangsdaten(hass, boards):
     entry = await setup(hass)
     diag = await async_get_config_entry_diagnostics(hass, entry)
     assert diag["data"] == {"client_id": "**REDACTED**", "api_key": "**REDACTED**"}
-    assert diag["trips"] == [] and diag["version"] == "0.9.0"
+    assert diag["trips"] == [] and diag["version"] == "0.9.1"
     assert diag["credentials"] is True and diag["openboards_calls_since_start"] == 0
     assert diag["app_links"] == [] and diag["app_local_only"] is True
     assert diag["railnet"]["enabled"] is True and diag["railnet"]["loaded"] is False

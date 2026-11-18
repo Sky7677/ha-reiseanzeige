@@ -246,14 +246,16 @@ class Links:
     async def handle(self, hass: HomeAssistant, webhook_id: str, request: web.Request) -> web.Response:
         if request.content_length is not None and request.content_length > MAX_BODY_BYTES:
             return _json(error_response("too_large", "Anfrage zu groß"), HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
-        raw = await request.content.read(MAX_BODY_BYTES + 1)
-        if len(raw) > MAX_BODY_BYTES:
+        raw = await _read_body(request)
+        if raw is None:
             return _json(error_response("too_large", "Anfrage zu groß"), HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
         if self._limited(webhook_id):
             return _json(error_response("rate_limited", "Zu viele Anfragen"), HTTPStatus.TOO_MANY_REQUESTS)
         try:
             req = parse_request(json.loads(raw.decode("utf-8")))
-        except (UnicodeDecodeError, json.JSONDecodeError):
+        except (UnicodeDecodeError, json.JSONDecodeError) as err:
+            _LOGGER.warning("Nachricht der Android-App unlesbar (%s von %s Bytes): %s",
+                            len(raw), request.content_length, err)
             return _json(error_response("bad_request", "JSON erwartet"), HTTPStatus.BAD_REQUEST)
         except FormatError as err:
             return _json(error_response(err.code, str(err)), HTTPStatus.BAD_REQUEST)
@@ -287,6 +289,20 @@ class Links:
             else:
                 trips[msg["tripId"]] = await self.rt.app_message(link, msg)
         return _json(response(trips, **extra), HTTPStatus.OK)
+
+
+async def _read_body(request: web.Request) -> bytes | None:
+    """Ganzen Inhalt lesen, höchstens MAX_BODY_BYTES (None: zu groß). content.read(n) liefert
+    nur, was gerade angekommen ist – größere Nachrichten kommen über Mobilfunk oder VPN oft
+    in mehreren Paketen (bis 0.8.1: „JSON erwartet“, je nach Netz)."""
+    buf = bytearray()
+    while True:
+        chunk = await request.content.read(MAX_BODY_BYTES + 1 - len(buf))
+        if not chunk:
+            return bytes(buf)
+        buf += chunk
+        if len(buf) > MAX_BODY_BYTES:
+            return None
 
 
 def _json(body: dict, status: HTTPStatus) -> web.Response:
