@@ -36,7 +36,7 @@ async def fix(hass, rt, freezer, when, point, accuracy=20):
     await hass.async_block_till_done(wait_background_tasks=True)
 
 
-async def test_zug_faehrt_ueber_leipzig_ohne_meldung(hass, iris, railnet_release, hass_admin_user, freezer):
+async def test_zug_faehrt_ueber_leipzig_ohne_meldung(hass, boards, railnet_release, hass_admin_user, freezer):
     freezer.move_to("2026-11-01T12:00:00+01:00")
     rt = await setup_with_phone(hass, hass_admin_user)
     trip_id = rt.trips.list()[0]["id"]
@@ -56,7 +56,7 @@ async def test_zug_faehrt_ueber_leipzig_ohne_meldung(hass, iris, railnet_release
     assert light["gps"] == {"active": True} and light["polyline"] is None
 
 
-async def test_abgeschaltet(hass, iris, railnet_release, hass_admin_user, freezer):
+async def test_abgeschaltet(hass, boards, railnet_release, hass_admin_user, freezer):
     freezer.move_to("2026-11-01T12:00:00+01:00")
     rt = await setup_with_phone(hass, hass_admin_user, gps_route=False)
     erf, lei = P["Erfurt Hbf"], P["Leipzig Hbf"]

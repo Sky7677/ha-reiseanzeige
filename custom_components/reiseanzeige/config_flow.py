@@ -1,4 +1,4 @@
-"""Einrichtung über die Oberfläche: Zugangsdaten der Timetables-API (optional) und Optionen.
+"""Einrichtung über die Oberfläche: Zugangsdaten für OpenBoards (optional) und Optionen.
 
 Ohne Zugangsdaten läuft die Reiseanzeige nach Fahrplan: Teilen, Zwischenhalte
 aus dem GTFS-Fahrplan, Karte aus dem Gleisnetz – ohne Echtzeit und
@@ -14,25 +14,26 @@ from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, TextSelectorType
+from homeassistant.util import dt as dt_util
 
 from .const import (
     CONF_API_KEY, CONF_APP_LOCAL_ONLY, CONF_APP_URL, CONF_CLIENT_ID, DEFAULT_APP_LOCAL_ONLY, CONF_GRACE_MINUTES, CONF_RAILNET, CONF_REFRESH_SECONDS, CONF_STATION,
     CONF_GPS_ROUTE, CONF_TIMETABLE, DEFAULT_GPS_ROUTE, DEFAULT_GRACE_MINUTES, DEFAULT_RAILNET, DEFAULT_REFRESH_SECONDS,
     DEFAULT_TIMETABLE, DOMAIN,
 )
-from .core.timetables import RateLimiter, TimetablesClient, TimetablesError, aiohttp_fetch
+from .core.openboards import OpenBoardsClient, OpenBoardsError, RateLimiter, aiohttp_post
 
-TEST_QUERY = "Frankfurt(Main)Hbf"
+TEST_EVA = "8000105"   # Frankfurt(Main)Hbf
 GUIDE_URL = "https://github.com/Sky7677/ha-reiseanzeige#zugangsdaten-der-bahn-optional"
 PLACEHOLDERS = {"guide": GUIDE_URL}
 
 
 async def validate(hass, client_id: str, api_key: str) -> str | None:
     """Eine einzige Testanfrage. Liefert einen Fehlerschlüssel oder None."""
-    client = TimetablesClient(aiohttp_fetch(async_get_clientsession(hass)), client_id, api_key, limiter=RateLimiter(limit=5))
+    client = OpenBoardsClient(aiohttp_post(async_get_clientsession(hass)), client_id, api_key, limiter=RateLimiter(limit=5))
     try:
-        await client.stations(TEST_QUERY)
-    except TimetablesError as err:
+        await client.check(TEST_EVA, dt_util.now())
+    except OpenBoardsError as err:
         return "invalid_auth" if err.code == "BAD_CREDENTIALS" else "cannot_connect"
     return None
 

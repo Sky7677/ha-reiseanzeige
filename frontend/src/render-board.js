@@ -4,7 +4,7 @@ import {clock, esc} from './format.js';
 
 const HINTS = {
 	'no-station': 'Kein Bahnhof für die Abfahrtstafel eingestellt (Optionen der Integration oder „station“ an der Karte).',
-	'no-credentials': 'Die Abfahrtstafel braucht Zugangsdaten der Bahn für die Timetables-API. Eintragen: Einstellungen → Geräte & Dienste → Reiseanzeige → ⋮ → Neu konfigurieren.',
+	'no-credentials': 'Die Abfahrtstafel braucht Zugangsdaten der Bahn für OpenBoards. Eintragen: Einstellungen → Geräte & Dienste → Reiseanzeige → ⋮ → Neu konfigurieren.',
 };
 
 // Farbe der Prognose: pünktlich grün, bis einschließlich 3 Minuten gelb, darüber rot
@@ -42,6 +42,6 @@ export const renderBoard = (board) => {
 			<thead><tr><th>Zeit</th><th>Zug</th><th>Ziel</th><th>Gl.</th></tr></thead>
 			<tbody>${board.departures.map(row).join('')}</tbody>
 		</table></div>` : '<div class="board-note">In den nächsten 90 Minuten keine Abfahrten. Kurzfristiger Ersatzverkehr kann fehlen.</div>'}
-		<div class="board-foot">Stand ${esc(clock(board.fetchedAt))} · Daten: Deutsche Bahn${board.departures.some(d => d.replacement) ? ', DELFI e.V./gtfs.de' : ''}, CC BY 4.0</div>
+		<div class="board-foot">Stand ${esc(clock(board.fetchedAt))} · Daten: Deutsche Bahn (OpenBoards)${board.departures.some(d => d.replacement) ? ' · Ersatzbusse laut Fahrplan: DELFI e.V./gtfs.de, CC BY 4.0' : ''}</div>
 	</section>`;
 };

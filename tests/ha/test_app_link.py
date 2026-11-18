@@ -70,7 +70,7 @@ async def connect(hass, ws, client):
     return token, body["link"]
 
 
-async def test_verbinden_reisen_standort_loeschen(hass, iris, hass_admin_user, hass_ws_client, hass_client_no_auth, freezer):
+async def test_verbinden_reisen_standort_loeschen(hass, boards, hass_admin_user, hass_ws_client, hass_client_no_auth, freezer):
     ws = await hass_ws_client(hass)
     freezer.move_to("2026-10-07T21:00:00+02:00")
     rt, calls = await setup(hass, hass_admin_user)
@@ -160,7 +160,7 @@ async def test_verbinden_reisen_standort_loeschen(hass, iris, hass_admin_user, h
     assert await post(client, webhook_id, sample("location.json")) == (200, None), "leere Antwort = aufgehoben"
 
 
-async def test_verbinden_per_teilen_an_die_companion_app(hass, iris, hass_admin_user, hass_client_no_auth, freezer):
+async def test_verbinden_per_teilen_an_die_companion_app(hass, boards, hass_admin_user, hass_client_no_auth, freezer):
     freezer.move_to("2026-10-07T21:00:00+02:00")
     rt, calls = await setup(hass, hass_admin_user)
     client = await hass_client_no_auth()
@@ -181,7 +181,7 @@ async def test_verbinden_per_teilen_an_die_companion_app(hass, iris, hass_admin_
     assert rt.links.linked(hass_admin_user.id)
 
 
-async def test_fehler_und_aufheben_in_home_assistant(hass, iris, hass_admin_user, hass_ws_client, hass_client_no_auth, freezer):
+async def test_fehler_und_aufheben_in_home_assistant(hass, boards, hass_admin_user, hass_ws_client, hass_client_no_auth, freezer):
     ws = await hass_ws_client(hass)
     freezer.move_to("2026-10-07T21:00:00+02:00")
     rt, _ = await setup(hass, hass_admin_user)
@@ -214,7 +214,7 @@ async def test_fehler_und_aufheben_in_home_assistant(hass, iris, hass_admin_user
     assert (await ws.receive_json())["result"]["linked"] is False
 
 
-async def test_administratoren_sehen_alle_verbindungen(hass, iris, hass_admin_user, hass_read_only_user,
+async def test_administratoren_sehen_alle_verbindungen(hass, boards, hass_admin_user, hass_read_only_user,
                                                       hass_read_only_access_token, hass_ws_client,
                                                       hass_client_no_auth, freezer):
     """Etwa das kaputte Handy einer anderen Person: Admins sehen und heben jede Verbindung auf."""
@@ -253,7 +253,7 @@ async def test_administratoren_sehen_alle_verbindungen(hass, iris, hass_admin_us
     assert own["webhookId"] in {l["webhookId"] for l in rt.links.links.values()}
 
 
-async def test_umleitung_per_gps_kommt_aus_der_app(hass, iris, railnet_release, hass_admin_user, hass_ws_client,
+async def test_umleitung_per_gps_kommt_aus_der_app(hass, boards, railnet_release, hass_admin_user, hass_ws_client,
                                                   hass_client_no_auth, freezer):
     ws = await hass_ws_client(hass)
     freezer.move_to("2026-11-01T12:00:00+01:00")

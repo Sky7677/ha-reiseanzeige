@@ -2,7 +2,7 @@
 
 Übernommen aus der bisherigen App (Node.js) und angepasst an den Import über
 den geteilten Text: Eine geteilte Reise wird sofort als Entwurf gespeichert
-(aus dem Text) und danach im Hintergrund über die Timetables-API angereichert.
+(aus dem Text) und danach im Hintergrund in OpenBoards zugeordnet (core/boardmatch.py).
 
 Kennt weder Home Assistant noch die API direkt. Speicher, Uhr und Anreicherung
 werden übergeben; Benachrichtigungen kommen als Ereignisse zurück.
@@ -23,7 +23,9 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Callable, Protocol
 
+from .boardmatch import pending
 from .journey import norm_name
+from .realtime import trackable
 from .share_text import SharedJourney
 
 UPCOMING, RUNNING, COMPLETED, EXPIRED = "upcoming", "running", "completed", "expired"
@@ -31,15 +33,20 @@ UPCOMING, RUNNING, COMPLETED, EXPIRED = "upcoming", "running", "completed", "exp
 MAX_SEAT_LENGTH = 12
 MAX_BACKOFF = timedelta(minutes=15)
 
-# Die Timetables-API liefert den Sollfahrplan nur kurz im Voraus. Reisen, deren
-# Bahn-Abschnitte beim Teilen noch nicht im Fahrplan stehen, werden deshalb
-# erneut abgeglichen: ab ENRICH_WINDOW vor Abfahrt des Abschnitts alle
-# ENRICH_EVERY, in den letzten ENRICH_HOT_WINDOW alle ENRICH_HOT_EVERY.
-ENRICH_WINDOW = timedelta(hours=24)
-ENRICH_EVERY = timedelta(hours=2)
-ENRICH_HOT_WINDOW = timedelta(hours=3)
-ENRICH_HOT_EVERY = timedelta(minutes=20)
-RAIL_PRODUCTS = {"longdistance", "regional", "suburban"}
+# OpenBoards kennt den Plan Tage im Voraus; die Zuordnung klappt meist gleich beim
+# Teilen. Findet sich ein Zug nicht (Plan noch nicht da, Bahn nicht erreichbar), folgt
+# ein neuer Versuch – wie in der Android-App: (bis so lange vor der Abfahrt, Abstand).
+ENRICH_STEPS = (
+    (timedelta(hours=1), timedelta(minutes=5)),
+    (timedelta(hours=3), timedelta(minutes=20)),
+    (timedelta(hours=24), timedelta(hours=2)),
+)
+ENRICH_FAR = timedelta(hours=12)
+
+
+def enrich_interval(until: timedelta) -> timedelta:
+    """Abstand der Versuche je nach Zeit bis zur Abfahrt."""
+    return next((every for limit, every in ENRICH_STEPS if until <= limit), ENRICH_FAR)
 
 
 class TripError(Exception):
@@ -140,10 +147,10 @@ def hot_interval(until_next: timedelta | None, running: timedelta) -> timedelta:
 
 
 def next_refresh_at(trip: dict, now: datetime, grace: timedelta, running: timedelta) -> datetime | None:
-    """Wann die nächste Echtzeit-Abfrage fällig ist. Nur Abschnitte, die die API
-    kennt, werden überhaupt abgefragt; die Auswahl der Bahnhöfe trifft
-    realtime.stations_to_poll."""
-    if not any(l.get("matched") for l in _rides(trip)):
+    """Wann die nächste Echtzeit-Abfrage fällig ist. Nur Abschnitte, die in OpenBoards
+    zugeordnet sind, werden überhaupt abgefragt; die Auswahl der Halte trifft
+    realtime.stops_to_poll."""
+    if not trackable(trip["snapshot"]):
         return None
     status = trip_status(trip, now, grace)
     if status in (COMPLETED, EXPIRED):
@@ -330,12 +337,12 @@ class TripManager:
             return len(mine)
         return await self._mutate(run)
 
-    async def set_snapshot(self, trip_id: str, snapshot: dict) -> bool:
-        """Angereicherte Fassung übernehmen (Sitzplätze bleiben). False, wenn die
-        Reise inzwischen gelöscht oder ersetzt wurde."""
+    async def set_snapshot(self, trip_id: str, snapshot: dict, created_at: str | None = None) -> bool:
+        """Zugeordnete Fassung übernehmen (Sitzplätze bleiben). False, wenn die Reise
+        inzwischen gelöscht oder (mit created_at: seit dieser Fassung) ersetzt wurde."""
         def run():
             trip = next((t for t in self.trips if t["id"] == trip_id), None)
-            if trip is None:
+            if trip is None or (created_at is not None and trip["snapshot"].get("createdAt") != created_at):
                 return False
             # Schon gefundene Abschnitte behalten, falls der neue Abgleich sie nicht findet
             old = {l["index"]: l for l in trip["snapshot"].get("legs", [])}
@@ -404,26 +411,25 @@ class TripManager:
     # --- Echtzeit ---
 
     def due_for_enrichment(self) -> list[dict]:
-        """Reisen mit Bahn-Abschnitten, die noch nicht im Fahrplan gefunden wurden
-        und deren Abfahrt jetzt in Reichweite der API liegt."""
+        """Reisen mit Bahn-Abschnitten, die noch nicht in OpenBoards zugeordnet sind
+        (auch solche aus der Timetables-API vor 0.9.0), bis zur Ankunft; neuer Versuch
+        nach enrich_interval."""
         now = self.clock()
         out = []
         for t in self.trips:
-            if not (t.get("shareText") or t.get("connection")):
+            if not pending(t["snapshot"]) or effective_arrival(t) < now:
                 continue
-            pending = [l for l in _rides(t) if not l.get("matched") and l["line"].get("product") in RAIL_PRODUCTS]
-            deps = [_dt(l["plannedDeparture"]) for l in pending]
-            deps = [d for d in deps if d and d > now]
-            if not deps:
-                continue
-            until = min(deps) - now
-            if until > ENRICH_WINDOW:
-                continue
-            every = ENRICH_HOT_EVERY if until <= ENRICH_HOT_WINDOW else ENRICH_EVERY
             last = _dt(t.get("enrichAttemptAt"))
-            if last is None or now - last >= every:
+            if last is None or now - last >= enrich_interval(effective_departure(t) - now):
                 out.append(copy.deepcopy(t))
         return out
+
+    def retry_enrichment(self) -> None:
+        """Nächster Durchlauf versucht alle nicht zugeordneten Reisen sofort (ohne Speichern:
+        der Zeitpunkt des letzten Versuchs ist nur ein Merker)."""
+        for t in self.trips:
+            if pending(t["snapshot"]):
+                t["enrichAttemptAt"] = None
 
     async def mark_enrich_attempt(self, trip_id: str) -> None:
         def run():

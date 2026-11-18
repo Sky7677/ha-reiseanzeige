@@ -1,8 +1,9 @@
 """Reiseanzeige: Bahnreisen aus dem DB Navigator teilen und live verfolgen.
 
-Datenquellen: der geteilte Text aus dem DB Navigator, die offizielle
-Timetables-API der DB (Fahrplan und Echtzeit, CC BY 4.0) und für die Karte
-OpenStreetMap. Kein Zugriff auf nicht-öffentliche Schnittstellen der Bahn.
+Datenquellen: der geteilte Text aus dem DB Navigator, OpenBoards der DB InfraGO
+(Abfahrts- und Ankunftstafeln mit Echtzeit, DB API Marketplace), offene Daten
+(Gleisnetz aus OpenStreetMap, Fahrplan von gtfs.de, Bahnhofsnummern aus OpenStation)
+und für die Karte OpenStreetMap. Kein Zugriff auf nicht-öffentliche Schnittstellen der Bahn.
 """
 
 from __future__ import annotations

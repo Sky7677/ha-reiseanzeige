@@ -16,6 +16,7 @@ import unicodedata
 
 ANCHOR_MAX_KM = 60.0       # Treffer in dieser Entfernung vom Anker bevorzugen (nächster zuerst)
 UNANCHORED_SPREAD_KM = 3.0 # ohne Anker nur eindeutige Treffer (alle dicht beieinander)
+EVA_NEAR_M = 400.0        # Bahnhofsnummern im Umkreis für OpenBoards (eva_near)
 
 _MARKERS = re.compile(r"\((?:s|u|s\s*\+\s*u|u\s*\+\s*s|bus|tram|str|stb)\)", re.I)
 _ABBREV = {"str": "strasse", "hbf": "hauptbahnhof", "bf": "bahnhof", "bhf": "bahnhof", "pl": "platz", "st": "sankt"}
@@ -99,10 +100,12 @@ class Places:
 
     def __init__(self, stations: list, routes: list | None = None) -> None:
         self._eva: dict[str, tuple[float, float]] = {}
+        self._with_eva: list[tuple[str, tuple[float, float]]] = []   # auch doppelte Nummern: die Lage zählt
         self._names: dict[str, list[tuple[float, float, str]]] = {}
         for name, eva, _ds100, lat, lon, kind in stations:
-            if eva and eva not in self._eva:
-                self._eva[eva] = (lat, lon)
+            if eva:
+                self._eva.setdefault(eva, (lat, lon))
+                self._with_eva.append((eva, (lat, lon)))
             self._add(name, lat, lon, kind)
         for r in routes or []:
             kind = f"line:{r.get('route')}"
@@ -119,6 +122,19 @@ class Places:
 
     def by_eva(self, eva: str | None) -> tuple[float, float] | None:
         return self._eva.get(str(eva)) if eva else None
+
+    def eva_near(self, p: tuple[float, float], max_m: float = EVA_NEAR_M, limit: int = 5) -> list[str]:
+        """Bahnhofsnummern (uic_ref aus dem Gleisnetz) im Umkreis, nächste zuerst."""
+        found = sorted(((km(p, q) * 1000, eva) for eva, q in self._with_eva), key=lambda x: (x[0], x[1]))
+        out: list[str] = []
+        for d, eva in found:
+            if d > max_m:
+                break
+            if eva not in out:
+                out.append(eva)
+            if len(out) >= limit:
+                break
+        return out
 
     def find(self, name: str, *, near: tuple[float, float] | None = None, mode: str | None = None) -> tuple[float, float] | None:
         ranks = _KIND_RANK.get(mode or "", {})

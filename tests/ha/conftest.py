@@ -6,7 +6,7 @@ import pytest
 from homeassistant.setup import async_setup_component
 from homeassistant.components.frontend import DATA_EXTRA_JS_URL_ES5, DATA_EXTRA_MODULE_URL, UrlManager
 
-from fake_iris import november_world
+from fake_openboards import november_world
 
 
 @pytest.fixture(autouse=True)
@@ -36,14 +36,16 @@ async def http_like_home_assistant(hass):
 
 @pytest.fixture(autouse=True)
 def no_data_download(request):
-    """Weder Gleisnetz noch Fahrplan aus dem Netz laden – außer in Tests mit
-    railnet_release bzw. timetable_release."""
+    """Weder Gleisnetz noch Fahrplan noch Bahnhofsnummern aus dem Netz laden – außer in
+    Tests mit railnet_release, timetable_release bzw. stations_release."""
     from contextlib import ExitStack
     with ExitStack() as stack:
         if "railnet_release" not in request.fixturenames:
             stack.enter_context(patch("custom_components.reiseanzeige.railnet_store.RailNetStore.refresh_if_due", return_value=False))
         if "timetable_release" not in request.fixturenames:
             stack.enter_context(patch("custom_components.reiseanzeige.railnet_store.TimetableStore.refresh_if_due", return_value=False))
+        if "stations_release" not in request.fixturenames:
+            stack.enter_context(patch("custom_components.reiseanzeige.railnet_store.StationListStore.refresh_if_due", return_value=False))
         yield
 
 
@@ -86,10 +88,32 @@ def timetable_release(hass, aioclient_mock, tmp_path):
 
 
 @pytest.fixture
-def iris():
-    """Nachgebaute Timetables-API statt echter Anfragen."""
+def stations_release(hass, aioclient_mock, tmp_path):
+    """Release „bahnhofsnummern“ wie auf GitHub, mit der echten Liste aus tests/fixtures."""
+    import hashlib
+
+    from custom_components.reiseanzeige.railnet_store import ST_MANIFEST_URL, ST_RELEASES
+    from testdata import FIXTURES
+
+    hass.config.config_dir = str(tmp_path)
+    gz = (FIXTURES / "bahnhofsnummern.json.gz").read_bytes()
+    manifest = {"format": 1, "kind": "stations", "version": "2026-11-09", "file": "bahnhofsnummern.json.gz",
+                "size": len(gz), "sha256": hashlib.sha256(gz).hexdigest()}
+    aioclient_mock.get(ST_MANIFEST_URL, json=manifest)
+    aioclient_mock.get(ST_RELEASES + manifest["file"], content=gz)
+    return manifest
+
+
+@pytest.fixture
+def boards():
+    """Nachgebautes OpenBoards (Verbindung vom 01.11.2026) statt echter Anfragen, dazu
+    die Bahnhofsliste dieser Welt."""
     world = november_world()
-    with patch("custom_components.reiseanzeige.runtime.aiohttp_fetch", lambda session: world), \
-         patch("custom_components.reiseanzeige.config_flow.aiohttp_fetch", lambda session: world), \
-         patch("custom_components.reiseanzeige.stations.StationDirectory.refresh_if_due", return_value=None):
+
+    async def load(store):
+        store.stations = world.directory()
+
+    with patch("custom_components.reiseanzeige.runtime.aiohttp_post", lambda session: world), \
+         patch("custom_components.reiseanzeige.config_flow.aiohttp_post", lambda session: world), \
+         patch("custom_components.reiseanzeige.railnet_store.StationListStore.load", load):
         yield world

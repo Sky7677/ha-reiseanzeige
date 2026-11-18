@@ -12,7 +12,7 @@ from custom_components.reiseanzeige.const import DOMAIN
 from testdata import fixture_text
 
 
-async def test_einrichtung_ohne_zugangsdaten(hass, iris):
+async def test_einrichtung_ohne_zugangsdaten(hass, boards):
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
     assert "guide" in result["description_placeholders"]
 
@@ -21,11 +21,11 @@ async def test_einrichtung_ohne_zugangsdaten(hass, iris):
 
     ok = await hass.config_entries.flow.async_configure(result["flow_id"], {"station": "Augsburg Hbf"})
     assert ok["type"] is FlowResultType.CREATE_ENTRY and ok["data"] == {}
-    assert iris.paths == [], "keine Anfrage bei der Bahn"
+    assert boards.queries == [], "keine Anfrage bei der Bahn"
     await hass.async_block_till_done()
 
 
-async def test_zugangsdaten_spaeter_eintragen_und_entfernen(hass, iris):
+async def test_zugangsdaten_spaeter_eintragen_und_entfernen(hass, boards):
     entry = MockConfigEntry(domain=DOMAIN, data={}, options={"station": "Augsburg Hbf"})
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
@@ -52,7 +52,7 @@ async def test_zugangsdaten_spaeter_eintragen_und_entfernen(hass, iris):
     assert entry.runtime_data.client is None
 
 
-async def test_betrieb_nach_fahrplan(hass, iris, timetable_release, hass_admin_user, hass_ws_client, freezer):
+async def test_betrieb_nach_fahrplan(hass, boards, timetable_release, hass_admin_user, hass_ws_client, freezer):
     ws = await hass_ws_client(hass)
     freezer.move_to("2026-10-05T12:00:00+02:00")
     entry = MockConfigEntry(domain=DOMAIN, data={}, options={"station": "Augsburg Hbf"})
@@ -71,7 +71,7 @@ async def test_betrieb_nach_fahrplan(hass, iris, timetable_release, hass_admin_u
     freezer.move_to("2026-10-08T06:10:00+02:00")
     await rt.tick()
     await hass.async_block_till_done(wait_background_tasks=True)
-    assert iris.paths == []
+    assert boards.queries == []
     assert rt.trips.get(trip["id"])["realtime"] is None
 
     await ws.send_json({"id": 1, "type": f"{DOMAIN}/me"})
@@ -81,4 +81,4 @@ async def test_betrieb_nach_fahrplan(hass, iris, timetable_release, hass_admin_u
 
     from custom_components.reiseanzeige.diagnostics import async_get_config_entry_diagnostics
     diag = await async_get_config_entry_diagnostics(hass, entry)
-    assert diag["credentials"] is False and diag["timetables_calls_since_start"] == 0
+    assert diag["credentials"] is False and diag["openboards_calls_since_start"] == 0

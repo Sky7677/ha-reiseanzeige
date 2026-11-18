@@ -23,8 +23,8 @@ test('Zwischenhalte laut Fahrplan: ohne Zugangsdaten kein „Echtzeit folgt“',
 	assert.match(without, /Ohne Echtzeit \(keine Zugangsdaten der Bahn\) · <a[^>]*>Fahrplan: DELFI e\.V\.\/gtfs\.de, CC BY 4\.0<\/a>/);
 	assert.doesNotMatch(without, /Deutsche Bahn AG/);
 	const withKey = renderInfo(v, {});
-	assert.match(withKey, /Echtzeit folgt etwa einen Tag vorher/);
-	assert.match(withKey, /Daten: Deutsche Bahn AG, DELFI e\.V\.\/gtfs\.de, CC BY 4\.0/);
+	assert.match(withKey, /Echtzeit folgt, sobald der Zug bei der Bahn gefunden ist/);
+	assert.match(withKey, /Daten: Deutsche Bahn \(OpenBoards\) · <a[^>]*>Fahrplan: DELFI e\.V\.\/gtfs\.de, CC BY 4\.0<\/a>/);
 });
 
 test('Noch ohne Zwischenhalte: Hinweis auf den Fahrplan statt auf die Bahn-API', () => {
@@ -46,7 +46,7 @@ test('Ersatzbus laut Fahrplan: gekennzeichnet, mit Haltestelle und Quelle', () =
 	assert.match(html, /Bus RE80/);
 	assert.match(html, /Ersatzbus, laut Fahrplan/);
 	assert.match(html, /ab Hauptbahnhof, Augsburg · über Ersatzhalt Mitte/);
-	assert.match(html, /Daten: Deutsche Bahn, DELFI e\.V\.\/gtfs\.de, CC BY 4\.0/);
+	assert.match(html, /Daten: Deutsche Bahn \(OpenBoards\) · Ersatzbusse laut Fahrplan: DELFI e\.V\.\/gtfs\.de, CC BY 4\.0/);
 	const empty = renderBoard({status: 'ok', station: {name: 'X'}, fetchedAt: '2026-11-01T13:30:00Z', departures: []});
 	assert.match(empty, /keine Abfahrten\. Kurzfristiger Ersatzverkehr kann fehlen\./);
 	assert.doesNotMatch(empty, /DELFI/);

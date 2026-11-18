@@ -8,13 +8,10 @@ import pytest
 
 from core.geometry import apply_geometry
 from core.gpsroute import Fix, Watch, dist_to_line_m, read_fix, step
-from core.journey import build_snapshot
 from core.places import Places, km
 from core.railnet.router import RailNet
-from core.realtime import compare_paths
-from core.share_text import parse_share_text
-from core.timetables import RateLimiter, TimetablesClient
-from fake_iris import november_world
+from core.realtime import RouteStop, compare_paths
+from fake_openboards import matched_trip
 from railnet_fixture import P, world
 from testdata import fixture_text
 
@@ -32,9 +29,7 @@ def places(net):
 
 
 async def trip(net, places):
-    client = TimetablesClient(november_world(), "cid", "key", limiter=RateLimiter(limit=1000))
-    snap = await build_snapshot(parse_share_text(fixture_text("share", "moritzplatz-berlin-2026-11-01.txt")), client,
-                                datetime(2026, 11, 1, 14, 17, tzinfo=TZ))
+    snap = await matched_trip(fixture_text("share", "moritzplatz-berlin-2026-11-01.txt"), datetime(2026, 11, 1, 14, 17, tzinfo=TZ))
     apply_geometry(snap, net, places, version="v")
     return snap
 
@@ -102,8 +97,8 @@ async def test_gemeldete_umleitung_und_gps_zusammen(net, places):
     """Bahn meldet Halle entfällt, Leipzig neu; GPS füllt den Weg – die Haltliste bleibt die der Bahn."""
     snap = await trip(net, places)
     ice = snap["legs"][2]
-    div = compare_paths([so["station"]["name"] for so in ice["stopovers"]],
-                        ["Nürnberg Hbf", "Erfurt Hbf", "Leipzig Hbf", "Berlin Südkreuz"])
+    div = compare_paths([RouteStop(so["station"]["id"], so["station"]["name"]) for so in ice["stopovers"]],
+                        [RouteStop(None, n) for n in ("Nürnberg Hbf", "Erfurt Hbf", "Leipzig Hbf", "Berlin Südkreuz")])
     apply_geometry(snap, net, places, version="v", diversions={2: div})
     erf, lei = P["Erfurt Hbf"], P["Leipzig Hbf"]
     w = Watch()

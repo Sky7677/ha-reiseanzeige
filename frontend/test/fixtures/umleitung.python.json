@@ -85,7 +85,6 @@
     "remarks": [],
     "matched": false,
     "source": "text",
-    "iris": null,
     "geometry": {
      "key": "1650647577e311fb",
      "source": "line",
@@ -96,13 +95,13 @@
    {
     "kind": "ride",
     "index": 1,
-    "tripId": "-111-2611011437",
+    "tripId": "20261101-111",
     "line": {
      "name": "RE1",
      "trainNumber": "4024",
      "productName": "RE",
      "product": "regional",
-     "operator": "80"
+     "operator": null
     },
     "replacementService": false,
     "direction": "Nürnberg Hbf",
@@ -141,7 +140,7 @@
        "lat": 48.7143,
        "lon": 10.7717
       },
-      "plannedArrival": "2026-11-01T14:58:00+01:00",
+      "plannedArrival": "2026-11-01T15:00:00+01:00",
       "plannedDeparture": "2026-11-01T15:00:00+01:00",
       "plannedPlatform": "2",
       "estimated": false
@@ -153,7 +152,7 @@
        "lat": 48.9567,
        "lon": 10.9087
       },
-      "plannedArrival": "2026-11-01T15:21:00+01:00",
+      "plannedArrival": "2026-11-01T15:23:00+01:00",
       "plannedDeparture": "2026-11-01T15:23:00+01:00",
       "plannedPlatform": "4",
       "estimated": false
@@ -202,24 +201,7 @@
     ],
     "remarks": [],
     "matched": true,
-    "source": "timetables",
-    "iris": {
-     "tripKey": "-111-2611011437",
-     "depEva": "8000013",
-     "arrEva": "8000284",
-     "number": "4024",
-     "pathAfter": [
-      "Donauwörth",
-      "Treuchtlingen",
-      "Nürnberg Hbf"
-     ],
-     "pathBefore": [
-      "Augsburg Hbf",
-      "Donauwörth",
-      "Treuchtlingen"
-     ],
-     "category": "RE"
-    },
+    "source": "openboards",
     "geometry": {
      "key": "82b9086f1fbe9d6e",
      "source": "tracks",
@@ -230,13 +212,13 @@
    {
     "kind": "ride",
     "index": 2,
-    "tripId": "-222-2611011636",
+    "tripId": "20261101-222",
     "line": {
      "name": "ICE 1004",
      "trainNumber": "1004",
      "productName": "ICE",
      "product": "longdistance",
-     "operator": "80"
+     "operator": null
     },
     "replacementService": false,
     "direction": "Berlin Hbf",
@@ -275,7 +257,7 @@
        "lat": 50.9725,
        "lon": 11.038
       },
-      "plannedArrival": "2026-11-01T17:42:00+01:00",
+      "plannedArrival": "2026-11-01T17:44:00+01:00",
       "plannedDeparture": "2026-11-01T17:44:00+01:00",
       "plannedPlatform": "1",
       "estimated": false
@@ -287,7 +269,7 @@
        "lat": 51.4776,
        "lon": 11.987
       },
-      "plannedArrival": "2026-11-01T18:20:00+01:00",
+      "plannedArrival": "2026-11-01T18:22:00+01:00",
       "plannedDeparture": "2026-11-01T18:22:00+01:00",
       "plannedPlatform": "8",
       "estimated": false
@@ -324,25 +306,7 @@
     ],
     "remarks": [],
     "matched": true,
-    "source": "timetables",
-    "iris": {
-     "tripKey": "-222-2611011636",
-     "depEva": "8000284",
-     "arrEva": "8011113",
-     "number": "1004",
-     "pathAfter": [
-      "Erfurt Hbf",
-      "Halle (Saale) Hbf",
-      "Berlin Südkreuz",
-      "Berlin Hbf"
-     ],
-     "pathBefore": [
-      "Nürnberg Hbf",
-      "Erfurt Hbf",
-      "Halle (Saale) Hbf"
-     ],
-     "category": "ICE"
-    },
+    "source": "openboards",
     "diversion": {
      "path": [
       "Nürnberg Hbf",
@@ -365,7 +329,8 @@
       },
       {
        "kind": "added",
-       "name": "Leipzig Hbf"
+       "name": "Leipzig Hbf",
+       "eva": "8010205"
       },
       {
        "kind": "served",
@@ -391,7 +356,7 @@
         "lat": 50.9725,
         "lon": 11.038
        },
-       "plannedArrival": "2026-11-01T17:42:00+01:00",
+       "plannedArrival": "2026-11-01T17:44:00+01:00",
        "plannedDeparture": "2026-11-01T17:44:00+01:00",
        "plannedPlatform": "1",
        "estimated": false
@@ -403,7 +368,7 @@
         "lat": 51.4776,
         "lon": 11.987
        },
-       "plannedArrival": "2026-11-01T18:20:00+01:00",
+       "plannedArrival": "2026-11-01T18:22:00+01:00",
        "plannedDeparture": "2026-11-01T18:22:00+01:00",
        "plannedPlatform": "8",
        "estimated": false,
@@ -411,7 +376,7 @@
       },
       {
        "station": {
-        "id": null,
+        "id": "8010205",
         "name": "Leipzig Hbf",
         "lat": 51.3455,
         "lon": 12.3821
@@ -433,6 +398,7 @@
        "plannedPlatform": "7"
       }
      ],
+     "gps": null,
      "polyline": [
       [
        49.4457,
@@ -468,13 +434,13 @@
    {
     "kind": "ride",
     "index": 3,
-    "tripId": "-333-2611011947",
+    "tripId": "20261101-333",
     "line": {
      "name": "S41",
      "trainNumber": "41047",
      "productName": "S",
      "product": "suburban",
-     "operator": "80"
+     "operator": null
     },
     "replacementService": false,
     "direction": "Ring S41",
@@ -570,24 +536,7 @@
     ],
     "remarks": [],
     "matched": true,
-    "source": "timetables",
-    "iris": {
-     "tripKey": "-333-2611011947",
-     "depEva": "8089110",
-     "arrEva": "8089015",
-     "number": "41047",
-     "pathAfter": [
-      "Berlin-Schöneberg",
-      "Berlin Innsbrucker Platz",
-      "Berlin Heidelberger Platz"
-     ],
-     "pathBefore": [
-      "Berlin Südkreuz (S)",
-      "Berlin-Schöneberg",
-      "Berlin Innsbrucker Platz"
-     ],
-     "category": "S"
-    },
+    "source": "openboards",
     "geometry": {
      "key": "1b53c175a630ab36",
      "source": "tracks",
@@ -661,7 +610,6 @@
     "remarks": [],
     "matched": false,
     "source": "text",
-    "iris": null,
     "geometry": {
      "key": "06239ee9ed3408ae",
      "source": "line",
@@ -675,9 +623,9 @@
   "legs": {
    "2": {
     "legIndex": 2,
-    "tripId": "-222-2611011636",
-    "origin": "timetables",
-    "fetchedAt": "2026-11-01T22:08:54.251544+01:00",
+    "tripId": "20261101-222",
+    "origin": "openboards",
+    "fetchedAt": "2026-11-01T17:30:00+01:00",
     "cancelled": false,
     "hasRealtime": true,
     "stopovers": [
@@ -703,8 +651,8 @@
       "stationId": "8010101",
       "cancelled": false,
       "arrival": {
-       "planned": "2026-11-01T17:42:00+01:00",
-       "prognosed": "2026-11-01T17:47:00+01:00",
+       "planned": "2026-11-01T17:44:00+01:00",
+       "prognosed": "2026-11-01T17:49:00+01:00",
        "delay": 300
       },
       "departure": {
@@ -713,16 +661,16 @@
        "delay": 300
       },
       "plannedPlatform": "1",
-      "platform": "1",
-      "platformChanged": false,
-      "source": "iris"
+      "platform": "2",
+      "platformChanged": true,
+      "source": "openboards"
      },
      {
       "stationId": "8010159",
       "cancelled": true,
       "arrival": {
-       "planned": "2026-11-01T18:20:00+01:00",
-       "prognosed": "2026-11-01T18:25:00+01:00",
+       "planned": "2026-11-01T18:22:00+01:00",
+       "prognosed": "2026-11-01T18:27:00+01:00",
        "delay": 300
       },
       "departure": {
@@ -733,7 +681,7 @@
       "plannedPlatform": "8",
       "platform": "8",
       "platformChanged": false,
-      "source": "propagated"
+      "source": "openboards"
      },
      {
       "stationId": "8011113",
@@ -751,10 +699,21 @@
       "plannedPlatform": "7",
       "platform": "7",
       "platformChanged": false,
-      "source": "propagated"
+      "source": "openboards"
      }
     ],
-    "remarks": [],
+    "remarks": [
+     {
+      "code": null,
+      "type": "warning",
+      "text": "Bauarbeiten zwischen Halle und Berlin"
+     },
+     {
+      "code": "38",
+      "type": "cause",
+      "text": "Reparatur am Zug"
+     }
+    ],
     "diversion": {
      "path": [
       "Nürnberg Hbf",
@@ -777,7 +736,8 @@
       },
       {
        "kind": "added",
-       "name": "Leipzig Hbf"
+       "name": "Leipzig Hbf",
+       "eva": "8010205"
       },
       {
        "kind": "served",

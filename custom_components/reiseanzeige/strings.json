@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Set up Reiseanzeige",
-        "description": "The Deutsche Bahn credentials are optional. Without them, Reiseanzeige works from the timetable: sharing trips, intermediate stops and the route on the map, but no real-time data and no departure board. With your own credentials for the Timetables API (DB API Marketplace, free plan “Free”) you also get delays, platform changes, cancellations, diversions and the departure board. How to get them: [guide]({guide}) (German). You can also add them later via “Reconfigure”.\n\nThe route on the map comes from a rail network based on OpenStreetMap (a one-time download of a few dozen MB, can be switched off in the options).",
+        "description": "The Deutsche Bahn credentials are optional. Without them, Reiseanzeige works from the timetable: sharing trips, intermediate stops and the route on the map, but no real-time data and no departure board. With your own credentials for OpenBoards (DB API Marketplace, free plan “Free”) you also get delays, platform changes, cancellations, diversions and the departure board. How to get them: [guide]({guide}) (German). You can also add them later via “Reconfigure”.\n\nThe route on the map comes from a rail network based on OpenStreetMap (a one-time download of a few dozen MB, can be switched off in the options).",
         "data": {
           "client_id": "Client ID (optional)",
           "api_key": "API key / client secret (optional)",
@@ -16,7 +16,7 @@
       },
       "reconfigure": {
         "title": "Deutsche Bahn credentials",
-        "description": "Add or change credentials for the Timetables API. Clear both fields to remove them – Reiseanzeige then works from the timetable, without real-time data and departure board. [Guide]({guide}) (German)",
+        "description": "Add or change credentials for OpenBoards. Clear both fields to remove them – Reiseanzeige then works from the timetable, without real-time data and departure board. [Guide]({guide}) (German)",
         "data": {
           "client_id": "Client ID",
           "api_key": "API key / client secret"
@@ -24,8 +24,8 @@
       }
     },
     "error": {
-      "invalid_auth": "The Timetables API does not accept these credentials. Is the application subscribed to “Timetables”?",
-      "cannot_connect": "The Timetables API is not reachable right now.",
+      "invalid_auth": "OpenBoards does not accept these credentials. Is the application subscribed to “OpenBoards”?",
+      "cannot_connect": "OpenBoards is not reachable right now.",
       "incomplete_credentials": "Please fill in both fields – or leave both empty to start without real-time data."
     },
     "abort": {
@@ -48,7 +48,7 @@
           "app_local_only": "Android app only from the local network"
         },
         "data_description": {
-          "railnet": "Draws the route along the tracks and locates the stops. One-time download of a few dozen MB, then a new edition monthly. Without it: straight lines, if StaDa is subscribed.",
+          "railnet": "Draws the route along the tracks and locates the stops. One-time download of a few dozen MB, then a new edition monthly. Without it: straight lines between the stations (located from the station list).",
           "timetable": "Shows intermediate stops with scheduled times for trains up to 30 days ahead and for trams and subways. Downloads a few MB daily. Timetable data: DELFI e.V., CC BY 4.0.",
           "gps_route": "If a train takes another route without Deutsche Bahn reporting new stops, the line follows the location of the traveller's phone – snapped to the tracks, never as raw positions. Needs the rail network and a phone with location in Home Assistant. The points stay in Home Assistant.",
           "app_url": "The Reiseanzeige app reaches Home Assistant at this address, e.g. http://192.168.178.10:8123 via WireGuard. Empty: the internal URL from the network settings.",

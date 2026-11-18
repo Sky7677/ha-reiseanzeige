@@ -7,7 +7,7 @@ from custom_components.reiseanzeige.const import DOMAIN
 from testdata import fixture_text
 
 
-async def test_reise_im_voraus_mit_zwischenhalten_aus_dem_fahrplan(hass, iris, timetable_release, hass_admin_user, freezer):
+async def test_reise_im_voraus_mit_zwischenhalten_aus_dem_fahrplan(hass, boards, timetable_release, hass_admin_user, freezer):
     freezer.move_to("2026-10-05T12:00:00+02:00")
     entry = MockConfigEntry(domain=DOMAIN, data={"client_id": "cid", "api_key": "key"}, options={"station": "Augsburg Hbf"})
     entry.add_to_hass(hass)
@@ -21,14 +21,14 @@ async def test_reise_im_voraus_mit_zwischenhalten_aus_dem_fahrplan(hass, iris, t
     await hass.async_block_till_done(wait_background_tasks=True)
     trip = rt.trips.list()[0]
     re16, ice = trip["snapshot"]["legs"]
-    assert not [p for p in iris.paths if p.startswith("/plan")], "drei Tage vorher keine Fahrplan-Abfragen bei der Bahn"
+    assert boards.queries, "gleich beim Teilen in OpenBoards gesucht – die nachgebaute Bahn kennt den Tag nicht"
     assert re16["source"] == "gtfs" and [s["station"]["name"] for s in re16["stopovers"]] == [
         "Augsburg Hbf", "Donauwörth", "Treuchtlingen", "Nürnberg Hbf"]
     assert ice["source"] == "gtfs" and len(ice["stopovers"]) == 3
     assert all(s["station"]["lat"] is not None for leg in (re16, ice) for s in leg["stopovers"]), "Lage aus dem Fahrplan"
 
 
-async def test_abfahrtstafel_mit_ersatzbus_laut_fahrplan(hass, iris, railnet_release, timetable_release, hass_ws_client, freezer):
+async def test_abfahrtstafel_mit_ersatzbus_laut_fahrplan(hass, boards, railnet_release, timetable_release, hass_ws_client, freezer):
     ws = await hass_ws_client(hass)
     freezer.move_to("2026-11-01T14:30:00+01:00")
     entry = MockConfigEntry(domain=DOMAIN, data={"client_id": "cid", "api_key": "key"}, options={"station": "Augsburg Hbf"})

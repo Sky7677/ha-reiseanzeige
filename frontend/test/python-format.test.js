@@ -24,6 +24,7 @@ test('Reiseinformationen aus dem Python-Format: alle Abschnitte, Verspätung, Gl
 	assert.equal(erfurt.platform, '2');
 	assert.ok(erfurt.platformChanged);
 	assert.equal(erfurt.state, 'next');
+	assert.deepEqual(ice.remarks, ['Bauarbeiten zwischen Halle und Berlin', 'Reparatur am Zug'], 'Störung und Verspätungsgrund');
 	assert.equal(v.legs[1].transfer.minutes, 47, 'Umstieg Nürnberg 15:49 → 16:36');
 	assert.equal(v.legs[0].transfer.station, 'Königsplatz, Augsburg (Bayern) → Augsburg Hbf', 'Fußweg zwischen verschiedenen Halten');
 	assert.ok(v.bahnLink.endsWith('00000000-0000-4000-8000-000000000002'));
@@ -51,5 +52,5 @@ test('Noch nicht im Fahrplan gefundener Bahn-Abschnitt: Hinweis statt leerer Zwi
 	assert.equal(v.legs[2].pending, true);
 	assert.equal(v.legs[0].pending, false, 'Tram: kein Hinweis');
 	assert.equal(v.legs[1].pending, false, 'gefunden');
-	assert.match(renderInfo(v, {owned: true}), /folgen, sobald der Fahrplan/);
+	assert.match(renderInfo(v, {owned: true}), /Zug noch nicht bei der Bahn gefunden, neuer Versuch folgt/);
 });

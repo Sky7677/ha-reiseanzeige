@@ -49,8 +49,8 @@ const legBlock = (leg, ui) => `
 		${seatPart(leg, ui)}
 		${leg.pending ? `<div class="remark pending">${ui.realtime === false
 			? 'Bisher nur Ein- und Ausstieg; Zwischenhalte folgen aus dem Fahrplan (bis 30 Tage vorher).'
-			: 'Zwischenhalte und Echtzeit folgen, sobald der Fahrplan dafür bereitsteht (etwa einen Tag vorher).'}</div>` : ''}
-		${leg.planned ? `<div class="remark pending">${leg.rail && ui.realtime !== false ? 'Zwischenhalte laut Fahrplan; Echtzeit folgt etwa einen Tag vorher.' : 'Zwischenhalte laut Fahrplan, ohne Echtzeit.'}</div>` : ''}
+			: 'Zug noch nicht bei der Bahn gefunden, neuer Versuch folgt; bis dahin nur Ein- und Ausstieg.'}</div>` : ''}
+		${leg.planned ? `<div class="remark pending">${leg.rail && ui.realtime !== false ? 'Zwischenhalte laut Fahrplan; Echtzeit folgt, sobald der Zug bei der Bahn gefunden ist.' : 'Zwischenhalte laut Fahrplan, ohne Echtzeit.'}</div>` : ''}
 		${leg.diversion && !leg.cancelled ? `<div class="remark">${esc(diversionNote(leg))}</div>` : ''}
 		${leg.remarks.map(r => `<div class="remark">${esc(r)}</div>`).join('')}
 		<ol class="stops">${leg.stops.map(stopRow).join('')}</ol>
@@ -103,14 +103,14 @@ export const renderInfo = (v, ui = {}) => `
 		${ui.owned && !ui.fromApp ? `<button type="button" class="link danger" data-action="delete">${ui.confirmDelete ? 'Wirklich löschen?' : 'Reise löschen'}</button>` : ''}
 	</footer>`;
 
-// Fußzeile: Stand der Echtzeit und Quellen (CC BY 4.0 verlangt die Nennung)
+// Fußzeile: Stand der Echtzeit und Quellen (OpenBoards wie in der App; CC BY 4.0 des Fahrplans verlangt die Nennung)
 const LICENSE = 'https://creativecommons.org/licenses/by/4.0/deed.de';
 const footerSource = (v, ui) => {
 	const gtfs = v.legs.some(l => l.planned);
 	if (ui.realtime === false) {
 		return `Ohne Echtzeit (keine Zugangsdaten der Bahn)${gtfs ? ` · <a class="source" href="${LICENSE}" target="_blank" rel="noopener noreferrer">Fahrplan: DELFI e.V./gtfs.de, CC BY 4.0</a>` : ''}`;
 	}
-	return `${v.updatedAt ? `Echtzeit aktualisiert ${esc(clock(v.updatedAt))}` : 'Noch keine Echtzeitdaten'} · <a class="source" href="${LICENSE}" target="_blank" rel="noopener noreferrer">Daten: Deutsche Bahn AG${gtfs ? ', DELFI e.V./gtfs.de' : ''}, CC BY 4.0</a>`;
+	return `${v.updatedAt ? `Echtzeit aktualisiert ${esc(clock(v.updatedAt))}` : 'Noch keine Echtzeitdaten'} · Daten: Deutsche Bahn (OpenBoards)${gtfs ? ` · <a class="source" href="${LICENSE}" target="_blank" rel="noopener noreferrer">Fahrplan: DELFI e.V./gtfs.de, CC BY 4.0</a>` : ''}`;
 };
 
 export const renderIdle = () => `

@@ -81,7 +81,7 @@ export const buildTripView = (trip, now = Date.now()) => {
 			} : null,
 			cancelled: Boolean(rt?.cancelled),
 			hasRealtime: Boolean(rt?.hasRealtime),
-			remarks: (rt?.remarks ?? leg.remarks ?? []).filter(m => m.type === 'warning' || m.type === 'status').map(m => m.text),
+			remarks: (rt?.remarks ?? leg.remarks ?? []).filter(m => m.type === 'warning' || m.type === 'status' || m.type === 'cause').map(m => m.text),
 			seat: seat ? [seat.coach && `Wagen ${seat.coach}`, seat.seat && `Platz ${seat.seat}`].filter(Boolean).join(', ') : null,
 			seatRaw: {coach: seat?.coach ?? '', seat: seat?.seat ?? ''},
 			stops,

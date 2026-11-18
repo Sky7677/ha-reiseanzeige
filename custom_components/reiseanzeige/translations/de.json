@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Reiseanzeige einrichten",
-        "description": "Die Zugangsdaten der Bahn sind optional. Ohne sie läuft die Reiseanzeige nach Fahrplan: Reisen teilen, Zwischenhalte und Strecke auf der Karte, aber ohne Echtzeit und ohne Abfahrtstafel. Mit eigenen Zugangsdaten für die Timetables-API (DB API Marketplace, kostenloser Plan „Free“) kommen Verspätungen, Gleiswechsel, Ausfälle, Umleitungen und die Abfahrtstafel dazu. Wie du sie bekommst: [Anleitung]({guide}). Eintragen lassen sie sich auch später über „Neu konfigurieren“.\n\nDen Streckenverlauf holt die Integration aus einem Gleisnetz auf Basis von OpenStreetMap (einmalig ein Download von einigen Dutzend MB, abschaltbar in den Optionen).",
+        "description": "Die Zugangsdaten der Bahn sind optional. Ohne sie läuft die Reiseanzeige nach Fahrplan: Reisen teilen, Zwischenhalte und Strecke auf der Karte, aber ohne Echtzeit und ohne Abfahrtstafel. Mit eigenen Zugangsdaten für OpenBoards (DB API Marketplace, kostenloser Plan „Free“) kommen Verspätungen, Gleiswechsel, Ausfälle, Umleitungen und die Abfahrtstafel dazu. Wie du sie bekommst: [Anleitung]({guide}). Eintragen lassen sie sich auch später über „Neu konfigurieren“.\n\nDen Streckenverlauf holt die Integration aus einem Gleisnetz auf Basis von OpenStreetMap (einmalig ein Download von einigen Dutzend MB, abschaltbar in den Optionen).",
         "data": {
           "client_id": "Client-ID (optional)",
           "api_key": "API-Schlüssel / Client Secret (optional)",
@@ -16,7 +16,7 @@
       },
       "reconfigure": {
         "title": "Zugangsdaten der Bahn",
-        "description": "Zugangsdaten für die Timetables-API eintragen oder ändern. Beide Felder leeren, um sie zu entfernen – die Reiseanzeige läuft dann nach Fahrplan, ohne Echtzeit und Abfahrtstafel. [Anleitung]({guide})",
+        "description": "Zugangsdaten für OpenBoards eintragen oder ändern. Beide Felder leeren, um sie zu entfernen – die Reiseanzeige läuft dann nach Fahrplan, ohne Echtzeit und Abfahrtstafel. [Anleitung]({guide})",
         "data": {
           "client_id": "Client-ID",
           "api_key": "API-Schlüssel / Client Secret"
@@ -24,8 +24,8 @@
       }
     },
     "error": {
-      "invalid_auth": "Die Zugangsdaten werden von der Timetables-API nicht akzeptiert. Ist die Anwendung für „Timetables“ freigeschaltet?",
-      "cannot_connect": "Die Timetables-API ist gerade nicht erreichbar.",
+      "invalid_auth": "Die Zugangsdaten werden von OpenBoards nicht akzeptiert. Ist die Anwendung für „OpenBoards“ freigeschaltet?",
+      "cannot_connect": "OpenBoards ist gerade nicht erreichbar.",
       "incomplete_credentials": "Bitte beide Felder ausfüllen – oder beide leer lassen, um ohne Echtzeit zu starten."
     },
     "abort": {
@@ -48,7 +48,7 @@
           "app_local_only": "Android-App nur aus dem lokalen Netz"
         },
         "data_description": {
-          "railnet": "Zeichnet den Weg auf den Gleisen und findet die Lage der Halte. Lädt einmalig einige Dutzend MB, danach monatlich eine neue Fassung. Ohne Gleisnetz: gerade Linien, sofern StaDa abonniert ist.",
+          "railnet": "Zeichnet den Weg auf den Gleisen und findet die Lage der Halte. Lädt einmalig einige Dutzend MB, danach monatlich eine neue Fassung. Ohne Gleisnetz: gerade Linien zwischen den Bahnhöfen (Lage aus der Bahnhofsliste).",
           "timetable": "Zeigt Zwischenhalte mit Planzeiten für Züge bis 30 Tage im Voraus und für Straßenbahn und U-Bahn. Lädt täglich wenige MB. Fahrplandaten: DELFI e.V., CC BY 4.0.",
           "gps_route": "Fährt ein Zug eine andere Strecke, ohne dass die Bahn neue Halte meldet, folgt die Linie den Standorten des Handys der reisenden Person – auf die Gleise gesetzt, nicht als rohe Standorte. Braucht das Gleisnetz und ein Handy mit Standort in Home Assistant. Die Punkte bleiben in Home Assistant.",
           "app_url": "Unter dieser Adresse erreicht die Reiseanzeige-App Home Assistant, etwa http://192.168.178.10:8123 über WireGuard. Leer: die interne Adresse aus den Netzwerk-Einstellungen.",

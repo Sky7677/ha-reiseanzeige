@@ -107,7 +107,7 @@ test('Ohne Reisen: Ruheansicht mit Abfahrtstafel und „+ Reise“', async () =>
 	assert.match(rows[0].textContent, /ICE 1291[\s\S]*München Hbf/);
 	assert.ok(rows[0].querySelector('.pf.changed'), 'Gleiswechsel markiert');
 	assert.ok(rows[1].classList.contains('cancelled'));
-	assert.match($('.board-foot').textContent, /CC BY 4\.0/);
+	assert.match($('.board-foot').textContent, /Daten: Deutsche Bahn \(OpenBoards\)/);
 	assert.equal($('.add-toggle').classList.contains('hidden'), false);
 });
 
@@ -218,7 +218,7 @@ test('Laufende Reise, nur Bahnhöfe haben Koordinaten (Tram/U-Bahn nicht): Karte
 	const py = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'fixtures', 'moritzplatz-berlin.python.json'), 'utf8'));
 	const realNow = Date.now;
 	try {
-		// Mit Koordinaten nur an Bahnhöfen und ganz ohne Koordinaten (kein StaDa-Abo)
+		// Mit Koordinaten nur an Bahnhöfen und ganz ohne Koordinaten
 		const bare = structuredClone(py.snapshot);
 		for (const leg of bare.legs) for (const st of [leg.origin, leg.destination, ...leg.stopovers.map(x => x.station)]) { st.lat = null; st.lon = null; }
 		for (const [snap, hhmm] of [['14:20', '15:55', '16:00', '17:30', '19:45', '20:05'].map(t => [py.snapshot, t]), ['14:20', '17:30', '20:05'].map(t => [bare, t])].flat()) {

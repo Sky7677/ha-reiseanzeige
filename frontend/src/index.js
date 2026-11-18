@@ -22,7 +22,7 @@ import {STYLE} from './styles.js';
 import {dayTime, esc} from './format.js';
 import qrcode from 'qrcode-generator';
 
-export const CARD_VERSION = '0.12.1';
+export const CARD_VERSION = '0.13.0';
 const POLL_MS = 60 * 1000;
 const SESSION_CHECK_MS = 60 * 1000;
 const field = (form, name) => form.elements.namedItem(name);

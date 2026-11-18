@@ -4,7 +4,7 @@ from custom_components.reiseanzeige.const import DOMAIN
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 
-async def test_vektorkachel_und_schrift(hass, iris, hass_client_no_auth, aioclient_mock):
+async def test_vektorkachel_und_schrift(hass, boards, hass_client_no_auth, aioclient_mock):
     aioclient_mock.get("https://vector.openstreetmap.org/shortbread_v1/5/16/10.mvt", content=b"TILE")
     aioclient_mock.get("https://vector.openstreetmap.org/styles/shortbread/fonts/noto_sans_regular/0-255.pbf", content=b"FONT")
     entry = MockConfigEntry(domain=DOMAIN, data={"client_id": "cid", "api_key": "key"})

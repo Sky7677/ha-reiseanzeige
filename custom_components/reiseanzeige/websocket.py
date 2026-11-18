@@ -18,7 +18,7 @@ from homeassistant.util import dt as dt_util
 from .const import DOMAIN
 from .core.board import departures
 from .core.link_format import deep_link, intent_link
-from .core.timetables import TimetablesError
+from .core.openboards import OpenBoardsError
 from .core.trips import TripError
 from .helpers import loaded_runtime
 
@@ -159,10 +159,16 @@ async def ws_board(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None
     if not station:
         connection.send_result(msg["id"], {"status": "no-station"})
         return
+    found = rt.board_station(station)
+    if found is None:
+        connection.send_result(msg["id"], {"status": "error", "code": "NOT_FOUND",
+                                           "message": f"Bahnhof „{station}“ nicht gefunden"})
+        return
     try:
-        board = await departures(rt.client, station, dt_util.now(), replacements=rt.board_replacements, locate=rt.locate_path)
+        board = await departures(rt.client, found, dt_util.now(), replacements=rt.board_replacements, locate=rt.locate_path)
         connection.send_result(msg["id"], {"status": "ok", **board})
-    except TimetablesError as err:
+    except OpenBoardsError as err:
+        rt.rejected(err)
         connection.send_result(msg["id"], {"status": "error", "code": err.code, "message": str(err)})
 
 
