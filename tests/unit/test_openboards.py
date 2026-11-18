@@ -190,6 +190,17 @@ async def test_welche_halte_abgefragt_werden():
     assert brt.stops_to_poll(s, None, at(10, 30)) == {}, "angekommen"
 
 
+async def test_verspaetung_erst_spaeter_bekannt():
+    """Verspätung nur am Ausstieg bekannt (+45 min): Stuttgart (geschätzt 09:36) ist nach Plan
+    vorbei, der Zug war aber noch nicht dort – es wird weiter abgefragt (wie in der App)."""
+    s = await matched()
+    assert brt.stops_to_poll(s, None, at(9, 45)) == {0: [3]}, "nach Plan"
+    known = {"legs": {"0": {"stopovers": [
+        {"arrival": {"prognosed": "2026-11-12T11:09:00+01:00" if k == 3 else None}} for k in range(4)]}}}
+    assert brt.stops_to_poll(s, known, at(9, 45)) == {0: [2, 3]}, "Stuttgart erwartet 10:21"
+    assert brt.stops_to_poll(s, known, at(10, 30)) == {0: [3]}
+
+
 async def test_verspaetung_und_gleiswechsel_vor_der_abfahrt():
     s = await matched()
     late = entry(time="2026-11-12T08:06:00+01:00", timeType="PREVIEW", platform={"name": "4"})
@@ -468,7 +479,7 @@ async def test_echte_umleitung_ueber_koeln_hbf():
         async def board(self, q):
             return NOW_ARR if q.arrivals and "8000013" in q.evas else ob.Board()
     # Ausstieg wird abgefragt (Zug laut letzter Abfrage über eine Stunde zu spät, noch unterwegs);
-    # auch Ulm: mit derselben Verspätung erst um 14:53 erwartet (Integration 0.7.2)
+    # auch Ulm: mit derselben Verspätung erst um 14:53 erwartet (wie in der App)
     known = {"legs": {"0": {"tripId": s["legs"][0]["tripId"], "stopovers": [
         {"stationId": x["station"]["id"], "arrival": {"prognosed": "2026-11-08T15:09:00+01:00" if k == 7 else None}}
         for k, x in enumerate(s["legs"][0]["stopovers"])]}}}
