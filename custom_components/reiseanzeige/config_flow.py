@@ -16,7 +16,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import TextSelector, TextSelectorConfig, TextSelectorType
 
 from .const import (
-    CONF_API_KEY, CONF_CLIENT_ID, CONF_GRACE_MINUTES, CONF_RAILNET, CONF_REFRESH_SECONDS, CONF_STATION,
+    CONF_API_KEY, CONF_APP_LOCAL_ONLY, CONF_APP_URL, CONF_CLIENT_ID, DEFAULT_APP_LOCAL_ONLY, CONF_GRACE_MINUTES, CONF_RAILNET, CONF_REFRESH_SECONDS, CONF_STATION,
     CONF_GPS_ROUTE, CONF_TIMETABLE, DEFAULT_GPS_ROUTE, DEFAULT_GRACE_MINUTES, DEFAULT_RAILNET, DEFAULT_REFRESH_SECONDS,
     DEFAULT_TIMETABLE, DOMAIN,
 )
@@ -102,6 +102,7 @@ class ReiseanzeigeOptionsFlow(config_entries.OptionsFlow):
     async def async_step_init(self, user_input: dict[str, Any] | None = None):
         if user_input is not None:
             user_input[CONF_STATION] = (user_input.get(CONF_STATION) or "").strip()
+            user_input[CONF_APP_URL] = (user_input.get(CONF_APP_URL) or "").strip().rstrip("/")
             return self.async_create_entry(data=user_input)
         o = self.config_entry.options
         schema = vol.Schema({
@@ -111,5 +112,7 @@ class ReiseanzeigeOptionsFlow(config_entries.OptionsFlow):
             vol.Required(CONF_RAILNET, default=o.get(CONF_RAILNET, DEFAULT_RAILNET)): bool,
             vol.Required(CONF_TIMETABLE, default=o.get(CONF_TIMETABLE, DEFAULT_TIMETABLE)): bool,
             vol.Required(CONF_GPS_ROUTE, default=o.get(CONF_GPS_ROUTE, DEFAULT_GPS_ROUTE)): bool,
+            vol.Optional(CONF_APP_URL, description={"suggested_value": o.get(CONF_APP_URL, "")}): str,
+            vol.Required(CONF_APP_LOCAL_ONLY, default=o.get(CONF_APP_LOCAL_ONLY, DEFAULT_APP_LOCAL_ONLY)): bool,
         })
         return self.async_show_form(step_id="init", data_schema=schema)

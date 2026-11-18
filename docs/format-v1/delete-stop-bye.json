@@ -1,0 +1,10 @@
+{
+  "format": 1,
+  "sentAt": "2026-10-08T10:40:00+02:00",
+  "app": {"name": "Reiseanzeige", "version": "0.8.0"},
+  "messages": [
+    {"type": "sharing.stop", "tripId": "5f0c2a9e1b7d4c3a"},
+    {"type": "trip.delete", "tripId": "5f0c2a9e1b7d4c3a"},
+    {"type": "link.bye"}
+  ]
+}

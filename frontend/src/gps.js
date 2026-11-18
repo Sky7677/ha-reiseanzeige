@@ -16,7 +16,8 @@
 // so ohne Sprung wieder bei der reinen Berechnung.
 //
 // Den Zeitpunkt der Messung liefert die Companion-App nicht; maßgeblich ist, wann
-// Home Assistant den Standort erhalten hat (last_updated).
+// Home Assistant den Standort erhalten hat (last_updated). Die Android-Reiseanzeige
+// schickt im Hintergrund gesammelt und nennt die Messzeit (Attribut fix_time).
 
 import {dist, pointAtAlong} from './position.js';
 
@@ -48,7 +49,7 @@ export const readFix = (state) => {
 		lat, lon,
 		accuracy: Number.isFinite(Number(a.gps_accuracy)) ? Number(a.gps_accuracy) : Infinity,
 		speed: Number.isFinite(Number(a.speed)) ? Number(a.speed) : null, // m/s
-		at: Date.parse(state.last_updated),
+		at: Date.parse(a.fix_time ?? state.last_updated),
 	};
 };
 

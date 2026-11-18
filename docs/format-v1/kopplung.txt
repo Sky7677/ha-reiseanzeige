@@ -1,0 +1,2 @@
+Reiseanzeige mit Home Assistant verbinden
+reiseanzeige-kopplung v1 k4p7x2m9q1w8z3t6 3c8f1a9e5b2d7f4a6c0e8b3d1f9a7c5e2b4d6f8a0c3e5b7d9f1a2c4e6b8d0f3a

@@ -1,0 +1,16 @@
+{
+  "format": 1,
+  "sentAt": "2026-10-08T07:41:05+02:00",
+  "app": {"name": "Reiseanzeige", "version": "0.8.0"},
+  "messages": [
+    {
+      "type": "location",
+      "tripId": "5f0c2a9e1b7d4c3a",
+      "fixes": [
+        {"lat": 49.4455, "lon": 11.0820, "accuracy": 14.0, "time": "2026-10-08T07:40:01+02:00", "speed": 18.2, "bearing": 8.0},
+        {"lat": 49.4512, "lon": 11.0846, "accuracy": 11.0, "time": "2026-10-08T07:40:31+02:00", "speed": 24.9, "bearing": 11.0}
+      ],
+      "train": {"leg": 1, "lat": 49.4510, "lon": 11.0845, "time": "2026-10-08T07:40:31+02:00", "gps": true}
+    }
+  ]
+}

@@ -43,7 +43,7 @@ RAIL_PRODUCTS = {"longdistance", "regional", "suburban"}
 
 
 class TripError(Exception):
-    """code: NOT_FOUND | INVALID_INPUT | IN_PAST"""
+    """code: NOT_FOUND | INVALID_INPUT | IN_PAST | FROM_APP | LINKED"""
 
     def __init__(self, code: str, message: str) -> None:
         super().__init__(message)
@@ -164,6 +164,10 @@ def next_refresh_at(trip: dict, now: datetime, grace: timedelta, running: timede
 
 # --- Verwaltung ----------------------------------------------------------------
 
+def _fresh_health() -> dict:
+    return {"consecutiveFailures": 0, "failing": False, "lastSuccessAt": None, "notifiedAt": None, "lastError": None}
+
+
 def _summary(trip: dict) -> dict:
     s = trip["snapshot"]
     return {"id": trip["id"], "originName": s["origin"].get("name"), "destinationName": s["destination"].get("name"),
@@ -206,6 +210,11 @@ class TripManager:
                 return t
         raise TripError("NOT_FOUND", "Reise nicht gefunden")
 
+    def find_app(self, link_id: str, app_trip_id: str) -> dict | None:
+        """Reise, die die Android-App (Verbindung link_id) unter app_trip_id geschickt hat."""
+        return next((t for t in self.trips if (t.get("app") or {}).get("linkId") == link_id
+                     and t["app"]["tripId"] == app_trip_id), None)
+
     def view(self, trip: dict, now: datetime | None = None) -> dict:
         now = now or self.clock()
         out = copy.deepcopy(trip)
@@ -245,12 +254,80 @@ class TripManager:
                 "enrichAttemptAt": None,
                 "seats": {},
                 "realtime": None,
-                "realtimeHealth": {"consecutiveFailures": 0, "failing": False, "lastSuccessAt": None,
-                                   "notifiedAt": None, "lastError": None},
+                "realtimeHealth": _fresh_health(),
                 "lastRefreshAt": None,
             }
             self.trips.append(trip)
             return {"status": "saved", "trip": self.view(trip, now), "replaced": [_summary(t) for t in replaced]}
+        return await self._mutate(run)
+
+    # --- Reisen aus der Android-App (Format v1) ---
+
+    async def upsert_from_app(self, owner_id: str, link_id: str, app_trip_id: str, revision: int,
+                              journey: SharedJourney, draft: dict, connection: dict, seats: dict) -> dict:
+        """Reise der App übernehmen. Die App ist Quelle ihrer Reisen: gleiche Kennung =
+        aktualisieren, keine eigene Ersetzungsregel unter App-Reisen. Überschneidet
+        sich eine neue App-Reise mit einer anderswo geteilten Reise derselben Person,
+        ersetzt sie diese. Ergebnis: {status: ok|stale|past, tripId, change:
+        new|connection|seats|None, replaced}."""
+        key = connection_key(journey)
+
+        def run():
+            now = self.clock()
+            existing = self.find_app(link_id, app_trip_id)
+            if existing is not None:
+                if revision <= existing["app"]["revision"]:
+                    return {"status": "stale", "tripId": existing["id"], "change": None, "replaced": []}
+                existing["app"]["revision"] = revision
+                existing["seats"] = copy.deepcopy(seats)
+                if existing.get("connectionKey") == key:
+                    existing["connection"] = connection
+                    return {"status": "ok", "tripId": existing["id"], "change": "seats", "replaced": []}
+                existing.update(connectionKey=key, connection=connection, snapshot=draft, enriched=False,
+                                enrichAttemptAt=None, realtime=None, lastRefreshAt=None,
+                                realtimeHealth=_fresh_health())
+                return {"status": "ok", "tripId": existing["id"], "change": "connection", "replaced": []}
+            candidate = {"snapshot": draft, "realtime": None}
+            if effective_arrival(candidate) <= now:
+                return {"status": "past", "tripId": None, "change": None, "replaced": []}
+            replaced = [t for t in self.trips if t["ownerId"] == owner_id and not t.get("app")
+                        and self._status(t, now) != EXPIRED and overlaps(candidate, t)]
+            self.trips = [t for t in self.trips if t not in replaced]
+            trip = {
+                "id": uuid.uuid4().hex,
+                "ownerId": owner_id,
+                "createdAt": now.isoformat(),
+                "connectionKey": key,
+                "snapshot": draft,
+                "enriched": False,
+                "shareText": None,
+                "connection": connection,    # für den Abgleich mit dem Fahrplan
+                "app": {"linkId": link_id, "tripId": app_trip_id, "revision": revision},
+                "enrichAttemptAt": None,
+                "seats": copy.deepcopy(seats),
+                "realtime": None,
+                "realtimeHealth": _fresh_health(),
+                "lastRefreshAt": None,
+            }
+            self.trips.append(trip)
+            return {"status": "ok", "tripId": trip["id"], "change": "new", "replaced": [_summary(t) for t in replaced]}
+        return await self._mutate(run)
+
+    async def delete_app(self, link_id: str, app_trip_id: str) -> bool:
+        def run():
+            trip = self.find_app(link_id, app_trip_id)
+            if trip is None:
+                return False
+            self.trips = [t for t in self.trips if t is not trip]
+            return True
+        return await self._mutate(run)
+
+    async def remove_link(self, link_id: str) -> int:
+        """Alle Reisen einer aufgehobenen Verbindung entfernen."""
+        def run():
+            mine = [t for t in self.trips if (t.get("app") or {}).get("linkId") == link_id]
+            self.trips = [t for t in self.trips if t not in mine]
+            return len(mine)
         return await self._mutate(run)
 
     async def set_snapshot(self, trip_id: str, snapshot: dict) -> bool:
@@ -299,6 +376,8 @@ class TripManager:
     async def set_seat(self, trip_id: str, leg_index: int, coach: str = "", seat: str = "") -> dict:
         def run():
             trip = self._find(trip_id)
+            if trip.get("app"):
+                raise TripError("FROM_APP", "Wagen und Sitzplatz kommen bei dieser Reise aus der Android-App")
             legs = trip["snapshot"]["legs"]
             if not (0 <= leg_index < len(legs)) or legs[leg_index].get("kind") != "ride":
                 raise TripError("INVALID_INPUT", "Kein Fahrtabschnitt mit diesem Index")
@@ -330,7 +409,7 @@ class TripManager:
         now = self.clock()
         out = []
         for t in self.trips:
-            if not t.get("shareText"):
+            if not (t.get("shareText") or t.get("connection")):
                 continue
             pending = [l for l in _rides(t) if not l.get("matched") and l["line"].get("product") in RAIL_PRODUCTS]
             deps = [_dt(l["plannedDeparture"]) for l in pending]

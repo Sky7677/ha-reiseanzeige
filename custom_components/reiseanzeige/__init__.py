@@ -25,7 +25,7 @@ from . import websocket
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.SENSOR]
+PLATFORMS = [Platform.SENSOR, Platform.DEVICE_TRACKER]
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 CARD_FILE = Path(__file__).parent / "frontend" / "reiseanzeige-card.js"
 

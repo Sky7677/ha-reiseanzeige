@@ -30,6 +30,8 @@ const seatPart = (leg, ui) => {
 			<button type="button" class="btn" data-action="seat-cancel">Abbrechen</button>
 		</form>`;
 	}
+	// Reise aus der Android-App: Wagen und Platz kommen von dort (die App hat Vorfahrt)
+	if (ui.fromApp) return leg.seat ? `<div class="seat">${esc(leg.seat)} <span class="from-app">· aus der App</span></div>` : '';
 	// Wagen/Platz nur bei Zügen (nicht bei Tram, U-Bahn, Bus, Schiff)
 	const edit = ui.owned && !['tram', 'subway', 'bus', 'ship'].includes(leg.product) ? `<button type="button" class="link" data-action="seat-edit" data-leg="${leg.index}">${leg.seat ? 'ändern' : 'Wagen/Platz eintragen'}</button>` : '';
 	if (!leg.seat && !edit) return '';

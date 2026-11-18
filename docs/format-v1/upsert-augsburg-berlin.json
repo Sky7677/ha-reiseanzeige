@@ -1,0 +1,70 @@
+{
+  "format": 1,
+  "sentAt": "2026-10-07T21:15:01+02:00",
+  "app": {
+    "name": "Reiseanzeige",
+    "version": "0.8.0"
+  },
+  "messages": [
+    {
+      "type": "trip.upsert",
+      "tripId": "5f0c2a9e1b7d4c3a",
+      "revision": 1,
+      "connection": {
+        "origin": "Augsburg Hbf",
+        "destination": "Berlin Südkreuz",
+        "day": "2026-10-08",
+        "vbid": "00000000-0000-4000-8000-000000000001",
+        "link": "https://www.bahn.de/buchung/start?vbid=00000000-0000-4000-8000-000000000001",
+        "legs": [
+          {
+            "line": "RE16",
+            "number": "59116",
+            "category": "RE",
+            "mode": "regional",
+            "direction": "Nürnberg Hbf",
+            "dep": {
+              "name": "Augsburg Hbf",
+              "time": "2026-10-08T05:57:00+02:00",
+              "platform": "5",
+              "platformNote": null
+            },
+            "arr": {
+              "name": "Nürnberg Hbf",
+              "time": "2026-10-08T07:30:00+02:00",
+              "platform": "9",
+              "platformNote": null
+            },
+            "extra": []
+          },
+          {
+            "line": "ICE 1604",
+            "number": "1604",
+            "category": "ICE",
+            "mode": "longdistance",
+            "direction": "Berlin Hbf",
+            "dep": {
+              "name": "Nürnberg Hbf",
+              "time": "2026-10-08T07:36:00+02:00",
+              "platform": "6",
+              "platformNote": null
+            },
+            "arr": {
+              "name": "Berlin Südkreuz",
+              "time": "2026-10-08T10:17:00+02:00",
+              "platform": "7",
+              "platformNote": null
+            },
+            "extra": []
+          }
+        ]
+      },
+      "seats": {
+        "1": {
+          "coach": "7",
+          "seat": "45"
+        }
+      }
+    }
+  ]
+}

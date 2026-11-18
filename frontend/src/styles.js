@@ -9,7 +9,20 @@ const CARD_CSS = `
    neu – auch nach Dashboard-Wechseln, ohne einen in JavaScript gemerkten Zustand */
 ha-card { overflow: hidden; container-type: inline-size; container-name: ra; }
 .toolbar { display: flex; align-items: flex-start; gap: 8px; padding: 10px 12px 0; }
-.toolbar:has(.switcher:empty):has(.add-toggle.hidden) { display: none; }
+.toolbar:has(.switcher:empty):has(.add-toggle.hidden):has(.app-toggle.hidden) { display: none; }
+.app-toggle { white-space: nowrap; }
+.app-panel { padding: 10px 12px 0; font-size: 14px; }
+.app-panel h3 { font-size: 15px; margin: 0 0 6px; }
+.app-links { list-style: none; margin: 0 0 8px; padding: 0; }
+.app-links li { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; }
+.app-links .when { color: var(--secondary-text-color); font-size: 12.5px; }
+.app-pair { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin: 8px 0; }
+.app-qr svg { width: 180px; height: 180px; background: #fff; border-radius: 8px; }
+.app-hint, .app-msg { color: var(--secondary-text-color); font-size: 13px; flex: 1 1 220px; }
+.app-msg.error { color: var(--ra-late); }
+.app-msg:empty { display: none; }
+.app-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.from-app { color: var(--secondary-text-color); }
 .switcher { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
 .add-toggle { margin-left: auto; white-space: nowrap; }
 .hidden { display: none !important; }
