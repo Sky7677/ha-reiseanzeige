@@ -181,6 +181,31 @@ async def test_verbinden_per_teilen_an_die_companion_app(hass, boards, hass_admi
     assert rt.links.linked(hass_admin_user.id)
 
 
+async def test_reise_in_mehreren_teilen_angekommen(hass, boards, hass_admin_user, hass_ws_client, hass_client_no_auth, freezer):
+    """Größere Nachrichten (trip.upsert) kommen über WLAN, Mobilfunk oder VPN oft in mehreren
+    Paketen an. Bis 0.8.1 las die Integration nur, was gerade da war, und antwortete dann
+    „JSON erwartet“ (manchmal, je nach Netz)."""
+    import asyncio
+    ws = await hass_ws_client(hass)
+    freezer.move_to("2026-10-07T21:00:00+02:00")
+    rt, _ = await setup(hass, hass_admin_user)
+    client = await hass_client_no_auth()
+    _, link = await connect(hass, ws, client)
+    raw = json.dumps(sample("upsert-augsburg-berlin.json")).encode("utf-8")
+    assert len(raw) > 1000
+
+    async def pieces():
+        for i in range(0, len(raw), 400):
+            yield raw[i:i + 400]
+            for _ in range(5):   # Zeit steht (freezer): nur dem Server den Vortritt lassen
+                await asyncio.sleep(0)
+    res = await client.post(f"/api/webhook/{link['webhookId']}", data=pieces(), headers={"Content-Type": "application/json"})
+    assert res.status == 200, await res.text()
+    assert (await res.json())["trips"] == {TRIP: "ok"}
+    await hass.async_block_till_done(wait_background_tasks=True)
+    assert [t["app"]["tripId"] for t in rt.trips.list()] == [TRIP]
+
+
 async def test_fehler_und_aufheben_in_home_assistant(hass, boards, hass_admin_user, hass_ws_client, hass_client_no_auth, freezer):
     ws = await hass_ws_client(hass)
     freezer.move_to("2026-10-07T21:00:00+02:00")
