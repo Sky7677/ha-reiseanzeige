@@ -99,7 +99,8 @@ export const renderInfo = (v, ui = {}) => `
 	${v.legs.map(leg => legBlock(leg, ui)).join('')}
 	<footer class="updated">
 		<span>${footerSource(v, ui)}</span>
-		${ui.owned ? `<button type="button" class="link danger" data-action="delete">${ui.confirmDelete ? 'Wirklich löschen?' : 'Reise löschen'}</button>` : ''}
+		${ui.owned && ui.fromApp ? '<span class="from-app">Löschen in der Reiseanzeige-App</span>' : ''}
+		${ui.owned && !ui.fromApp ? `<button type="button" class="link danger" data-action="delete">${ui.confirmDelete ? 'Wirklich löschen?' : 'Reise löschen'}</button>` : ''}
 	</footer>`;
 
 // Fußzeile: Stand der Echtzeit und Quellen (CC BY 4.0 verlangt die Nennung)

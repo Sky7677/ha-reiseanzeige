@@ -22,7 +22,7 @@ ha-card { overflow: hidden; container-type: inline-size; container-name: ra; }
 .app-msg.error { color: var(--ra-late); }
 .app-msg:empty { display: none; }
 .app-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.from-app { color: var(--secondary-text-color); }
+.from-app, .app-links .who { color: var(--secondary-text-color); }
 .switcher { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
 .add-toggle { margin-left: auto; white-space: nowrap; }
 .hidden { display: none !important; }

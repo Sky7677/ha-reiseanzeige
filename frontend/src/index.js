@@ -22,7 +22,7 @@ import {STYLE} from './styles.js';
 import {dayTime, esc} from './format.js';
 import qrcode from 'qrcode-generator';
 
-export const CARD_VERSION = '0.12.0';
+export const CARD_VERSION = '0.12.1';
 const POLL_MS = 60 * 1000;
 const SESSION_CHECK_MS = 60 * 1000;
 const field = (form, name) => form.elements.namedItem(name);
@@ -510,11 +510,12 @@ if (!customElements.get('reiseanzeige-card')) {
 	console.info(`%c REISEANZEIGE-KARTE %c ${CARD_VERSION} `, 'background:#ec0016;color:#fff', 'background:#333;color:#fff');
 }
 
-// Verbundene Apps des angemeldeten Benutzers; ohne Adressen (die kennt nur die App)
+// Verbundene Apps des angemeldeten Benutzers, für Administratoren alle (mit Namen der Person);
+// ohne Adressen (die kennt nur die App)
 const renderAppPanel = (links) => `
 	<h3>Android-App</h3>
 	${links.length ? `<ul class="app-links">${links.map(l => `
-		<li><span>${esc(l.device || 'Android-App')}</span>
+		<li><span>${esc(l.device || 'Android-App')}${l.own === false ? ` <span class="who">· ${esc(l.userName || 'andere Person')}</span>` : ''}</span>
 			<span class="when">${l.lastSeenAt ? `zuletzt ${esc(dayTime(l.lastSeenAt))}` : ''}</span>
 			<button type="button" class="link danger" data-action="app-remove" data-id="${esc(l.id)}">aufheben</button></li>`).join('')}</ul>`
 		: '<div class="app-hint">Noch keine Reiseanzeige-App verbunden. Verbunden wird einmal je Handy, danach kommen alle Reisen von selbst.</div>'}

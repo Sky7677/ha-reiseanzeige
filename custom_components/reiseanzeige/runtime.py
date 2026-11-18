@@ -44,7 +44,7 @@ from .const import (
 from .core.geometry import apply_geometry
 from .core.gpsroute import Watch, apply_route, read_fix, step as gps_step
 from .core.journey import build_snapshot, draft_snapshot, norm_line
-from .core.link_format import DELETED, IGNORED, OK, UNKNOWN, deep_link, journey_from_dict, parse_pairing
+from .core.link_format import IGNORED, OK, UNKNOWN, deep_link, journey_from_dict, parse_pairing
 from .core.realtime import leg_realtime, stations_to_poll
 from .core.share_text import ShareTextError, looks_like_share, parse_share_text
 from .core.timetables import TimetablesClient, TimetablesError, aiohttp_fetch
@@ -286,14 +286,12 @@ class Reiseanzeige:
         return parse_share_text(trip["shareText"])
 
     async def delete_trip(self, trip_id: str) -> dict:
-        """Reise löschen (Karte). Eine Reise aus der App bekommt diese Instanz danach nicht mehr."""
+        """Reise löschen (Karte). Reisen aus der Android-App löscht man nur dort; ist das Handy
+        weg, entfernt das Aufheben der Verbindung alle seine Reisen (Entscheidung 18.11.2026)."""
         trip = self.trips.get(trip_id)
-        result = await self.trips.delete_trip(trip_id)
-        if app := trip.get("app"):
-            await self.links.add_tombstone(app["linkId"], app["tripId"])
-            if (self.links.locations.get(app["linkId"]) or {}).get("tripId") == trip_id:
-                self.links.clear_location(app["linkId"])
-        return result
+        if trip is not None and trip.get("app"):
+            raise TripError("FROM_APP", "Diese Reise kommt aus der Android-App und wird dort gelöscht")
+        return await self.trips.delete_trip(trip_id)
 
     # --- Android-App (links.py, Format v1) ---
 
@@ -312,7 +310,7 @@ class Reiseanzeige:
                 return OK
             trip = self.trips.find_app(link["id"], msg["tripId"])
             if trip is None:
-                return DELETED if self.links.tombstoned(link["id"], msg["tripId"]) else UNKNOWN
+                return UNKNOWN
             if kind == "location":
                 if msg["fixes"]:
                     self.links.set_location(link["id"], msg["fixes"][-1], trip["id"])
@@ -327,8 +325,6 @@ class Reiseanzeige:
         return IGNORED
 
     async def _app_upsert(self, link: dict, msg: dict) -> str:
-        if self.links.tombstoned(link["id"], msg["tripId"]):
-            return DELETED
         journey = msg["journey"]
         draft = draft_snapshot(journey, dt_util.now(), self.coords)
         res = await self.trips.upsert_from_app(link["userId"], link["id"], msg["tripId"], msg["revision"], journey,
