@@ -6,12 +6,11 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from core.geometry import apply_geometry, cut_line, fill_coordinates
-from core.journey import build_snapshot, draft_snapshot
+from core.journey import draft_snapshot
 from core.places import Places, km, name_keys, norm_key
 from core.railnet.router import RailNet
 from core.share_text import parse_share_text
-from core.timetables import RateLimiter, TimetablesClient
-from fake_iris import november_world
+from fake_openboards import matched_trip
 from railnet_fixture import P, world
 from testdata import fixture_text
 
@@ -91,10 +90,10 @@ def test_koordinaten_nur_aus_dem_text(places):
     assert not fill_coordinates(snap, places), "nichts mehr zu tun"
 
 
-def test_staDa_als_weitere_quelle():
+def test_bahnhofsliste_als_weitere_quelle():
     snap = draft_snapshot(journey(), NOW)
-    stada = {"Augsburg Hbf": (48.0, 10.0)}
-    assert fill_coordinates(snap, None, lambda eva, name: stada.get(name))
+    listed = {"Augsburg Hbf": (48.0, 10.0)}
+    assert fill_coordinates(snap, None, lambda eva, name: listed.get(name))
     assert (snap["legs"][1]["stopovers"][0]["station"]["lat"]) == 48.0
     assert snap["legs"][0]["stopovers"][0]["station"]["lat"] is None
 
@@ -102,8 +101,7 @@ def test_staDa_als_weitere_quelle():
 # --- Verlauf -----------------------------------------------------------------------------
 
 async def test_verlauf_je_verkehrsmittel(net, places):
-    client = TimetablesClient(november_world(), "cid", "key", limiter=RateLimiter(limit=1000))
-    snap = await build_snapshot(journey(), client, NOW)
+    snap = await matched_trip(fixture_text("share", "moritzplatz-berlin-2026-11-01.txt"), NOW)
     assert apply_geometry(snap, net, places, version="2026-11-02")
     tram, re1, ice, s41, u3 = snap["legs"]
 
@@ -126,14 +124,13 @@ async def test_verlauf_je_verkehrsmittel(net, places):
 
 async def test_umleitung_ueber_andere_halte(net, places):
     """ICE 1004 fährt ab Erfurt über Leipzig statt Halle (Meldung aus der Echtzeit)."""
-    from core.realtime import compare_paths
-    client = TimetablesClient(november_world(), "cid", "key", limiter=RateLimiter(limit=1000))
-    snap = await build_snapshot(journey(), client, NOW)
+    from core.realtime import RouteStop, compare_paths
+    snap = await matched_trip(fixture_text("share", "moritzplatz-berlin-2026-11-01.txt"), NOW)
     apply_geometry(snap, net, places, version="v")
     ice = snap["legs"][2]
     planned_line = ice["polyline"]
-    div = compare_paths([so["station"]["name"] for so in ice["stopovers"]],
-                        ["Nürnberg Hbf", "Erfurt Hbf", "Leipzig Hbf", "Berlin Südkreuz", "Berlin Hbf"])
+    div = compare_paths([RouteStop(so["station"]["id"], so["station"]["name"]) for so in ice["stopovers"]],
+                        [RouteStop(None, n) for n in ("Nürnberg Hbf", "Erfurt Hbf", "Leipzig Hbf", "Berlin Südkreuz", "Berlin Hbf")])
     assert apply_geometry(snap, net, places, version="v", diversions={2: div})
     d = ice["diversion"]
     assert [so["station"]["name"] for so in d["stopovers"]] == ["Nürnberg Hbf", "Erfurt Hbf", "Halle (Saale) Hbf", "Leipzig Hbf", "Berlin Südkreuz"]

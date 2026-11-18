@@ -10,6 +10,8 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.reiseanzeige.const import DOMAIN
+from custom_components.reiseanzeige.core.board import Station as BoardStation
+from custom_components.reiseanzeige.core.openboards import OpenBoardsError
 from testdata import fixture_text
 
 SHARE = fixture_text("share", "moritzplatz-berlin-2026-11-01.txt")
@@ -19,11 +21,11 @@ async def setup(hass, options=None):
     entry = MockConfigEntry(domain=DOMAIN, data={"client_id": "cid", "api_key": "key"}, options=options or {"station": "Augsburg Hbf"})
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     return entry
 
 
-async def test_einrichtung_mit_pruefung_der_zugangsdaten(hass, iris):
+async def test_einrichtung_mit_pruefung_der_zugangsdaten(hass, boards):
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
     assert result["type"] is FlowResultType.FORM
 
@@ -35,31 +37,33 @@ async def test_einrichtung_mit_pruefung_der_zugangsdaten(hass, iris):
     assert ok["type"] is FlowResultType.CREATE_ENTRY
     assert ok["data"] == {"client_id": "cid", "api_key": "key"}
     assert ok["options"] == {"station": "Augsburg Hbf"}
-    assert any(p.startswith("/station/") for p in iris.paths), "eine Testanfrage"
-    await hass.async_block_till_done()
+    assert [(q.evas, q.arrivals, q.entries) for q in boards.queries] == [(("8000105",), False, 1)], "eine Testanfrage"
+    await hass.async_block_till_done(wait_background_tasks=True)
 
     again = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
     assert again["type"] is FlowResultType.ABORT
 
 
-async def test_teilen_speichert_reise_und_reichert_an(hass, iris, hass_admin_user, hass_ws_client, freezer):
+async def test_teilen_speichert_reise_und_reichert_an(hass, boards, hass_admin_user, hass_ws_client, freezer):
     ws = await hass_ws_client(hass)  # vor dem Zeitsprung anmelden
     freezer.move_to("2026-11-01T12:00:00+01:00")
     entry = await setup(hass)
     hass.bus.async_fire("mobile_app.share", {"text": "https://youtube.com/watch?v=x"}, context=Context(user_id=hass_admin_user.id))
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert entry.runtime_data.trips.trips == [], "fremdes Teilen wird ignoriert"
 
     hass.bus.async_fire("mobile_app.share", {"caller": "android-app://de.hafas.android.db", "text": SHARE},
                         context=Context(user_id=hass_admin_user.id))
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
 
     trips = entry.runtime_data.trips.list()
     assert len(trips) == 1
     trip = trips[0]
     assert trip["ownerId"] == hass_admin_user.id and trip["status"] == "upcoming"
-    assert trip["enriched"], "im Hintergrund über die Timetables-API angereichert"
+    assert trip["enriched"], "im Hintergrund in OpenBoards zugeordnet"
     assert [l["matched"] for l in trip["snapshot"]["legs"]] == [False, True, True, True, False]
+    assert [l["source"] for l in trip["snapshot"]["legs"]] == ["text", "openboards", "openboards", "openboards", "text"]
+    assert trip["snapshot"]["legs"][2]["tripId"] == "20261101-222"
 
     # Ohne bekanntes Handy: Bestätigung als Hinweis in Home Assistant
     notes = list(persistent_notification._async_get_or_create_notifications(hass).values())
@@ -99,11 +103,11 @@ async def test_teilen_speichert_reise_und_reichert_an(hass, iris, hass_admin_use
 
     await ws.send_json({"id": 7, "type": f"{DOMAIN}/delete", "trip_id": trip["id"]})
     assert (await ws.receive_json())["success"]
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert hass.states.get(state.entity_id).state == "none"
 
 
-async def test_abfahrtstafel_und_kartenproxy(hass, iris, hass_ws_client, hass_client_no_auth, freezer):
+async def test_abfahrtstafel_und_kartenproxy(hass, boards, hass_ws_client, hass_client_no_auth, freezer):
     ws = await hass_ws_client(hass)  # vor dem Zeitsprung anmelden
     freezer.move_to("2026-11-01T14:30:00+01:00")
     entry = await setup(hass)
@@ -122,14 +126,14 @@ async def test_abfahrtstafel_und_kartenproxy(hass, iris, hass_ws_client, hass_cl
     assert (await client.get(f"{base}map/../../etc/passwd")).status == 404
 
 
-async def test_entladen(hass, iris):
+async def test_entladen(hass, boards):
     entry = await setup(hass)
     assert await hass.config_entries.async_unload(entry.entry_id)
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert entry.state is config_entries.ConfigEntryState.NOT_LOADED
 
 
-async def test_handy_wird_erkannt_push_standort_und_echtzeit(hass, iris, hass_admin_user, hass_ws_client, freezer):
+async def test_handy_wird_erkannt_push_standort_und_echtzeit(hass, boards, hass_admin_user, hass_ws_client, freezer):
     from homeassistant.helpers import device_registry as dr, entity_registry as er
     from pytest_homeassistant_custom_component.common import async_mock_service
 
@@ -145,7 +149,7 @@ async def test_handy_wird_erkannt_push_standort_und_echtzeit(hass, iris, hass_ad
     entry = await setup(hass)
     hass.bus.async_fire("mobile_app.share", {"caller": "android-app://de.hafas.android.db", "text": SHARE, "device_id": "abc123"},
                         context=Context(user_id=hass_admin_user.id))
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert [c.data["message"] for c in pushes][0].startswith("Reise Moritzplatz"), "Bestätigung aufs eigene Handy"
     assert entry.runtime_data.owners.get(hass_admin_user.id)["tracker"] == "device_tracker.testhandy"
 
@@ -154,13 +158,14 @@ async def test_handy_wird_erkannt_push_standort_und_echtzeit(hass, iris, hass_ad
     trip_id = entry.runtime_data.trips.list()[0]["id"]
 
     # Während der ICE-Fahrt: Echtzeit aus Erfurt, Standort anfordern
-    iris.changes["8010101"] = '<timetable station="Erfurt Hbf"><s id="-222-2611011636-2"><ar ct="2611011747"/><dp ct="2611011749" cp="2"/></s></timetable>'
+    boards.change("-222", 1, delay=5, platform="2")
+    boards.queries.clear()
     freezer.move_to("2026-11-01T17:30:00+01:00")
     await entry.runtime_data.tick()
     trip = entry.runtime_data.trips.get(trip_id)
     erfurt = trip["realtime"]["legs"]["2"]["stopovers"][1]
     assert erfurt["departure"]["delay"] == 300 and erfurt["platform"] == "2"
-    assert "/fchg/8010101" in iris.paths
+    assert any(q.evas == ("8010101",) and not q.arrivals for q in boards.queries)
 
     await ws.send_json({"id": 2, "type": f"{DOMAIN}/trips"})
     listed = (await ws.receive_json())["result"]["trips"][0]
@@ -169,35 +174,90 @@ async def test_handy_wird_erkannt_push_standort_und_echtzeit(hass, iris, hass_ad
 
     await ws.send_json({"id": 3, "type": f"{DOMAIN}/locate", "trip_id": trip_id})
     assert (await ws.receive_json())["result"] == {"status": "sent"}
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     assert pushes[-1].data == {"message": "request_location_update"}
     await ws.send_json({"id": 4, "type": f"{DOMAIN}/locate", "trip_id": trip_id})
     assert (await ws.receive_json())["result"]["status"] == "cooldown"
 
 
-async def test_diagnose_ohne_zugangsdaten(hass, iris):
+async def test_diagnose_ohne_zugangsdaten(hass, boards):
     from custom_components.reiseanzeige.diagnostics import async_get_config_entry_diagnostics
     entry = await setup(hass)
     diag = await async_get_config_entry_diagnostics(hass, entry)
     assert diag["data"] == {"client_id": "**REDACTED**", "api_key": "**REDACTED**"}
-    assert diag["trips"] == [] and diag["version"] == "0.8.1"
+    assert diag["trips"] == [] and diag["version"] == "0.9.0"
+    assert diag["credentials"] is True and diag["openboards_calls_since_start"] == 0
     assert diag["app_links"] == [] and diag["app_local_only"] is True
     assert diag["railnet"]["enabled"] is True and diag["railnet"]["loaded"] is False
     assert diag["timetable"]["enabled"] is True and diag["timetable"]["loaded"] is False
+    assert diag["stations"]["loaded"] is True
 
 
-async def test_reise_im_voraus_wird_am_reisetag_abgeglichen(hass, iris, hass_admin_user, hass_ws_client, freezer):
+async def test_zug_nicht_gefunden_neuer_versuch_spaeter(hass, boards, hass_admin_user, hass_ws_client, freezer):
+    """OpenBoards kennt den Plan Tage vorher; klappt es beim Teilen nicht, folgt ein neuer
+    Versuch – drei Tage vorher alle 12 Stunden, in der Stunde davor alle 5 Minuten."""
     await hass_ws_client(hass)
     freezer.move_to("2026-10-29T12:00:00+01:00")
     entry = await setup(hass)
+    boards.fail = OpenBoardsError("UNAVAILABLE", "HTTP 503", 503)
     hass.bus.async_fire("mobile_app.share", {"text": SHARE}, context=Context(user_id=hass_admin_user.id))
-    await hass.async_block_till_done()
+    await hass.async_block_till_done(wait_background_tasks=True)
     trip = entry.runtime_data.trips.list()[0]
     assert not any(l["matched"] for l in trip["snapshot"]["legs"])
-    assert not [p for p in iris.paths if p.startswith("/plan")], "drei Tage vorher keine Fahrplan-Abfragen"
 
-    freezer.move_to("2026-11-01T08:00:00+01:00")
+    boards.fail = None
+    boards.queries.clear()
+    freezer.move_to("2026-10-29T23:00:00+01:00")
     await entry.runtime_data.tick()
-    await hass.async_block_till_done()
+    assert boards.queries == [], "noch keine 12 Stunden"
+    freezer.move_to("2026-10-30T00:30:00+01:00")
+    await entry.runtime_data.tick()
+    await hass.async_block_till_done(wait_background_tasks=True)
     trip = entry.runtime_data.trips.get(trip["id"])
     assert [l["matched"] for l in trip["snapshot"]["legs"]] == [False, True, True, True, False]
+    assert trip["snapshot"]["plannedDeparture"] == "2026-11-01T14:18:00+01:00"
+
+
+async def test_reisen_aus_der_timetables_api_werden_neu_zugeordnet(hass, boards, hass_admin_user, freezer):
+    """Gespeicherte Reisen von 0.8 (source „timetables“) sucht 0.9 in OpenBoards neu."""
+    freezer.move_to("2026-11-01T12:00:00+01:00")
+    entry = await setup(hass)
+    boards.fail = OpenBoardsError("UNAVAILABLE", "HTTP 503", 503)
+    hass.bus.async_fire("mobile_app.share", {"text": SHARE}, context=Context(user_id=hass_admin_user.id))
+    await hass.async_block_till_done(wait_background_tasks=True)
+    rt = entry.runtime_data
+    trip = rt.trips.trips[0]
+    for leg in trip["snapshot"]["legs"][1:4]:
+        leg.update(matched=True, source="timetables", tripId="-222-2611011636", iris={"x": 1})
+    trip.update(enriched=True, enrichAttemptAt=None, realtime={"legs": {"2": {"origin": "iris", "stopovers": []}}})
+    boards.fail = None
+    await rt.tick()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    trip = rt.trips.get(trip["id"])
+    assert [l["source"] for l in trip["snapshot"]["legs"]] == ["text", "openboards", "openboards", "openboards", "text"]
+    assert all("iris" not in l for l in trip["snapshot"]["legs"])
+    assert (trip["realtime"] or {}).get("legs", {}).get("2", {}).get("origin") != "iris"
+
+
+async def test_abgelehnte_zugangsdaten_einmal_melden(hass, boards, hass_admin_user, freezer):
+    freezer.move_to("2026-11-01T12:00:00+01:00")
+    entry = await setup(hass)
+    boards.fail = OpenBoardsError("BAD_CREDENTIALS", "HTTP 401", 401)
+    hass.bus.async_fire("mobile_app.share", {"text": SHARE}, context=Context(user_id=hass_admin_user.id))
+    await hass.async_block_till_done(wait_background_tasks=True)
+    freezer.move_to("2026-11-01T13:00:00+01:00")
+    await entry.runtime_data.tick()
+    notes = persistent_notification._async_get_or_create_notifications(hass)
+    assert "OpenBoards lehnt die Zugangsdaten der Bahn ab" in notes["reiseanzeige_openboards"]["message"]
+
+
+async def test_bahnhofsnummern_werden_geladen(hass, stations_release, freezer):
+    freezer.move_to("2026-11-01T12:00:00+01:00")
+    entry = await setup(hass)
+    await hass.async_block_till_done(wait_background_tasks=True)
+    rt = entry.runtime_data
+    assert rt.stations.loaded and len(rt.stations.stations) > 7000
+    assert rt.stations.status()["version"] == "2026-11-09"
+    assert rt.board_station("augsburg hbf") == BoardStation("8000013", "Augsburg Hbf")
+    assert rt.board_station("8000261") == BoardStation("8000261", "München Hbf")
+    assert rt.coords.coords(None, "Ulm Hbf") is not None, "Lage ohne Gleisnetz"

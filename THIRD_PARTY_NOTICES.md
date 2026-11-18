@@ -7,7 +7,9 @@ Die Kartenstile in `custom_components/reiseanzeige/map_styles/` wurden mit Versa
 
 Der Ordner `custom_components/reiseanzeige/core/railnet/` (Dateiformat und Routing des Gleisnetzes) stammt aus [reiseanzeige-gleisnetz](https://github.com/Sky7677/reiseanzeige-gleisnetz), ebenfalls MIT.
 
-Laufzeitdaten, die nicht im Repository liegen: Kartendaten und das Gleisnetz © OpenStreetMap-Mitwirkende (ODbL 1.0), Fahrplan- und Echtzeitdaten der Deutschen Bahn AG (CC BY 4.0), Fahrplandaten DELFI e.V., aufbereitet von gtfs.de (CC BY 4.0). Die Karte zeigt die Quellen an.
+Laufzeitdaten, die nicht im Repository liegen: Kartendaten und das Gleisnetz © OpenStreetMap-Mitwirkende (ODbL 1.0); Abfahrts- und Ankunftstafeln aus [OpenBoards](https://developers.deutschebahn.com/db-api-marketplace/apis/product/open-boards), DB InfraGO AG, zu den Bedingungen der API (nur mit eigenen Zugangsdaten); Bahnhofsnummern aus dem Release „bahnhofsnummern“ von reiseanzeige-gleisnetz: Nummern und Namen aus OpenStation (DB InfraGO AG, CC0), Lage und weitere Schreibweisen aus [trainline-eu/stations](https://github.com/trainline-eu/stations) und OpenStreetMap (ODbL 1.0); Fahrplandaten DELFI e.V., aufbereitet von gtfs.de (CC BY 4.0). Die Karte zeigt die Quellen an.
+
+Die Testdaten in `tests/fixtures/openboards/` sind aufgezeichnete Antworten von OpenBoards (Augsburg Hbf, November und Dezember 2026), `tests/fixtures/bahnhofsnummern.json.gz` eine Fassung der Bahnhofsliste – beide wie in der Android-App.
 
 ## Leaflet 1.9.4 (BSD-2-Clause)
 

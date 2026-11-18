@@ -1,7 +1,7 @@
-"""Abfahrtstafel eines Bahnhofs (Ruheansicht der Karte) aus der Timetables-API,
-ergänzt um Ersatzbusse laut Fahrplan (GTFS, DELFI e.V./gtfs.de).
+"""Abfahrtstafel eines Bahnhofs (Ruheansicht der Karte) aus OpenBoards (wie
+DepartureBoard der App), ergänzt um Ersatzbusse laut Fahrplan (GTFS, DELFI e.V./gtfs.de).
 
-Ersatzverkehr eines anderen Betreibers kennt die Timetables-API oft nicht. Die
+Ersatzverkehr eines anderen Betreibers kennt die Bahn oft nicht. Die
 Ersatzbusse kommen deshalb aus dem Fahrplan – als Planung, ohne Echtzeit:
   * Fährt laut Bahn der Zug derselben Linie zur gleichen Zeit (±5 min) in dieselbe
     Richtung, entfällt der Ersatzbus (der Plan ist überholt). Dieselbe Richtung:
@@ -20,15 +20,24 @@ Ergebnis im Format der Karte (frontend render-board.js):
 from __future__ import annotations
 
 import logging
+import math
 import re
-from datetime import datetime, timedelta, timezone
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import Callable
 
-from .journey import resolve_station
+from . import openboards as ob
+from .openboards import BoardSource, iso, parse_time
 from .places import km
-from .timetables import PASSENGER_MESSAGES, Station, TimetablesClient, TimetablesError, line_name, merge_changes
 
 _LOGGER = logging.getLogger(__name__)
+
+@dataclass(frozen=True)
+class Station:
+    """Bahnhof der Tafel: Hauptnummer und amtlicher Name (aus der Bahnhofsliste)."""
+    eva: str
+    name: str
+
 
 # Ersatzbusse laut Fahrplan: (Bahnhof, jetzt, Minuten) → [{line, planned (datetime), destination, via, stop, to_at}]
 Replacements = Callable[[Station, datetime, int], list[dict]]
@@ -130,49 +139,46 @@ def replacement_rows(rows: list[dict], candidates: list[dict], now: datetime, mi
     return out
 
 
-async def departures(client: TimetablesClient, query: str, now: datetime, *, minutes: int = 90, limit: int = 20,
+async def departures(source: BoardSource, station: Station, now: datetime, *, minutes: int = 90, limit: int = 20,
                      replacements: Replacements | None = None, locate: Locate | None = None) -> dict:
-    station = await resolve_station(client, query)
-    if station is None:
-        raise TimetablesError("NOT_FOUND", f"Bahnhof „{query}“ nicht gefunden")
-    slices = [now, now + timedelta(hours=1)] + ([now + timedelta(hours=2)] if minutes > 60 else [])
-    plan = []
-    for t in slices:
-        plan += await client.plan(station.eva, t)
-    fetched, changes = await client.changes(station.eva)
-    merged = merge_changes(plan, changes)
-
+    """Abfahrten im Fenster nach bester bekannter Zeit; dazu Ersatzbusse laut Fahrplan."""
+    board = await source.board(ob.query(False, [station.eva], now - timedelta(minutes=1), now + timedelta(minutes=minutes),
+                                        max_via=20))
     out = []
     paths: dict[str, list[str]] = {}
-    for s in merged.values():
-        dp = s.departure
-        if dp is None or dp.hidden:
-            continue  # Endhalt
-        planned = dp.planned or dp.changed
+    for e in board.departures:
+        planned = parse_time(e.get("timeSchedule"))
         if planned is None:
             continue
-        eff = dp.changed or planned
+        eff = parse_time(e.get("time")) or planned
         if eff < now - timedelta(minutes=1) or planned > now + timedelta(minutes=minutes):
             continue
-        path = dp.path
-        paths[s.id] = list(path)
-        texts = []
-        for m in s.messages + dp.messages:
-            if m.get("text") and m.get("type") in PASSENGER_MESSAGES and m["text"] not in texts:
-                texts.append(m["text"])
+        prog = ob.prognosed(e)
+        p = parse_time(prog)
+        texts: list[str] = []
+        for kind, _code, text in board.texts(e.get("messages")):
+            if kind != ob.QUALITY and text not in texts:
+                texts.append(text)
+        via = [n for n in (board.name(v.get("evaNumber")) for v in ob.via(e) if not v.get("cancelled")) if n]
+        dest = board.name((ob.destination(e) or {}).get("evaNumber"))
+        line = ob.line_name(e)
+        rid = e.get("journeyId") or f"{line}-{e.get('timeSchedule')}"
+        paths[rid] = via + ([dest] if dest else [])
+        pp = ob.platform(e, "platformSchedule")
+        platform = ob.platform(e) or pp
         out.append({
-            "id": s.id,
-            "line": line_name(s, dp),
-            "destination": path[-1] if path else None,
-            "via": path[:-1][:3],
-            "planned": planned.isoformat(),
-            "prognosed": dp.changed.isoformat() if dp.changed else None,
-            "delayMin": round((dp.changed - planned).total_seconds() / 60) if dp.changed else None,
-            "platform": dp.changed_platform or dp.planned_platform,
-            "plannedPlatform": dp.planned_platform,
-            "platformChanged": bool(dp.changed_platform and dp.planned_platform and dp.changed_platform != dp.planned_platform),
-            "cancelled": dp.cancelled,
-            "added": dp.changed_status == "a",
+            "id": rid,
+            "line": line,
+            "destination": dest,
+            "via": via[:3],
+            "planned": iso(e.get("timeSchedule")),
+            "prognosed": iso(prog),
+            "delayMin": math.floor((p - planned).total_seconds() / 60 + 0.5) if p else None,
+            "platform": platform,
+            "plannedPlatform": pp,
+            "platformChanged": bool(platform and pp and platform != pp),
+            "cancelled": bool(e.get("cancelled") or ob.journey_cancelled(e)),
+            "added": bool(e.get("additional")),
             "messages": texts,
         })
     if replacements is not None:
@@ -184,6 +190,6 @@ async def departures(client: TimetablesClient, query: str, now: datetime, *, min
     out.sort(key=lambda d: datetime.fromisoformat(d["prognosed"] or d["planned"]))
     return {
         "station": {"eva": station.eva, "name": station.name},
-        "fetchedAt": datetime.fromtimestamp(fetched, tz=timezone.utc).isoformat(),
+        "fetchedAt": now.astimezone(ob.TZ).replace(microsecond=0).isoformat(),
         "departures": out[:limit],
     }

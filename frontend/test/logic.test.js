@@ -175,7 +175,7 @@ test('Reiseinformationen: Zwischenhalte aus dem Fahrplan (GTFS) mit eigenem Hinw
 	assert.equal(v.legs[0].pending, false, 'kein „folgen“-Hinweis, die Halte sind ja da');
 	assert.equal(v.legs[1].pending, true, 'ohne Fahrplan wie bisher');
 	const html = renderInfo(v);
-	assert.match(html, /Zwischenhalte laut Fahrplan; Echtzeit folgt etwa einen Tag vorher/);
+	assert.match(html, /Zwischenhalte laut Fahrplan; Echtzeit folgt, sobald der Zug bei der Bahn gefunden ist/);
 	assert.match(html, /DELFI e\.V\.\/gtfs\.de, CC BY 4\.0/);
 });
 

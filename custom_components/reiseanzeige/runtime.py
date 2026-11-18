@@ -1,18 +1,20 @@
 """Laufzeit der Integration: verbindet Teilen-Ereignis, Reiseverwaltung,
-Timetables-API, Benachrichtigungen und die Karte.
+OpenBoards, Benachrichtigungen und die Karte.
 
-  mobile_app.share  → Text auslesen, Entwurf speichern, Bestätigung ans Handy,
-                      im Hintergrund Züge im Fahrplan suchen
-  Reise gespeichert/abgeglichen → Lage der Halte und Streckenverlauf aus dem
+  mobile_app.share  → Text auslesen, Entwurf speichern, Bestätigung ans Handy;
+                      Lage und Verlauf, dann im Hintergrund die Züge in OpenBoards
+                      zuordnen (core/boardmatch.py)
+  Reise gespeichert/zugeordnet → Lage der Halte und Streckenverlauf aus dem
                       Gleisnetz (im Executor, siehe core/geometry.py)
-  alle 15 s         → Abgelaufene entfernen, fällige Echtzeit holen; Gleisnetz
-                      wöchentlich auf neue Fassung prüfen
+  alle 15 s         → Abgelaufene entfernen, nicht gefundene Züge erneut suchen,
+                      fällige Echtzeit holen; Gleisnetz, Fahrplan und Bahnhofsnummern
+                      auf neue Fassung prüfen
   Echtzeit fehlt    → einmalige Nachricht, Ereignis "reiseanzeige"
   Android-App       → Reisen, Standort und Umleitungen per Webhook (links.py,
                       Format v1); für verbundene Personen ist die App die Quelle
 
-Ohne Zugangsdaten der Bahn (client None) läuft alles nach Fahrplan: kein
-Abgleich mit der Timetables-API, keine Echtzeit, keine Abfahrtstafel, kein StaDa.
+Ohne Zugangsdaten der Bahn (client None) läuft alles nach Fahrplan: keine
+Zuordnung in OpenBoards, keine Echtzeit, keine Abfahrtstafel.
 """
 
 from __future__ import annotations
@@ -43,18 +45,19 @@ from .const import (
 )
 from .core.geometry import apply_geometry
 from .core.gpsroute import Watch, apply_route, read_fix, step as gps_step
-from .core.journey import build_snapshot, draft_snapshot, norm_line
-from .core.link_format import IGNORED, OK, UNKNOWN, deep_link, journey_from_dict, parse_pairing
-from .core.realtime import leg_realtime, stations_to_poll
+from .core.board import Station as BoardStation
+from .core.boardmatch import match_snapshot, pending
+from .core.journey import draft_snapshot, norm_line
+from .core.link_format import IGNORED, OK, UNKNOWN, deep_link, parse_pairing
+from .core.openboards import OpenBoardsClient, OpenBoardsError, aiohttp_post, is_eva
+from .core.realtime import leg_realtime, stops_to_poll
 from .core.share_text import ShareTextError, looks_like_share, parse_share_text
-from .core.timetables import TimetablesClient, TimetablesError, aiohttp_fetch
 from .core.trips import (
-    ENRICH_WINDOW, RUNNING, TripError, TripManager, realtime_unavailable, share_confirmation, share_error, trip_status,
+    RUNNING, TripError, TripManager, realtime_unavailable, share_confirmation, share_error, trip_status,
 )
 from .links import Links
 from .owners import Owners
-from .railnet_store import DataStore, RailNetStore, TimetableStore
-from .stations import StationDirectory
+from .railnet_store import DataStore, RailNetStore, StationListStore, TimetableStore
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,6 +66,13 @@ LINKED_HINT = ("Deine Reiseanzeige-App ist mit Home Assistant verbunden. Bitte t
                "Home Assistant übernimmt sie von selbst.")
 PAIRING_MESSAGE = "Tippen, um die Reiseanzeige-App mit Home Assistant zu verbinden (gilt 10 Minuten)."
 REPLACEMENT_RADIUS_KM = 0.5   # Ersatzbus-Haltestellen so nah am Bahnhof gehören zur Tafel
+STOP_ENRICHING = ("BAD_CREDENTIALS", "RATE_LIMITED")   # danach in diesem Durchlauf keine weiteren Abfragen
+REJECTED_MESSAGE = (
+    "OpenBoards lehnt die Zugangsdaten der Bahn ab. Seit Version 0.9.0 holt die Reiseanzeige Zuordnung, "
+    "Echtzeit und Abfahrtstafel aus OpenBoards statt aus der Timetables-API. Bitte im DB API Marketplace "
+    "die Anwendung zusätzlich für OpenBoards abonnieren (Plan „Free“): "
+    "https://developers.deutschebahn.com/db-api-marketplace/apis/product/open-boards – oder unter "
+    "Geräte & Dienste → Reiseanzeige → ⋮ → Neu konfigurieren andere Zugangsdaten eintragen.")
 
 
 class HaTripStore:
@@ -78,15 +88,15 @@ class HaTripStore:
 
 
 class Coordinates:
-    """Lage eines Bahnhofs über seine Nummer: Gleisnetz (OSM), sonst StaDa.
-    Suche über den Namen übernimmt core/geometry.py mit Anker."""
+    """Lage eines Bahnhofs über seine Nummer: Gleisnetz (OSM), sonst Bahnhofsliste (auch
+    über einen eindeutigen Namen). Suche über den Namen mit Anker übernimmt core/geometry.py."""
 
-    def __init__(self, railnet: RailNetStore, stations: StationDirectory) -> None:
+    def __init__(self, railnet: RailNetStore, stations: StationListStore) -> None:
         self.railnet, self.stations = railnet, stations
 
     def coords(self, eva: str | None, name: str) -> tuple[float, float] | None:
-        places = self.railnet.places
-        return (places.by_eva(eva) if places else None) or self.stations.coords(eva, name)
+        places, stations = self.railnet.places, self.stations.stations
+        return (places.by_eva(eva) if places else None) or (stations.coords(eva, name) if stations else None)
 
 
 class Reiseanzeige:
@@ -98,11 +108,11 @@ class Reiseanzeige:
         session = async_get_clientsession(hass)
         client_id, api_key = entry.data.get(CONF_CLIENT_ID), entry.data.get(CONF_API_KEY)
         # Ohne Zugangsdaten: Fahrplanmodus (siehe oben)
-        self.client: TimetablesClient | None = (
-            TimetablesClient(aiohttp_fetch(session), client_id, api_key) if client_id and api_key else None)
-        self.stations = StationDirectory(hass, client_id or "", api_key or "")
+        self.client: OpenBoardsClient | None = (
+            OpenBoardsClient(aiohttp_post(session), client_id, api_key) if client_id and api_key else None)
         self.railnet = RailNetStore(hass, enabled=opts.get(CONF_RAILNET, DEFAULT_RAILNET))
         self.timetable = TimetableStore(hass, enabled=opts.get(CONF_TIMETABLE, DEFAULT_TIMETABLE))
+        self.stations = StationListStore(hass)   # klein, immer: Nummern für OpenBoards, Lage als Rückfall
         self.gps_route: bool = opts.get(CONF_GPS_ROUTE, DEFAULT_GPS_ROUTE)
         self.coords = Coordinates(self.railnet, self.stations)
         self.trips = TripManager(
@@ -123,6 +133,7 @@ class Reiseanzeige:
         self._unsubs: list = []
         self._ticking = False
         self._busy: set[str] = set()   # gerade ladende Datenquellen
+        self._rejected_shown = False
         self._geo_lock = asyncio.Lock()
         self._gps: dict[str, Watch] = {}   # je laufender Reise: Stand der GPS-Auswertung
         self.sensor_owners: set[str] = set()
@@ -133,10 +144,11 @@ class Reiseanzeige:
         await self.owners.load()
         await self.links.load()
         await self.trips.init()
-        await self.stations.load()
         for store in (self.railnet, self.timetable):
             await store.load()
             store.listeners.append(self.update_geometry)
+        await self.stations.load()
+        self.stations.listeners.append(self._stations_loaded)
         await self._load_names()
         self.trips.listeners.append(self._trips_changed)
         self.links.start()
@@ -144,8 +156,6 @@ class Reiseanzeige:
         self._unsubs.append(async_track_time_interval(self.hass, self._on_tick, timedelta(seconds=TICK_SECONDS)))
         if self.client is None:
             _LOGGER.info("Ohne Zugangsdaten der Bahn: Reisen nach Fahrplan, ohne Echtzeit und Abfahrtstafel")
-        else:
-            self._spawn(self.stations.refresh_if_due())
         self._spawn(self.update_geometry())  # gespeicherte Reisen, z. B. nach einem Update
         self._spawn(self.tick())
 
@@ -273,17 +283,9 @@ class Reiseanzeige:
         message = share_confirmation(result)
         _LOGGER.info("%s: %s", self.name_of(user_id) or user_id, message)
         trip_id = result["trip"]["id"]
-        # Erst Lage und Verlauf aus dem Text, dann (auch bei erneutem Teilen) Fahrplan abgleichen
-        self._spawn(self.update_geometry([trip_id]))
-        if self.client is not None:
-            self._spawn(self._enrich(trip_id, journey))
+        # Erst Lage und Verlauf aus dem Text, dann (auch bei erneutem Teilen) Züge zuordnen
+        self._spawn(self._prepare(trip_id))
         return {"ok": True, "status": result["status"], "message": message, "trip": self.trip_view(self.trips.get(trip_id))}
-
-    def journey_of(self, trip: dict):
-        """Verbindung einer Reise für den Abgleich: aus der App oder aus dem geteilten Text."""
-        if trip.get("connection"):
-            return journey_from_dict(trip["connection"])
-        return parse_share_text(trip["shareText"])
 
     async def delete_trip(self, trip_id: str) -> dict:
         """Reise löschen (Karte). Reisen aus der Android-App löscht man nur dort; ist das Handy
@@ -332,15 +334,15 @@ class Reiseanzeige:
         if res["replaced"]:
             _LOGGER.info("Reise aus der App ersetzt %s anders geteilte Reise(n)", len(res["replaced"]))
         if res["change"] in ("new", "connection"):
-            self._spawn(self._prepare(res["tripId"], journey))
+            self._spawn(self._prepare(res["tripId"]))
         return OK
 
-    async def _prepare(self, trip_id: str, journey) -> None:
-        """Lage und Verlauf aus der Verbindung, danach Abgleich mit dem Fahrplan –
-        nacheinander, damit der Verlauf des Entwurfs den Abgleich nicht überschreibt."""
+    async def _prepare(self, trip_id: str) -> None:
+        """Lage und Verlauf aus der Verbindung, danach Zuordnung in OpenBoards –
+        nacheinander: Die Zuordnung braucht die Lage der Halte (Bahnhofsnummern rundum)."""
         await self.update_geometry([trip_id])
         if self.client is not None:
-            await self._enrich(trip_id, journey)
+            await self._enrich(trip_id)
 
     async def _app_route(self, trip_id: str, msg: dict) -> str:
         async with self._geo_lock:
@@ -356,25 +358,55 @@ class Reiseanzeige:
             snapshot, created = copy.deepcopy(trip["snapshot"]), trip["snapshot"].get("createdAt")
             changed = await self.hass.async_add_executor_job(
                 apply_route, snapshot, i, msg["gps"], copy.deepcopy(trip.get("realtime")), self.railnet.net,
-                self.railnet.places, self.stations.coords, self.railnet.version or "")
+                self.railnet.places, self.coords.coords, self.railnet.version or "")
             if changed:
                 await self.trips.set_geometry(trip_id, created, snapshot)
         return OK
 
-    async def _enrich(self, trip_id: str, journey) -> None:
+    async def _enrich(self, trip_id: str) -> str | None:
+        """Bahn-Abschnitte der gespeicherten Reise in OpenBoards zuordnen (mit der Lage der
+        Halte aus dem Gleisnetz). Liefert den Fehlercode, falls OpenBoards ablehnt."""
+        trip = next((t for t in self.trips.trips if t["id"] == trip_id), None)
+        if trip is None or not pending(trip["snapshot"]):
+            return None
         await self.trips.mark_enrich_attempt(trip_id)
+        snapshot = copy.deepcopy(trip["snapshot"])
+        created = snapshot.get("createdAt")
+        notes: list[str] = []
         try:
-            snapshot = await build_snapshot(journey, self.client, dt_util.now(), self.coords, horizon=ENRICH_WINDOW)
-        except TimetablesError as err:
-            _LOGGER.warning("Reise %s: Züge nicht im Fahrplan gesucht: %s", trip_id, err)
-            return
-        matched = sum(1 for l in snapshot["legs"] if l.get("matched"))
-        rail = sum(1 for l in journey.legs if l.rail)
-        _LOGGER.info("Reise %s: %s von %s Bahn-Abschnitten im Fahrplan gefunden (%s Abfragen bisher)",
-                     trip_id, matched, rail, self.client.calls)
-        if await self.trips.set_snapshot(trip_id, snapshot):
+            matched = await match_snapshot(snapshot, self.client, self.railnet.places, self.stations.stations, log=notes.append)
+        except OpenBoardsError as err:
+            _LOGGER.warning("Reise %s: Züge nicht in OpenBoards gesucht: %s", trip_id, err)
+            self.rejected(err)
+            return err.code
+        for note in notes:
+            _LOGGER.info("Reise %s: %s", trip_id, note)
+        rides = [l for l in (matched or snapshot)["legs"] if l.get("kind") == "ride"]
+        _LOGGER.info("Reise %s: %s von %s Fahrten in OpenBoards zugeordnet (%s Abfragen bisher)", trip_id,
+                     sum(1 for l in rides if l.get("source") == "openboards"), len(rides), self.client.calls)
+        if matched is None:
+            return None
+        # Neue Fassung: Verlauf und GPS-Auswertung der alten dürfen sie nicht mehr überschreiben
+        matched["createdAt"] = dt_util.now().isoformat()
+        if await self.trips.set_snapshot(trip_id, matched, created):
             await self.update_geometry([trip_id])
             await self.tick()
+        return None
+
+    def rejected(self, err: OpenBoardsError) -> None:
+        """Zugangsdaten abgelehnt – etwa für die Timetables-API, aber nicht für OpenBoards
+        abonniert (Umstieg in 0.9.0): einmal je Start in Home Assistant melden."""
+        if err.code != "BAD_CREDENTIALS" or self._rejected_shown:
+            return
+        self._rejected_shown = True
+        _LOGGER.error("OpenBoards lehnt die Zugangsdaten ab: %s", err)
+        persistent_notification.async_create(self.hass, REJECTED_MESSAGE, title=NOTIFY_TITLE,
+                                             notification_id=f"{DOMAIN}_openboards")
+
+    async def _stations_loaded(self) -> None:
+        """Bahnhofsliste neu: nicht gefundene Züge gleich noch einmal suchen."""
+        self.trips.retry_enrichment()
+        self._spawn(self.tick())
 
     # --- Lage der Halte und Streckenverlauf ---
 
@@ -392,7 +424,7 @@ class Reiseanzeige:
                 try:
                     changed = await self.hass.async_add_executor_job(
                         apply_geometry, snapshot, self.railnet.net, self.railnet.places,
-                        self.stations.coords, self.railnet.version or "", self.timetable.timetable, diversions,
+                        self.coords.coords, self.railnet.version or "", self.timetable.timetable, diversions,
                         copy.deepcopy(trip.get("realtime")))
                 except Exception:  # noqa: BLE001 – ohne Verlauf geht es auch
                     _LOGGER.exception("Streckenverlauf für Reise %s nicht berechnet", trip["id"])
@@ -420,22 +452,22 @@ class Reiseanzeige:
         try:
             for removed in await self.trips.cleanup():
                 _LOGGER.info("Reise %s → %s entfernt", removed["originName"], removed["destinationName"])
-            if self.client is not None:
-                for trip in self.trips.due_for_enrichment():
-                    try:
-                        await self._enrich(trip["id"], self.journey_of(trip))
-                    except (ShareTextError, ValueError):
-                        pass
-                for trip in self.trips.due_for_refresh():
-                    await self._refresh(trip)
-                await self.stations.refresh_if_due()  # fragt höchstens alle 7 Tage wirklich ab
-            await self._gps_tick()
-            await self.links.cleanup(dt_util.now())
-            for store in (self.railnet, self.timetable):
+            for store in (self.railnet, self.timetable, self.stations):
                 if store.label not in self._busy and store.due(dt_util.now()):
                     # Download kann dauern: eigene Aufgabe, damit die Echtzeit weiterläuft
                     self._busy.add(store.label)
                     self._spawn(self._refresh_store(store))
+            # Beim ersten Start die Bahnhofsliste abwarten (wenige Sekunden): ohne sie fehlen
+            # bei großen Bahnhöfen oft die richtigen Nummern
+            if self.client is not None and (self.stations.loaded or self.stations.label not in self._busy):
+                for trip in self.trips.due_for_enrichment():
+                    if await self._enrich(trip["id"]) in STOP_ENRICHING:
+                        break
+            if self.client is not None:
+                for trip in self.trips.due_for_refresh():
+                    await self._refresh(trip)
+            await self._gps_tick()
+            await self.links.cleanup(dt_util.now())
         except Exception:  # noqa: BLE001 – ein Durchlauf darf die Integration nicht stoppen
             _LOGGER.exception("Durchlauf fehlgeschlagen")
         finally:
@@ -443,15 +475,17 @@ class Reiseanzeige:
 
     async def _refresh(self, trip: dict) -> None:
         now = dt_util.now()
-        polls = stations_to_poll(trip["snapshot"], trip.get("realtime"), now)
+        polls = stops_to_poll(trip["snapshot"], trip.get("realtime"), now)
+        known = (trip.get("realtime") or {}).get("legs") or {}
         results = []
-        for index, evas in polls.items():
-            leg = trip["snapshot"]["legs"][index]
+        for index, stops in polls.items():
+            leg = next(l for l in trip["snapshot"]["legs"] if l.get("index") == index)
             try:
-                rt = await leg_realtime(self.client, leg, evas, now)
+                rt = await leg_realtime(leg, stops, known.get(str(index)), self.client, now)
                 results.append({"legIndex": index, "status": "ok", "realtime": rt})
-            except TimetablesError as err:
+            except OpenBoardsError as err:
                 _LOGGER.warning("Echtzeit Abschnitt %s (%s): %s", index, leg["line"]["name"], err)
+                self.rejected(err)
                 results.append({"legIndex": index, "status": "error", "error": err.code})
         events = await self.trips.apply_realtime(trip["id"], results)
         # Laufweg geändert (Umleitung, Zug endet früher) oder wieder wie geplant: Halte und Verlauf neu
@@ -470,7 +504,22 @@ class Reiseanzeige:
                 self.hass.bus.async_fire(DOMAIN, {"type": ev["type"], "trip_id": ev["tripId"], "user_id": ev["ownerId"]})
                 await self.notify(ev["ownerId"], realtime_unavailable(ev))
 
-    # --- Abfahrtstafel: Ersatzbusse laut Fahrplan (core/board.py) ---
+    # --- Abfahrtstafel (core/board.py) ---
+
+    def board_station(self, query: str) -> BoardStation | None:
+        """Bahnhof der Tafel aus Name oder Nummer: über die Bahnhofsliste, sonst eine
+        Nummer direkt oder die nächste Nummer aus dem Gleisnetz."""
+        q = (query or "").strip()
+        stations = self.stations.stations
+        if stations is not None:
+            hit = stations.resolve(q)
+            return BoardStation(*hit) if hit else None
+        if is_eva(q):
+            return BoardStation(q, q)
+        places = self.railnet.places
+        c = places.find(q) if places else None
+        evas = places.eva_near(c) if c else []
+        return BoardStation(evas[0], q) if evas else None
 
     def board_replacements(self, station, now, minutes: int) -> list[dict]:
         """Ersatzbusse an Haltestellen rund um den Bahnhof laut Fahrplan (GTFS)."""
@@ -494,7 +543,7 @@ class Reiseanzeige:
         anchor = self.coords.coords(station.eva, station.name)
         out = []
         for name in names:
-            c = (places.find(name, near=anchor) if places else None) or self.stations.coords(None, name)
+            c = (places.find(name, near=anchor) if places else None) or self.coords.coords(None, name)
             if c:
                 anchor = c
             out.append(c)
@@ -532,7 +581,7 @@ class Reiseanzeige:
                 try:
                     changed = await self.hass.async_add_executor_job(
                         gps_step, snapshot, copy.deepcopy(trip.get("realtime")), watch, fix, self.railnet.net,
-                        self.railnet.places, self.stations.coords, self.railnet.version or "")
+                        self.railnet.places, self.coords.coords, self.railnet.version or "")
                 except Exception:  # noqa: BLE001 – ohne GPS-Auswertung geht es auch
                     _LOGGER.exception("Standort für Reise %s nicht ausgewertet", trip_id)
                     continue

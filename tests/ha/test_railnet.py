@@ -6,6 +6,7 @@ from homeassistant.core import Context
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.reiseanzeige.const import DOMAIN
+from fake_openboards import leipzig_instead_of_halle
 from testdata import fixture_text
 
 SHARE = fixture_text("share", "moritzplatz-berlin-2026-11-01.txt")
@@ -25,7 +26,7 @@ async def share(hass, user):
     await hass.async_block_till_done(wait_background_tasks=True)
 
 
-async def test_gleisnetz_wird_geladen_und_zeichnet_die_strecke(hass, iris, railnet_release, hass_admin_user, freezer):
+async def test_gleisnetz_wird_geladen_und_zeichnet_die_strecke(hass, boards, railnet_release, hass_admin_user, freezer):
     freezer.move_to("2026-11-01T12:00:00+01:00")
     entry = await setup(hass)
     rt = entry.runtime_data
@@ -38,7 +39,7 @@ async def test_gleisnetz_wird_geladen_und_zeichnet_die_strecke(hass, iris, railn
     assert trip["enriched"]
     legs = trip["snapshot"]["legs"]
     assert [l["geometry"]["source"] for l in legs] == ["line", "tracks", "tracks", "tracks", "line"]
-    assert all(s["station"]["lat"] is not None for l in legs for s in l["stopovers"]), "alle Halte ohne StaDa verortet"
+    assert all(s["station"]["lat"] is not None for l in legs for s in l["stopovers"]), "alle Halte aus dem Gleisnetz verortet"
     assert trip["snapshot"]["origin"]["lat"] is not None
 
     # Die Karte bekommt den Verlauf; in der kurzen Liste nur den Hinweis darauf
@@ -72,15 +73,15 @@ async def test_gleisnetz_wird_geladen_und_zeichnet_die_strecke(hass, iris, railn
     assert railnet_release.mock.call_count == 0
 
 
-async def test_umleitung_aus_der_echtzeit(hass, iris, railnet_release, hass_admin_user, freezer):
+async def test_umleitung_aus_der_echtzeit(hass, boards, railnet_release, hass_admin_user, freezer):
     """Der ICE fährt ab Erfurt über Leipzig: Haltliste und Verlauf folgen der Meldung."""
     freezer.move_to("2026-11-01T12:00:00+01:00")
     rt = (await setup(hass)).runtime_data
     await share(hass, hass_admin_user)
     trip_id = rt.trips.list()[0]["id"]
 
-    iris.changes["8010101"] = """<timetable station="Erfurt Hbf"><s id="-222-2611011636-2">
-      <dp ct="2611011752" cpth="Leipzig Hbf|Berlin Südkreuz|Berlin Hbf"/></s></timetable>"""
+    boards.change("-222", 1, delay=8)
+    leipzig_instead_of_halle(boards)
     freezer.move_to("2026-11-01T17:30:00+01:00")
     await rt.tick()
     await hass.async_block_till_done(wait_background_tasks=True)
@@ -93,9 +94,10 @@ async def test_umleitung_aus_der_echtzeit(hass, iris, railnet_release, hass_admi
     light = rt.trip_view(trip, light=True)["snapshot"]["legs"][2]["diversion"]
     assert light["polyline"] is None and light["hasPolyline"] and light["stopovers"][3]["added"]
 
-    # Keine neue Meldung: Umleitung bleibt (nur Abfragen, keine Neuberechnung; Abfrage alle 5 min)
-    iris.changes["8010101"] = '<timetable station="Erfurt Hbf"/>'
-    rt.client.clear_changes()
+    # Keine neue Aussage (Zug in keiner Tafel): Umleitung bleibt (nur Abfragen, keine
+    # Neuberechnung; Abfrage alle 5 min)
+    trips, boards.trips = boards.trips, [t for t in boards.trips if t.key != "-222"]
+    rt.client.clear()
     key = ice["diversion"]["geometry"]["key"]
     freezer.move_to("2026-11-01T17:36:00+01:00")
     await rt.tick()
@@ -103,16 +105,16 @@ async def test_umleitung_aus_der_echtzeit(hass, iris, railnet_release, hass_admi
     assert rt.trips.get(trip_id)["snapshot"]["legs"][2]["diversion"]["geometry"]["key"] == key
 
     # Bahn meldet wieder den geplanten Laufweg: Umleitung aufgehoben
-    iris.changes["8010101"] = """<timetable station="Erfurt Hbf"><s id="-222-2611011636-2">
-      <dp cpth="Halle (Saale) Hbf|Berlin Südkreuz|Berlin Hbf"/></s></timetable>"""
-    rt.client.clear_changes()
+    boards.trips = trips
+    del boards.route["-222"]
+    rt.client.clear()
     freezer.move_to("2026-11-01T17:42:00+01:00")
     await rt.tick()
     await hass.async_block_till_done(wait_background_tasks=True)
     assert "diversion" not in rt.trips.get(trip_id)["snapshot"]["legs"][2]
 
 
-async def test_falsche_pruefsumme_wird_verworfen(hass, iris, railnet_release, freezer):
+async def test_falsche_pruefsumme_wird_verworfen(hass, boards, railnet_release, freezer):
     freezer.move_to("2026-11-01T12:00:00+01:00")
     railnet_release.publish(corrupt=True)
     entry = await setup(hass)
@@ -132,7 +134,7 @@ async def test_falsche_pruefsumme_wird_verworfen(hass, iris, railnet_release, fr
     assert rt.railnet.net is not None and rt.railnet.error is None
 
 
-async def test_gleisnetz_abgeschaltet(hass, iris, railnet_release, hass_admin_user, freezer):
+async def test_gleisnetz_abgeschaltet(hass, boards, railnet_release, hass_admin_user, freezer):
     freezer.move_to("2026-11-01T12:00:00+01:00")
     entry = await setup(hass, railnet=False)
     assert railnet_release.mock.call_count == 0
@@ -141,7 +143,7 @@ async def test_gleisnetz_abgeschaltet(hass, iris, railnet_release, hass_admin_us
     assert all(l["polyline"] is None for l in trip["snapshot"]["legs"])
 
 
-async def test_unerwartetes_format_und_kaputte_dateien(hass, iris, railnet_release, freezer):
+async def test_unerwartetes_format_und_kaputte_dateien(hass, boards, railnet_release, freezer):
     """Weder ein neues Format noch kaputte Dateien dürfen die Integration stören:
     altes Netz behalten, nicht in Schleife laden, Start nie verhindern."""
     import gzip

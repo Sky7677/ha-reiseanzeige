@@ -1,10 +1,14 @@
-"""Offene Daten herunterladen, zwischenspeichern und laden: Gleisnetz und Fahrplan.
+"""Offene Daten herunterladen, zwischenspeichern und laden: Gleisnetz, Fahrplan und
+Bahnhofsnummern.
 
 Quelle: Releases von https://github.com/Sky7677/reiseanzeige-gleisnetz
   * Gleisnetz: monatlich aus OpenStreetMap (ODbL 1.0, © OpenStreetMap-Mitwirkende),
     Prüfung wöchentlich.
   * Fahrplan: täglich aus den GTFS-Feeds von gtfs.de (Daten DELFI e.V., CC BY 4.0),
     30 Tage voraus, Prüfung alle 12 Stunden.
+  * Bahnhofsnummern für OpenBoards: wöchentlich aus OpenStation (DB InfraGO, CC0),
+    trainline-eu/stations und OpenStreetMap (ODbL 1.0), rund 200 KB, Prüfung täglich –
+    dieselbe Liste wie in der Android-App.
 Zuerst wird nur das kleine Manifest geholt (Version, Größe, SHA-256); die Datei
 selbst nur bei neuer Version. Sie liegt gepackt in .storage und wird beim Start
 geladen. Nach einem Fehlschlag frühestens nach 6 Stunden erneut; die bisherige
@@ -32,6 +36,7 @@ from .core.places import Places, norm_key
 from .core.railnet.fileformat import FORMAT_VERSION
 from .core.railnet.plan import Timetable
 from .core.railnet.router import RailNet
+from .core.stationlist import FORMAT as STATIONS_FORMAT, StationList, parse as parse_stations
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,6 +44,8 @@ RELEASES = "https://github.com/Sky7677/reiseanzeige-gleisnetz/releases/latest/do
 MANIFEST_URL = RELEASES + "manifest.json"
 TT_RELEASES = "https://github.com/Sky7677/reiseanzeige-gleisnetz/releases/download/fahrplan/"
 TT_MANIFEST_URL = TT_RELEASES + "fahrplan-manifest.json"
+ST_RELEASES = "https://github.com/Sky7677/reiseanzeige-gleisnetz/releases/download/bahnhofsnummern/"
+ST_MANIFEST_URL = ST_RELEASES + "bahnhofsnummern-manifest.json"
 RETRY_AFTER = timedelta(hours=6)
 MAX_SIZE = 400 * 1024 * 1024
 
@@ -69,11 +76,19 @@ def _load_timetable(path: str) -> Timetable:
     return tt
 
 
+def _load_stations(path: str) -> StationList:
+    stations = parse_stations(_read_gz(path).decode("utf-8"))
+    if not len(stations):
+        raise RailNetError("Bahnhofsliste ist leer")
+    return stations
+
+
 class DataStore:
     """Gemeinsamer Ablauf: Manifest prüfen, Datei mit Prüfsumme laden, ersetzen."""
 
     label = "Daten"
     kind: str | None = None
+    format = FORMAT_VERSION
     releases = ""
     manifest_url = ""
     file_name = ""
@@ -157,7 +172,7 @@ class DataStore:
                 manifest = await res.json(content_type=None)
             if not isinstance(manifest, dict):
                 raise RailNetError("Manifest unlesbar")
-            if manifest.get("format") != FORMAT_VERSION or (self.kind and manifest.get("kind", self.kind) != self.kind):
+            if manifest.get("format") != self.format or (self.kind and manifest.get("kind", self.kind) != self.kind):
                 raise RailNetError(f"Format {manifest.get('format')} wird von dieser Version nicht unterstützt – bitte die Integration aktualisieren")
             if self.loaded and manifest.get("version") == self.version and manifest.get("sha256") == (self.manifest or {}).get("sha256"):
                 self.checked_at, self.error, self.failed_at = now, None, None
@@ -298,3 +313,32 @@ class TimetableStore(DataStore):
     def describe(self) -> str:
         tt = self.timetable
         return f"{len(tt.trip_start)} Fahrten ab {tt.window_start}" if tt else ""
+
+
+class StationListStore(DataStore):
+    label = "Bahnhofsnummern"
+    kind = "stations"
+    format = STATIONS_FORMAT
+    releases = ST_RELEASES
+    manifest_url = ST_MANIFEST_URL
+    file_name = "reiseanzeige.bahnhofsnummern.json.gz"
+    meta_key = "reiseanzeige.bahnhofsnummern"
+    check_every = timedelta(days=1)
+    without = "Zuordnung nur mit den Nummern aus dem Gleisnetz"
+
+    def __init__(self, hass: HomeAssistant, enabled: bool = True) -> None:
+        super().__init__(hass, enabled)
+        self.stations: StationList | None = None
+
+    def _loader(self):
+        return _load_stations
+
+    def _apply(self, loaded) -> None:
+        self.stations = loaded
+
+    @property
+    def loaded(self) -> bool:
+        return self.stations is not None
+
+    def describe(self) -> str:
+        return f"{len(self.stations)} Bahnhöfe" if self.stations else ""

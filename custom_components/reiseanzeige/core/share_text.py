@@ -55,7 +55,7 @@ TRAM = {"STR", "TRAM", "STB"}
 BUS = {"BUS", "SEV", "EV", "RUF", "AST", "X", "N", "NE", "SB", "ALT"}
 SHIP = {"SCH", "SCHIFF", "FÄHRE", "F"}
 
-# Arten, für die die Timetables-API Daten hat (Halte an Bahnhöfen der DB)
+# Arten, für die OpenBoards Daten hat (Halte an Bahnhöfen der DB)
 RAIL_MODES = {"longdistance", "regional", "suburban"}
 
 
@@ -88,7 +88,7 @@ class SharedLeg:
 
     @property
     def rail(self) -> bool:
-        """Liegt der Abschnitt im Bereich der Timetables-API?"""
+        """Liegt der Abschnitt im Bereich von OpenBoards?"""
         return self.mode in RAIL_MODES
 
 

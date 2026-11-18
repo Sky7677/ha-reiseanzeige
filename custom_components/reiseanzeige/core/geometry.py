@@ -3,7 +3,7 @@
 apply_geometry() ergänzt einen Snapshot (Format von journey.py):
   * fehlende Koordinaten der Halte – über die Bahnhofsnummer, sonst über den
     Namen mit dem nächsten bekannten Halt als Anker (core/places.py);
-    StaDa (falls abonniert) dient als weitere Quelle;
+    die Bahnhofsliste (Release „bahnhofsnummern“) dient als weitere Quelle;
   * je Abschnitt legs[].polyline als [[lat, lon], …]:
       Bahn (Fern-, Regional-, S-Bahn): auf den Gleisen von Halt zu Halt,
       Tram/U-Bahn: entlang der OSM-Linie mit passender Nummer, die beide Halte
@@ -195,7 +195,8 @@ def _diversion_stopovers(leg: dict, div: dict) -> list[dict]:
         if st.get("kind") == "added":
             name = st.get("name") or ""
             c = known.get(name)
-            out.append({"station": {"id": None, "name": name, "lat": c[0] if c else None, "lon": c[1] if c else None},
+            # Bahnhofsnummer aus OpenBoards: Lage über die Nummer, auch bei fremder Schreibweise
+            out.append({"station": {"id": st.get("eva"), "name": name, "lat": c[0] if c else None, "lon": c[1] if c else None},
                         "plannedArrival": None, "plannedDeparture": None, "plannedPlatform": None, "added": True})
             continue
         i = st.get("index")

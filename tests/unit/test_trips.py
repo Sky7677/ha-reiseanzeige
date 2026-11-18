@@ -53,7 +53,7 @@ async def manager(clock):
 def matched(snapshot):
     for leg in snapshot["legs"]:
         if leg["line"]["product"] in ("regional", "longdistance", "suburban"):
-            leg["matched"], leg["tripId"] = True, f"trip-{leg['index']}"
+            leg["matched"], leg["tripId"], leg["source"] = True, f"trip-{leg['index']}", "openboards"
     return snapshot
 
 
@@ -167,25 +167,41 @@ def test_abfrageplan_mit_rueckzug_bei_fehlern():
     assert next_refresh_at(trip, at(1, 17), grace, run) is None
 
 
-async def test_erneuter_abgleich_erst_im_zeitfenster_und_im_takt():
-    from core.trips import ENRICH_EVERY
+async def test_erneute_zuordnung_im_takt():
+    """OpenBoards kennt den Plan Tage vorher: gleich versuchen, danach (wie in der App) mehr
+    als 24 h vorher alle 12 h, bis 3 h vorher alle 2 h, dann alle 20 min, in der Stunde
+    davor und unterwegs alle 5 min – bis zur Ankunft."""
+    from core.trips import enrich_interval
+    assert [enrich_interval(timedelta(hours=h)) for h in (30, 24, 3, 1, -2)] == [
+        timedelta(hours=12), timedelta(hours=2), timedelta(minutes=20), timedelta(minutes=5), timedelta(minutes=5)]
     clock = Clock(datetime(2026, 10, 29, 12, 0, tzinfo=TZ))
     m = await manager(clock)
     j = shared()
     text = fixture_text("share", "moritzplatz-berlin-2026-11-01.txt")
     tid = (await m.add_from_share("max", j, draft_snapshot(j, clock()), text))["trip"]["id"]
-    assert m.due_for_enrichment() == [], "drei Tage vorher: nichts"
-    clock.t = datetime(2026, 10, 31, 15, 0, tzinfo=TZ)  # RE1 01.11. 14:37 in < 24 h
-    assert [t["id"] for t in m.due_for_enrichment()] == [tid]
+    assert [t["id"] for t in m.due_for_enrichment()] == [tid], "gleich, auch Tage vorher"
     await m.mark_enrich_attempt(tid)
     assert m.due_for_enrichment() == []
-    clock.t += ENRICH_EVERY
+    clock.t += timedelta(hours=12)
     assert len(m.due_for_enrichment()) == 1
     await m.mark_enrich_attempt(tid)
-    clock.t = datetime(2026, 11, 1, 12, 0, tzinfo=TZ)  # < 3 h: alle 20 Minuten
+    m.retry_enrichment()
+    assert len(m.due_for_enrichment()) == 1, "neue Bahnhofsliste: sofort"
+    clock.t = datetime(2026, 11, 1, 12, 0, tzinfo=TZ)  # Tram 14:18 in < 3 h: alle 20 Minuten
     await m.mark_enrich_attempt(tid)
     clock.t = datetime(2026, 11, 1, 12, 21, tzinfo=TZ)
     assert len(m.due_for_enrichment()) == 1
+    clock.t = datetime(2026, 11, 1, 20, 30, tzinfo=TZ)
+    assert m.due_for_enrichment() == [], "nach der Ankunft nicht mehr"
+    clock.t = datetime(2026, 11, 1, 12, 21, tzinfo=TZ)
+
+    # Abschnitte aus der Timetables-API (vor 0.9.0) werden neu zugeordnet
+    old = draft_snapshot(j, clock())
+    for leg in old["legs"][1:4]:
+        leg.update(matched=True, tripId="-222-2611011636", source="timetables")
+    await m.set_snapshot(tid, old)
+    assert len(m.due_for_enrichment()) == 1
+    assert next_refresh_at(m.trips[0], clock(), m.grace, m.running) is None, "keine Echtzeit für alte Kennungen"
 
     # Gefundene Abschnitte bleiben, auch wenn ein späterer Abgleich sie nicht findet
     found = matched(draft_snapshot(j, clock()))

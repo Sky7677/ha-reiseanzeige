@@ -1,15 +1,15 @@
 """Zwischenhalte aus dem Fahrplan (GTFS von gtfs.de, Daten DELFI e.V., CC BY 4.0).
 
 Für Abschnitte, die nur aus dem geteilten Text bestehen (source "text"):
-  * Züge, solange die Timetables-API ihren Fahrplan noch nicht liefert
-    (mehr als etwa einen Tag vor Abfahrt) – bis 30 Tage im Voraus,
-  * Straßenbahn und U-Bahn, die die Timetables-API gar nicht kennt,
+  * Züge ohne Zugangsdaten der Bahn oder bis zur Zuordnung in OpenBoards
+    – bis 30 Tage im Voraus,
+  * Straßenbahn und U-Bahn, die OpenBoards nicht führt,
   * Ersatzbusse („Bus RE80“); andere Busse stehen nicht im Fahrplan.
 Gesucht wird die Fahrt über Einstiegs-Station, Abfahrtsminute, Linie und
 Ausstieg (die freien Feeds haben keine Zugnummern). Treffer → alle Halte mit
 Planzeiten und Lage; der Abschnitt bekommt source "gtfs". Findet die
-Integration den Zug später in der Timetables-API, ersetzt deren Fassung (mit
-Echtzeit) diese.
+Integration den Zug in OpenBoards, ersetzt deren Fassung (mit Echtzeit) diese;
+die Zeiten der Zwischenhalte aus dem Fahrplan übernimmt sie dabei.
 """
 
 from __future__ import annotations

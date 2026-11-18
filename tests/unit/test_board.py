@@ -1,37 +1,36 @@
-"""Abfahrtstafel: Plan + Änderungen, Zeitfenster, Sortierung."""
+"""Abfahrtstafel aus OpenBoards: Änderungen, Zeitfenster, Sortierung, Ersatzbusse.
+Die echte Tafel von Augsburg prüft test_openboards.py."""
 
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-import pytest
-
-from core.board import departures
-from core.timetables import RateLimiter, TimetablesClient, TimetablesError
-from fake_iris import november_world
+from core.board import Station, departures
+from fake_openboards import november_world
 
 TZ = ZoneInfo("Europe/Berlin")
+AUGSBURG = Station("8000013", "Augsburg Hbf")
 
 
 async def test_abfahrten_mit_aenderungen():
-    iris = november_world()
-    iris.changes["8000013"] = """<timetable station="Augsburg Hbf">
-      <s id="-111-2611011437-1"><dp ct="2611011441" cp="4"><m id="1" t="f" ext="Reparatur am Zug"/></dp></s>
-      <s id="-112-2611011537-1"><dp cs="c"/></s></timetable>"""
-    client = TimetablesClient(iris, "cid", "key", limiter=RateLimiter(limit=1000))
-    board = await departures(client, "Augsburg Hbf", datetime(2026, 11, 1, 14, 30, tzinfo=TZ))
+    w = november_world()
+    w.messages = {"disruptions": [{"messageID": 1, "descriptions": [{"language": "deu", "text": "Reparatur am Zug"}]}],
+                  "risQualityDeviations": [{"messageID": 2, "descriptions": [{"language": "deu", "text": "Wagenreihung geändert"}]}]}
+    w.change("-111", 0, delay=4, platform="4", messages=[1, 2])
+    w.change("-112", 0, cancelled=True)
+    board = await departures(w, AUGSBURG, datetime(2026, 11, 1, 14, 30, tzinfo=TZ))
     assert board["station"] == {"eva": "8000013", "name": "Augsburg Hbf"}
     re1, re1b = board["departures"]
     assert (re1["line"], re1["destination"], re1["via"]) == ("RE1", "Nürnberg Hbf", ["Donauwörth", "Treuchtlingen"])
     assert (re1["delayMin"], re1["platform"], re1["platformChanged"]) == (4, "4", True)
-    assert re1["messages"] == ["Reparatur am Zug"]
+    assert re1["messages"] == ["Reparatur am Zug"], "Hinweise zur Qualität (Wagenreihung …) nicht auf der Tafel"
     assert re1b["cancelled"]
+    assert [(q.evas, q.arrivals, q.max_via) for q in w.queries] == [(("8000013",), False, 20)]
 
 
-async def test_unbekannter_bahnhof():
-    client = TimetablesClient(november_world(), "cid", "key", limiter=RateLimiter(limit=1000))
-    with pytest.raises(TimetablesError) as e:
-        await departures(client, "Atlantis", datetime(2026, 11, 1, 14, 30, tzinfo=TZ))
-    assert e.value.code == "NOT_FOUND"
+def test_unbekannter_bahnhof():
+    d = november_world().directory()
+    assert d.resolve("Atlantis") is None
+    assert d.resolve("augsburg") == ("8000013", "Augsburg Hbf")
 
 
 # --- Ersatzbusse laut Fahrplan ---------------------------------------------------------
@@ -53,8 +52,7 @@ async def test_ersatzbusse_laut_fahrplan():
     from core.railnet.plan import Timetable
     from timetable_fixture import build
     tt = Timetable(build())
-    client = TimetablesClient(november_world(), "cid", "key", limiter=RateLimiter(limit=1000))
-    board = await departures(client, "Augsburg Hbf", datetime(2026, 11, 1, 14, 30, tzinfo=TZ),
+    board = await departures(november_world(), AUGSBURG, datetime(2026, 11, 1, 14, 30, tzinfo=TZ),
                              replacements=_replacements(tt, (48.3655, 10.8856)))
     rows = [(d["line"], d["planned"][11:16], d.get("replacement", False)) for d in board["departures"]]
     assert rows == [("RE1", "14:37", False), ("Bus RE80", "14:50", True), ("RE1", "15:37", False)], \
@@ -67,8 +65,8 @@ def test_ersatzbus_den_die_bahn_selbst_kennt():
     from core.board import replacement_rows
     now = datetime(2026, 11, 1, 23, 30, tzinfo=TZ)
     bus = {"line": "RE80", "planned": datetime(2026, 11, 1, 23, 41, tzinfo=TZ), "destination": "X", "via": [], "stop": "S"}
-    iris_bus = {"line": "Bus SEV", "planned": "2026-11-01T23:42:00+01:00", "prognosed": None, "cancelled": False}
-    assert replacement_rows([iris_bus], [bus], now, 90) == [], "Bahn kennt den Bus: ihre Fassung gilt"
+    db_bus = {"line": "Bus SEV", "planned": "2026-11-01T23:42:00+01:00", "prognosed": None, "cancelled": False}
+    assert replacement_rows([db_bus], [bus], now, 90) == [], "Bahn kennt den Bus: ihre Fassung gilt"
     cancelled_train = {"line": "RE80", "planned": "2026-11-01T23:44:00+01:00", "prognosed": None, "cancelled": True}
     assert len(replacement_rows([cancelled_train], [bus], now, 90)) == 1, "Zug fällt aus: Ersatzbus bleibt"
     assert replacement_rows([], [bus, dict(bus)], now, 90)[0]["line"] == "Bus RE80" and len(replacement_rows([], [bus, dict(bus)], now, 90)) == 1

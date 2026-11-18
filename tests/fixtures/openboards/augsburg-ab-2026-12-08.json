@@ -1,0 +1,3695 @@
+{
+ "administrations": [
+  {
+   "administrationId": "80",
+   "operatorCode": "DB",
+   "operatorName": "DB Fernverkehr AG",
+   "transportCompanies": [
+    {
+     "language": "deu",
+     "name": "DB Fernverkehr AG",
+     "phoneNumber": "+49 30 2970",
+     "shortName": "DB Fernverkehr AG",
+     "website": "https://www.bahn.de"
+    },
+    {
+     "language": "eng",
+     "name": "DB Fernverkehr AG",
+     "phoneNumber": "+49 30 2970",
+     "shortName": "DB Fernverkehr AG",
+     "website": "https://int.bahn.de/en"
+    }
+   ]
+  },
+  {
+   "administrationId": "GYRE",
+   "operatorCode": "ARV",
+   "operatorName": "Arverio Bayern",
+   "transportCompanies": [
+    {
+     "email": "servus@arverio.de",
+     "language": "deu",
+     "name": "Arverio Bayern GmbH",
+     "phoneNumber": "+49 821 899 825 44",
+     "shortName": "Arverio Bayern GmbH",
+     "website": "https://www.arverio-by.de"
+    },
+    {
+     "email": "servus@arverio.de",
+     "language": "eng",
+     "name": "Arverio Bayern GmbH",
+     "phoneNumber": "+49 821 899 825 44",
+     "shortName": "Arverio Bayern GmbH",
+     "website": "https://www.arverio-by.de"
+    }
+   ]
+  },
+  {
+   "administrationId": "8007D4",
+   "operatorCode": "DB",
+   "operatorName": "DB Regio AG Bayern",
+   "transportCompanies": [
+    {
+     "language": "deu",
+     "name": "DB Regio AG",
+     "phoneNumber": "+49 30 2970",
+     "shortName": "DB Regio AG",
+     "website": "https://www.dbregio.de"
+    },
+    {
+     "language": "eng",
+     "name": "DB Regio AG",
+     "phoneNumber": "+49 30 2970",
+     "shortName": "DB Regio AG",
+     "website": "https://www.dbregio.de"
+    }
+   ]
+  },
+  {
+   "administrationId": "Y8",
+   "operatorCode": "BRB",
+   "operatorName": "Bayerische Regiobahn",
+   "transportCompanies": [
+    {
+     "email": "info@brb.de",
+     "language": "deu",
+     "name": "Bayerische Regiobahn GmbH",
+     "phoneNumber": "+49 8024 997171",
+     "shortName": "Bayerische Regiobahn GmbH",
+     "website": "https://www.brb.de/"
+    },
+    {
+     "email": "info@brb.de",
+     "language": "eng",
+     "name": "Bayerische Regiobahn GmbH",
+     "phoneNumber": "+49 8024 997171",
+     "shortName": "Bayerische Regiobahn GmbH",
+     "website": "https://www.brb.de/"
+    }
+   ]
+  },
+  {
+   "administrationId": "8007D5",
+   "operatorCode": "DB",
+   "operatorName": "DB Regio AG Bayern",
+   "transportCompanies": [
+    {
+     "language": "deu",
+     "name": "DB Regio AG",
+     "phoneNumber": "+49 30 2970",
+     "shortName": "DB Regio AG",
+     "website": "https://www.dbregio.de"
+    },
+    {
+     "language": "eng",
+     "name": "DB Regio AG",
+     "phoneNumber": "+49 30 2970",
+     "shortName": "DB Regio AG",
+     "website": "https://www.dbregio.de"
+    }
+   ]
+  },
+  {
+   "administrationId": "GYRB",
+   "operatorCode": "ARV",
+   "operatorName": "Arverio Bayern",
+   "transportCompanies": [
+    {
+     "email": "servus@arverio.de",
+     "language": "deu",
+     "name": "Arverio Bayern GmbH",
+     "phoneNumber": "+49 821 899 825 44",
+     "shortName": "Arverio Bayern GmbH",
+     "website": "https://www.arverio-by.de"
+    },
+    {
+     "email": "servus@arverio.de",
+     "language": "eng",
+     "name": "Arverio Bayern GmbH",
+     "phoneNumber": "+49 821 899 825 44",
+     "shortName": "Arverio Bayern GmbH",
+     "website": "https://www.arverio-by.de"
+    }
+   ]
+  }
+ ],
+ "departures": [
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-cf548756-351e-3312-a3ff-ab5c48f49eaa",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000261"
+    },
+    "headerAdministrationId": "80",
+    "headerJourneyNumber": 1063,
+    "origin": {
+     "evaNumber": "8000096"
+    },
+    "scheduledStartTime": "2026-12-08T06:24:00+01:00",
+    "transportAtStart": {
+     "administrationId": "80",
+     "category": "ICE",
+     "categoryInternal": "ICE",
+     "journeyDescription": "ICE 1063",
+     "journeyNumber": 1063,
+     "operationalJourneyNumber": "1063",
+     "type": "HIGH_SPEED_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:13:4",
+    "name": "4"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:13:4",
+    "name": "4"
+   },
+   "time": "2026-12-08T08:00:00+01:00",
+   "timeSchedule": "2026-12-08T08:00:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "80",
+    "category": "ICE",
+    "categoryInternal": "ICE",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000261"
+      }
+     ]
+    },
+    "journeyDescription": "ICE 1063",
+    "journeyNumber": 1063,
+    "operationalJourneyNumber": "1063",
+    "type": "HIGH_SPEED_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8004158"
+     }
+    ]
+   }
+  },
+  {
+   "codeshares": [
+    {
+     "airlineCode": "LH",
+     "flightnumber": 3415
+    }
+   ],
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-d136f45d-9f67-3032-af2b-6d3cf146aa89",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8002553"
+    },
+    "headerAdministrationId": "80",
+    "headerJourneyNumber": 612,
+    "origin": {
+     "evaNumber": "8000261"
+    },
+    "scheduledStartTime": "2026-12-08T07:28:00+01:00",
+    "transportAtStart": {
+     "administrationId": "80",
+     "category": "ICE",
+     "categoryInternal": "ICE",
+     "journeyDescription": "ICE 612",
+     "journeyNumber": 612,
+     "operationalJourneyNumber": "612",
+     "type": "HIGH_SPEED_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:11:1",
+    "name": "1"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:11:1",
+    "name": "1"
+   },
+   "time": "2026-12-08T08:01:00+01:00",
+   "timeSchedule": "2026-12-08T08:01:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "80",
+    "category": "ICE",
+    "categoryInternal": "ICE",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8002553"
+      }
+     ]
+    },
+    "journeyDescription": "ICE 612",
+    "journeyNumber": 612,
+    "operationalJourneyNumber": "612",
+    "type": "HIGH_SPEED_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000170"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8000096"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8000244"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8070003"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8073368"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8000266"
+     },
+     {
+      "displayPriority": 7,
+      "evaNumber": "8000142"
+     },
+     {
+      "displayPriority": 8,
+      "evaNumber": "8000080"
+     },
+     {
+      "displayPriority": 9,
+      "evaNumber": "8000263"
+     },
+     {
+      "displayPriority": 10,
+      "evaNumber": "8000294"
+     },
+     {
+      "displayPriority": 11,
+      "evaNumber": "8000050"
+     },
+     {
+      "displayPriority": 12,
+      "evaNumber": "8000147"
+     },
+     {
+      "displayPriority": 13,
+      "evaNumber": "8002549"
+     },
+     {
+      "displayPriority": 14,
+      "evaNumber": "8002548"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-8faf87b1-eeb6-34d0-ac6a-dbc39d875a39",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000261"
+    },
+    "headerAdministrationId": "GYRE",
+    "headerJourneyNumber": 57031,
+    "origin": {
+     "evaNumber": "8000002"
+    },
+    "scheduledStartTime": "2026-12-08T06:08:00+01:00",
+    "transportAtStart": {
+     "administrationId": "GYRE",
+     "category": "ARV",
+     "categoryInternal": "DRE",
+     "journeyDescription": "RE89",
+     "journeyNumber": 57031,
+     "line": {
+      "name": "RE89"
+     },
+     "operationalJourneyNumber": "57031",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:15:8",
+    "name": "8"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:15:8",
+    "name": "8"
+   },
+   "time": "2026-12-08T08:08:00+01:00",
+   "timeSchedule": "2026-12-08T08:08:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "GYRE",
+    "category": "ARV",
+    "categoryInternal": "DRE",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000261"
+      }
+     ]
+    },
+    "journeyDescription": "RE89",
+    "journeyNumber": 57031,
+    "line": {
+     "name": "RE89"
+    },
+    "operationalJourneyNumber": "57031",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000658"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8000661"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8003299"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8004008"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8003982"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8004158"
+     }
+    ]
+   },
+   "travelsWith": [
+    {
+     "administrationId": "GYRE",
+     "category": "ARV",
+     "categoryInternal": "DRE",
+     "destination": {
+      "evaNumber": "8000261"
+     },
+     "journeyDescription": "RE9",
+     "journeyID": "20261208-6debdfda-afe5-3ffe-b7f4-0673679a2367",
+     "journeyNumber": 57131,
+     "line": {
+      "name": "RE9"
+     },
+     "operationalJourneyNumber": "57131",
+     "type": "REGIONAL_TRAIN"
+    }
+   ]
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-6debdfda-afe5-3ffe-b7f4-0673679a2367",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000261"
+    },
+    "headerAdministrationId": "GYRE",
+    "headerJourneyNumber": 57131,
+    "origin": {
+     "evaNumber": "8000170"
+    },
+    "scheduledStartTime": "2026-12-08T06:47:00+01:00",
+    "transportAtStart": {
+     "administrationId": "GYRE",
+     "category": "ARV",
+     "categoryInternal": "DRE",
+     "journeyDescription": "RE9",
+     "journeyNumber": 57131,
+     "line": {
+      "name": "RE9"
+     },
+     "operationalJourneyNumber": "57131",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:15:8",
+    "name": "8"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:15:8",
+    "name": "8"
+   },
+   "time": "2026-12-08T08:08:00+01:00",
+   "timeSchedule": "2026-12-08T08:08:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "GYRE",
+    "category": "ARV",
+    "categoryInternal": "DRE",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000261"
+      }
+     ]
+    },
+    "journeyDescription": "RE9",
+    "journeyNumber": 57131,
+    "line": {
+     "name": "RE9"
+    },
+    "operationalJourneyNumber": "57131",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000658"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8000661"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8003299"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8004008"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8003982"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8004158"
+     }
+    ]
+   },
+   "travelsWith": [
+    {
+     "administrationId": "GYRE",
+     "category": "ARV",
+     "categoryInternal": "DRE",
+     "destination": {
+      "evaNumber": "8000261"
+     },
+     "journeyDescription": "RE89",
+     "journeyID": "20261208-8faf87b1-eeb6-34d0-ac6a-dbc39d875a39",
+     "journeyNumber": 57031,
+     "line": {
+      "name": "RE89"
+     },
+     "operationalJourneyNumber": "57031",
+     "type": "REGIONAL_TRAIN"
+    }
+   ]
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-f6222d80-110e-3b70-bc20-37bba2dbe5f9",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000197"
+    },
+    "headerAdministrationId": "8007D4",
+    "headerJourneyNumber": 57406,
+    "origin": {
+     "evaNumber": "8000013"
+    },
+    "scheduledStartTime": "2026-12-08T08:09:00+01:00",
+    "transportAtStart": {
+     "administrationId": "8007D4",
+     "category": "RE",
+     "categoryInternal": "NRE",
+     "dfid": "de:beg:RE79::57406|0809",
+     "dtid": "de:beg:RE79:",
+     "journeyDescription": "RE79",
+     "journeyNumber": 57406,
+     "line": {
+      "name": "RE79"
+     },
+     "operationalJourneyNumber": "57406",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "name": "12 C-E"
+   },
+   "platformSchedule": {
+    "name": "12 C-E"
+   },
+   "time": "2026-12-08T08:09:00+01:00",
+   "timeSchedule": "2026-12-08T08:09:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "8007D4",
+    "category": "RE",
+    "categoryInternal": "NRE",
+    "dfid": "de:beg:RE79::57406|0809",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000197"
+      }
+     ]
+    },
+    "dtid": "de:beg:RE79:",
+    "journeyDescription": "RE79",
+    "journeyNumber": 57406,
+    "line": {
+     "name": "RE79"
+    },
+    "operationalJourneyNumber": "57406",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8001033"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8005444"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8000057"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8000194"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-e5d19bd9-7b04-305e-aae7-3a19bdd054f0",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000195"
+    },
+    "headerAdministrationId": "Y8",
+    "headerJourneyNumber": 62914,
+    "origin": {
+     "evaNumber": "8000013"
+    },
+    "scheduledStartTime": "2026-12-08T08:13:00+01:00",
+    "transportAtStart": {
+     "administrationId": "Y8",
+     "category": "BRB",
+     "categoryInternal": "DRB",
+     "journeyDescription": "RB69",
+     "journeyNumber": 62914,
+     "line": {
+      "name": "RB69"
+     },
+     "operationalJourneyNumber": "62914",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "name": "12 C-E"
+   },
+   "platformSchedule": {
+    "name": "12 C-E"
+   },
+   "time": "2026-12-08T08:13:00+01:00",
+   "timeSchedule": "2026-12-08T08:13:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "Y8",
+    "category": "BRB",
+    "categoryInternal": "DRB",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000195"
+      }
+     ]
+    },
+    "journeyDescription": "RB69",
+    "journeyNumber": 62914,
+    "line": {
+     "name": "RB69"
+    },
+    "operationalJourneyNumber": "62914",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000660"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8000659"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8003079"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8001033"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8004571"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8002346"
+     },
+     {
+      "displayPriority": 7,
+      "evaNumber": "8003490"
+     },
+     {
+      "displayPriority": 8,
+      "evaNumber": "8003342"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-875a4e37-735a-3b21-99e1-715123fa4292",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000662"
+    },
+    "headerAdministrationId": "Y8",
+    "headerJourneyNumber": 86516,
+    "origin": {
+     "evaNumber": "8000220"
+    },
+    "scheduledStartTime": "2026-12-08T06:45:00+01:00",
+    "transportAtStart": {
+     "administrationId": "Y8",
+     "category": "BRB",
+     "categoryInternal": "DRB",
+     "journeyDescription": "RB67",
+     "journeyNumber": 86516,
+     "line": {
+      "name": "RB67"
+     },
+     "operationalJourneyNumber": "86516",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:13:5",
+    "name": "5"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:13:5",
+    "name": "5"
+   },
+   "time": "2026-12-08T08:15:00+01:00",
+   "timeSchedule": "2026-12-08T08:15:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "Y8",
+    "category": "BRB",
+    "categoryInternal": "DRB",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000662"
+      }
+     ]
+    },
+    "journeyDescription": "RB67",
+    "journeyNumber": 86516,
+    "line": {
+     "name": "RB67"
+    },
+    "operationalJourneyNumber": "86516",
+    "type": "REGIONAL_TRAIN"
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "futureDisruptions": true,
+   "journeyId": "20261208-bc1be7e8-fad1-33ba-b759-560adf7c6f6d",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000105"
+    },
+    "headerAdministrationId": "80",
+    "headerJourneyNumber": 2090,
+    "origin": {
+     "evaNumber": "8000261"
+    },
+    "scheduledStartTime": "2026-12-08T07:47:00+01:00",
+    "transportAtStart": {
+     "administrationId": "80",
+     "category": "ICE",
+     "categoryInternal": "ICE",
+     "journeyDescription": "ICE 2090",
+     "journeyNumber": 2090,
+     "operationalJourneyNumber": "2090",
+     "type": "HIGH_SPEED_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:11:1",
+    "name": "1"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:11:1",
+    "name": "1"
+   },
+   "time": "2026-12-08T08:16:00+01:00",
+   "timeSchedule": "2026-12-08T08:16:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "80",
+    "category": "ICE",
+    "categoryInternal": "ICE",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000105"
+      }
+     ]
+    },
+    "journeyDescription": "ICE 2090",
+    "journeyNumber": 2090,
+    "operationalJourneyNumber": "2090",
+    "type": "HIGH_SPEED_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000139"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8000170"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8000096"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8000156"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8000377"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8000031"
+     },
+     {
+      "displayPriority": 7,
+      "evaNumber": "8000068"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-fc61073d-f1f1-33fd-a423-8ccb86b8054d",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000220"
+    },
+    "headerAdministrationId": "Y8",
+    "headerJourneyNumber": 86521,
+    "origin": {
+     "evaNumber": "8000662"
+    },
+    "scheduledStartTime": "2026-12-08T08:13:00+01:00",
+    "transportAtStart": {
+     "administrationId": "Y8",
+     "category": "BRB",
+     "categoryInternal": "DRB",
+     "journeyDescription": "RB67",
+     "journeyNumber": 86521,
+     "line": {
+      "name": "RB67"
+     },
+     "operationalJourneyNumber": "86521",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:14:6",
+    "name": "6"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:14:6",
+    "name": "6"
+   },
+   "time": "2026-12-08T08:18:00+01:00",
+   "timeSchedule": "2026-12-08T08:18:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "Y8",
+    "category": "BRB",
+    "categoryInternal": "DRB",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000220"
+      }
+     ]
+    },
+    "journeyDescription": "RB67",
+    "journeyNumber": 86521,
+    "line": {
+     "name": "RB67"
+    },
+    "operationalJourneyNumber": "86521",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000658"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8000661"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8003299"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8004008"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8003982"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8003979"
+     },
+     {
+      "displayPriority": 7,
+      "evaNumber": "8005381"
+     },
+     {
+      "displayPriority": 8,
+      "evaNumber": "8001683"
+     },
+     {
+      "displayPriority": 9,
+      "evaNumber": "8006184"
+     },
+     {
+      "displayPriority": 10,
+      "evaNumber": "8000119"
+     },
+     {
+      "displayPriority": 11,
+      "evaNumber": "8005656"
+     },
+     {
+      "displayPriority": 12,
+      "evaNumber": "8005417"
+     },
+     {
+      "displayPriority": 13,
+      "evaNumber": "8006048"
+     },
+     {
+      "displayPriority": 14,
+      "evaNumber": "8005086"
+     },
+     {
+      "displayPriority": 15,
+      "evaNumber": "8005639"
+     },
+     {
+      "displayPriority": 16,
+      "evaNumber": "8001447"
+     },
+     {
+      "displayPriority": 17,
+      "evaNumber": "8004925"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-372b246a-3cbc-3747-8896-986893988a67",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000261"
+    },
+    "headerAdministrationId": "80",
+    "headerJourneyNumber": 561,
+    "origin": {
+     "evaNumber": "8000191"
+    },
+    "scheduledStartTime": "2026-12-08T06:00:00+01:00",
+    "transportAtStart": {
+     "administrationId": "80",
+     "category": "ICE",
+     "categoryInternal": "ICE",
+     "journeyDescription": "ICE 561",
+     "journeyNumber": 561,
+     "operationalJourneyNumber": "561",
+     "type": "HIGH_SPEED_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:13:4",
+    "name": "4"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:13:4",
+    "name": "4"
+   },
+   "time": "2026-12-08T08:19:00+01:00",
+   "timeSchedule": "2026-12-08T08:19:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "80",
+    "category": "ICE",
+    "categoryInternal": "ICE",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000261"
+      }
+     ]
+    },
+    "journeyDescription": "ICE 561",
+    "journeyNumber": 561,
+    "operationalJourneyNumber": "561",
+    "type": "HIGH_SPEED_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8004158"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "futureDisruptions": true,
+   "journeyId": "20261208-9dac3f2f-0c2e-35ae-b960-9f76e07c83c6",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8002549"
+    },
+    "headerAdministrationId": "80",
+    "headerJourneyNumber": 882,
+    "origin": {
+     "evaNumber": "8000261"
+    },
+    "scheduledStartTime": "2026-12-08T07:53:00+01:00",
+    "transportAtStart": {
+     "administrationId": "80",
+     "category": "ICE",
+     "categoryInternal": "ICE",
+     "journeyDescription": "ICE 882",
+     "journeyNumber": 882,
+     "operationalJourneyNumber": "882",
+     "type": "HIGH_SPEED_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:12:3",
+    "name": "3"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:12:3",
+    "name": "3"
+   },
+   "time": "2026-12-08T08:23:00+01:00",
+   "timeSchedule": "2026-12-08T08:23:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "80",
+    "category": "ICE",
+    "categoryInternal": "ICE",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8002549"
+      }
+     ]
+    },
+    "journeyDescription": "ICE 882",
+    "journeyNumber": 882,
+    "operationalJourneyNumber": "882",
+    "type": "HIGH_SPEED_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000260"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8000115"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8003200"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8000128"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8000152"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8000238"
+     },
+     {
+      "displayPriority": 7,
+      "evaNumber": "8000147"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-44da018e-2574-3dc6-8e2d-8c12bff2ec11",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000170"
+    },
+    "headerAdministrationId": "GYRE",
+    "headerJourneyNumber": 57018,
+    "origin": {
+     "evaNumber": "8000261"
+    },
+    "scheduledStartTime": "2026-12-08T07:36:00+01:00",
+    "transportAtStart": {
+     "administrationId": "GYRE",
+     "category": "ARV",
+     "categoryInternal": "DRE",
+     "journeyDescription": "RE9",
+     "journeyNumber": 57018,
+     "line": {
+      "name": "RE9"
+     },
+     "operationalJourneyNumber": "57018",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:13:5",
+    "name": "5"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:13:5",
+    "name": "5"
+   },
+   "time": "2026-12-08T08:25:00+01:00",
+   "timeSchedule": "2026-12-08T08:25:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "GYRE",
+    "category": "ARV",
+    "categoryInternal": "DRE",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000170"
+      }
+     ]
+    },
+    "journeyDescription": "RE9",
+    "journeyNumber": 57018,
+    "line": {
+     "name": "RE9"
+    },
+    "operationalJourneyNumber": "57018",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000662"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8004318"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8006378"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8001439"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8002263"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8003483"
+     },
+     {
+      "displayPriority": 7,
+      "evaNumber": "8001468"
+     },
+     {
+      "displayPriority": 8,
+      "evaNumber": "8002074"
+     },
+     {
+      "displayPriority": 9,
+      "evaNumber": "8003123"
+     },
+     {
+      "displayPriority": 10,
+      "evaNumber": "8001276"
+     },
+     {
+      "displayPriority": 11,
+      "evaNumber": "8004030"
+     },
+     {
+      "displayPriority": 12,
+      "evaNumber": "8004654"
+     },
+     {
+      "displayPriority": 13,
+      "evaNumber": "8000139"
+     },
+     {
+      "displayPriority": 14,
+      "evaNumber": "8003627"
+     },
+     {
+      "displayPriority": 15,
+      "evaNumber": "8004239"
+     },
+     {
+      "displayPriority": 16,
+      "evaNumber": "8006730"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-cb83f82f-3061-306c-90ba-9bfdd4966648",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000260"
+    },
+    "headerAdministrationId": "GYRE",
+    "headerJourneyNumber": 57118,
+    "origin": {
+     "evaNumber": "8000261"
+    },
+    "scheduledStartTime": "2026-12-08T07:36:00+01:00",
+    "transportAtStart": {
+     "administrationId": "GYRE",
+     "category": "ARV",
+     "categoryInternal": "DRE",
+     "journeyDescription": "RE80",
+     "journeyNumber": 57118,
+     "line": {
+      "name": "RE80"
+     },
+     "operationalJourneyNumber": "57118",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:13:5",
+    "name": "5"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:13:5",
+    "name": "5"
+   },
+   "time": "2026-12-08T08:28:00+01:00",
+   "timeSchedule": "2026-12-08T08:28:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "GYRE",
+    "category": "ARV",
+    "categoryInternal": "DRE",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000260"
+      }
+     ]
+    },
+    "journeyDescription": "RE80",
+    "journeyNumber": 57118,
+    "line": {
+     "name": "RE80"
+    },
+    "operationalJourneyNumber": "57118",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000662"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8003952"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8004451"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8003989"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8000078"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8004731"
+     },
+     {
+      "displayPriority": 7,
+      "evaNumber": "8000122"
+     },
+     {
+      "displayPriority": 8,
+      "evaNumber": "8000385"
+     },
+     {
+      "displayPriority": 9,
+      "evaNumber": "8000534"
+     },
+     {
+      "displayPriority": 10,
+      "evaNumber": "8005907"
+     },
+     {
+      "displayPriority": 11,
+      "evaNumber": "8000009"
+     },
+     {
+      "displayPriority": 12,
+      "evaNumber": "8004521"
+     },
+     {
+      "displayPriority": 13,
+      "evaNumber": "8001278"
+     },
+     {
+      "displayPriority": 14,
+      "evaNumber": "8000091"
+     },
+     {
+      "displayPriority": 15,
+      "evaNumber": "8005947"
+     },
+     {
+      "displayPriority": 16,
+      "evaNumber": "8003881"
+     },
+     {
+      "displayPriority": 17,
+      "evaNumber": "8000818"
+     },
+     {
+      "displayPriority": 18,
+      "evaNumber": "8002333"
+     },
+     {
+      "displayPriority": 19,
+      "evaNumber": "8006488"
+     },
+     {
+      "displayPriority": 20,
+      "evaNumber": "8006580"
+     },
+     {
+      "displayPriority": 21,
+      "evaNumber": "8006582"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-9fde2eea-b988-3c85-9633-234433b7033c",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8002263"
+    },
+    "headerAdministrationId": "Y8",
+    "headerJourneyNumber": 86614,
+    "origin": {
+     "evaNumber": "8000013"
+    },
+    "scheduledStartTime": "2026-12-08T08:37:00+01:00",
+    "transportAtStart": {
+     "administrationId": "Y8",
+     "category": "BRB",
+     "categoryInternal": "DRB",
+     "journeyDescription": "RB83",
+     "journeyNumber": 86614,
+     "line": {
+      "name": "RB83"
+     },
+     "operationalJourneyNumber": "86614",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:12:3",
+    "name": "3"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:12:3",
+    "name": "3"
+   },
+   "time": "2026-12-08T08:37:00+01:00",
+   "timeSchedule": "2026-12-08T08:37:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "Y8",
+    "category": "BRB",
+    "categoryInternal": "DRB",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8002263"
+      }
+     ]
+    },
+    "journeyDescription": "RB83",
+    "journeyNumber": 86614,
+    "line": {
+     "name": "RB83"
+    },
+    "operationalJourneyNumber": "86614",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000662"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8004318"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8006378"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8001439"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-958bb7f0-7856-340d-821f-edd8c1163f3f",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000261"
+    },
+    "headerAdministrationId": "GYRE",
+    "headerJourneyNumber": 57033,
+    "origin": {
+     "evaNumber": "8000170"
+    },
+    "scheduledStartTime": "2026-12-08T07:19:00+01:00",
+    "transportAtStart": {
+     "administrationId": "GYRE",
+     "category": "ARV",
+     "categoryInternal": "DRE",
+     "journeyDescription": "RE9",
+     "journeyNumber": 57033,
+     "line": {
+      "name": "RE9"
+     },
+     "operationalJourneyNumber": "57033",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:15:9",
+    "name": "9"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:15:9",
+    "name": "9"
+   },
+   "time": "2026-12-08T08:38:00+01:00",
+   "timeSchedule": "2026-12-08T08:38:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "GYRE",
+    "category": "ARV",
+    "categoryInternal": "DRE",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000261"
+      }
+     ]
+    },
+    "journeyDescription": "RE9",
+    "journeyNumber": 57033,
+    "line": {
+     "name": "RE9"
+    },
+    "operationalJourneyNumber": "57033",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000658"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8000661"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8003299"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8004008"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8003982"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8004158"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-7fe6f1be-0fba-3ffc-89ec-c89ec27f0b41",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000662"
+    },
+    "headerAdministrationId": "Y8",
+    "headerJourneyNumber": 86520,
+    "origin": {
+     "evaNumber": "8000220"
+    },
+    "scheduledStartTime": "2026-12-08T07:15:00+01:00",
+    "transportAtStart": {
+     "administrationId": "Y8",
+     "category": "BRB",
+     "categoryInternal": "DRB",
+     "journeyDescription": "RB67",
+     "journeyNumber": 86520,
+     "line": {
+      "name": "RB67"
+     },
+     "operationalJourneyNumber": "86520",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:13:5",
+    "name": "5"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:13:5",
+    "name": "5"
+   },
+   "time": "2026-12-08T08:40:00+01:00",
+   "timeSchedule": "2026-12-08T08:40:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "Y8",
+    "category": "BRB",
+    "categoryInternal": "DRB",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000662"
+      }
+     ]
+    },
+    "journeyDescription": "RB67",
+    "journeyNumber": 86520,
+    "line": {
+     "name": "RB67"
+    },
+    "operationalJourneyNumber": "86520",
+    "type": "REGIONAL_TRAIN"
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-4a9845fd-4d0d-3c7b-b2f5-fcb7a5254f60",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000661"
+    },
+    "headerAdministrationId": "Y8",
+    "headerJourneyNumber": 22112,
+    "origin": {
+     "evaNumber": "8000013"
+    },
+    "scheduledStartTime": "2026-12-08T08:41:00+01:00",
+    "transportAtStart": {
+     "administrationId": "Y8",
+     "category": "BRB",
+     "categoryInternal": "DRB",
+     "journeyDescription": "RB13",
+     "journeyNumber": 22112,
+     "line": {
+      "name": "RB13"
+     },
+     "operationalJourneyNumber": "22112",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {},
+   "platformSchedule": {},
+   "time": "2026-12-08T08:41:00+01:00",
+   "timeSchedule": "2026-12-08T08:41:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "Y8",
+    "category": "BRB",
+    "categoryInternal": "DRB",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000661"
+      }
+     ]
+    },
+    "journeyDescription": "RB13",
+    "journeyNumber": 22112,
+    "line": {
+     "name": "RB13"
+    },
+    "operationalJourneyNumber": "22112",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000658"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "futureDisruptions": true,
+   "journeyId": "20261208-a0b54ba9-307e-3f8d-9d5a-069eeb08b5e6",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8003693"
+    },
+    "headerAdministrationId": "8007D5",
+    "headerJourneyNumber": 3284,
+    "origin": {
+     "evaNumber": "8000013"
+    },
+    "scheduledStartTime": "2026-12-08T08:41:00+01:00",
+    "transportAtStart": {
+     "administrationId": "8007D5",
+     "category": "RE",
+     "categoryInternal": "NRE",
+     "dfid": "de:beg:RE7::3284|0841",
+     "dtid": "de:beg:RE7:",
+     "journeyDescription": "RE7",
+     "journeyNumber": 3284,
+     "line": {
+      "name": "RE7"
+     },
+     "operationalJourneyNumber": "3284",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "name": "8 A-C"
+   },
+   "platformSchedule": {
+    "name": "8 A-C"
+   },
+   "time": "2026-12-08T08:41:00+01:00",
+   "timeSchedule": "2026-12-08T08:41:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "8007D5",
+    "category": "RE",
+    "categoryInternal": "NRE",
+    "dfid": "de:beg:RE7::3284|0841",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8003693"
+      }
+     ]
+    },
+    "dtid": "de:beg:RE7:",
+    "journeyDescription": "RE7",
+    "journeyNumber": 3284,
+    "line": {
+     "name": "RE7"
+    },
+    "operationalJourneyNumber": "3284",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000057"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8000194"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8000962"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8002458"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8000197"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8003065"
+     },
+     {
+      "displayPriority": 7,
+      "evaNumber": "8004584"
+     },
+     {
+      "displayPriority": 8,
+      "evaNumber": "8005138"
+     },
+     {
+      "displayPriority": 9,
+      "evaNumber": "8002710"
+     },
+     {
+      "displayPriority": 10,
+      "evaNumber": "8000387"
+     },
+     {
+      "displayPriority": 11,
+      "evaNumber": "8000230"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-3251c374-e9c8-3320-875c-2a10c2a67170",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000261"
+    },
+    "headerAdministrationId": "80",
+    "headerJourneyNumber": 991,
+    "origin": {
+     "evaNumber": "8000250"
+    },
+    "scheduledStartTime": "2026-12-08T05:26:00+01:00",
+    "transportAtStart": {
+     "administrationId": "80",
+     "category": "ICE",
+     "categoryInternal": "ICE",
+     "journeyDescription": "ICE 991",
+     "journeyNumber": 991,
+     "operationalJourneyNumber": "991",
+     "type": "HIGH_SPEED_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:13:4",
+    "name": "4"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:13:4",
+    "name": "4"
+   },
+   "time": "2026-12-08T08:46:00+01:00",
+   "timeSchedule": "2026-12-08T08:46:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "80",
+    "category": "ICE",
+    "categoryInternal": "ICE",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000261"
+      }
+     ]
+    },
+    "journeyDescription": "ICE 991",
+    "journeyNumber": 991,
+    "operationalJourneyNumber": "991",
+    "type": "HIGH_SPEED_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8004158"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-7c098569-6a7d-3cf5-b5c1-81b18cdf1bcc",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8002156"
+    },
+    "headerAdministrationId": "Y8",
+    "headerJourneyNumber": 62730,
+    "origin": {
+     "evaNumber": "8000013"
+    },
+    "scheduledStartTime": "2026-12-08T08:48:00+01:00",
+    "transportAtStart": {
+     "administrationId": "Y8",
+     "category": "BRB",
+     "categoryInternal": "DRB",
+     "journeyDescription": "RB77",
+     "journeyNumber": 62730,
+     "line": {
+      "name": "RB77"
+     },
+     "operationalJourneyNumber": "62730",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:16:12",
+    "name": "12"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:16:12",
+    "name": "12"
+   },
+   "time": "2026-12-08T08:48:00+01:00",
+   "timeSchedule": "2026-12-08T08:48:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "Y8",
+    "category": "BRB",
+    "categoryInternal": "DRB",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8002156"
+      }
+     ]
+    },
+    "journeyDescription": "RB77",
+    "journeyNumber": 62730,
+    "line": {
+     "name": "RB77"
+    },
+    "operationalJourneyNumber": "62730",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000660"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8000659"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8003079"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8001033"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8005444"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8000057"
+     },
+     {
+      "displayPriority": 7,
+      "evaNumber": "8000194"
+     },
+     {
+      "displayPriority": 8,
+      "evaNumber": "8000962"
+     },
+     {
+      "displayPriority": 9,
+      "evaNumber": "8001622"
+     },
+     {
+      "displayPriority": 10,
+      "evaNumber": "8003889"
+     },
+     {
+      "displayPriority": 11,
+      "evaNumber": "8003885"
+     },
+     {
+      "displayPriority": 12,
+      "evaNumber": "8003877"
+     },
+     {
+      "displayPriority": 13,
+      "evaNumber": "8003663"
+     },
+     {
+      "displayPriority": 14,
+      "evaNumber": "8003639"
+     },
+     {
+      "displayPriority": 15,
+      "evaNumber": "8005505"
+     },
+     {
+      "displayPriority": 16,
+      "evaNumber": "8006309"
+     }
+    ]
+   }
+  },
+  {
+   "codeshares": [
+    {
+     "airlineCode": "LH",
+     "flightnumber": 3417
+    }
+   ],
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-855301f9-196a-3ed8-97cf-e852f38d6adb",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000080"
+    },
+    "headerAdministrationId": "80",
+    "headerJourneyNumber": 1010,
+    "origin": {
+     "evaNumber": "8000261"
+    },
+    "scheduledStartTime": "2026-12-08T08:19:00+01:00",
+    "transportAtStart": {
+     "administrationId": "80",
+     "category": "ICE",
+     "categoryInternal": "ICE",
+     "journeyDescription": "ICE 1010",
+     "journeyNumber": 1010,
+     "operationalJourneyNumber": "1010",
+     "type": "HIGH_SPEED_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:11:1",
+    "name": "1"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:11:1",
+    "name": "1"
+   },
+   "time": "2026-12-08T08:48:00+01:00",
+   "timeSchedule": "2026-12-08T08:48:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "80",
+    "category": "ICE",
+    "categoryInternal": "ICE",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000080"
+      }
+     ]
+    },
+    "journeyDescription": "ICE 1010",
+    "journeyNumber": 1010,
+    "operationalJourneyNumber": "1010",
+    "type": "HIGH_SPEED_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000170"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8000096"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8000244"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8070003"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8073368"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8000085"
+     },
+     {
+      "displayPriority": 7,
+      "evaNumber": "8000086"
+     },
+     {
+      "displayPriority": 8,
+      "evaNumber": "8000098"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-d887239d-f9d0-3689-82f3-23f169fbc757",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8001468"
+    },
+    "headerAdministrationId": "GYRB",
+    "headerJourneyNumber": 57020,
+    "origin": {
+     "evaNumber": "8000261"
+    },
+    "scheduledStartTime": "2026-12-08T07:59:00+01:00",
+    "transportAtStart": {
+     "administrationId": "GYRB",
+     "category": "ARV",
+     "categoryInternal": "DRB",
+     "journeyDescription": "RB86",
+     "journeyNumber": 57020,
+     "line": {
+      "name": "RB86"
+     },
+     "operationalJourneyNumber": "57020",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:13:5",
+    "name": "5"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:13:5",
+    "name": "5"
+   },
+   "time": "2026-12-08T08:50:00+01:00",
+   "timeSchedule": "2026-12-08T08:50:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "GYRB",
+    "category": "ARV",
+    "categoryInternal": "DRB",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8001468"
+      }
+     ]
+    },
+    "journeyDescription": "RB86",
+    "journeyNumber": 57020,
+    "line": {
+     "name": "RB86"
+    },
+    "operationalJourneyNumber": "57020",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000662"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8004318"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8006378"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8001439"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8002263"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8003483"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-841d1c07-9c31-37d5-adc6-14414851a54d",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000078"
+    },
+    "headerAdministrationId": "GYRB",
+    "headerJourneyNumber": 57120,
+    "origin": {
+     "evaNumber": "8000261"
+    },
+    "scheduledStartTime": "2026-12-08T07:59:00+01:00",
+    "transportAtStart": {
+     "administrationId": "GYRB",
+     "category": "ARV",
+     "categoryInternal": "DRB",
+     "journeyDescription": "RB87",
+     "journeyNumber": 57120,
+     "line": {
+      "name": "RB87"
+     },
+     "operationalJourneyNumber": "57120",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {
+    "ifopt": "de:09761:100:13:5",
+    "name": "5"
+   },
+   "platformSchedule": {
+    "ifopt": "de:09761:100:13:5",
+    "name": "5"
+   },
+   "time": "2026-12-08T08:53:00+01:00",
+   "timeSchedule": "2026-12-08T08:53:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "GYRB",
+    "category": "ARV",
+    "categoryInternal": "DRB",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000078"
+      }
+     ]
+    },
+    "journeyDescription": "RB87",
+    "journeyNumber": 57120,
+    "line": {
+     "name": "RB87"
+    },
+    "operationalJourneyNumber": "57120",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000662"
+     },
+     {
+      "displayPriority": 2,
+      "evaNumber": "8002256"
+     },
+     {
+      "displayPriority": 3,
+      "evaNumber": "8002162"
+     },
+     {
+      "displayPriority": 4,
+      "evaNumber": "8003560"
+     },
+     {
+      "displayPriority": 5,
+      "evaNumber": "8002761"
+     },
+     {
+      "displayPriority": 6,
+      "evaNumber": "8003952"
+     },
+     {
+      "displayPriority": 7,
+      "evaNumber": "8006363"
+     },
+     {
+      "displayPriority": 8,
+      "evaNumber": "8004451"
+     },
+     {
+      "displayPriority": 9,
+      "evaNumber": "8003989"
+     },
+     {
+      "displayPriority": 10,
+      "evaNumber": "8000778"
+     }
+    ]
+   }
+  },
+  {
+   "departureId": "8000013_D_1",
+   "evaNumber": "8000013",
+   "journeyId": "20261208-b674c044-98f5-3e22-a12b-90355ce76fd9",
+   "journeyInfo": {
+    "destination": {
+     "evaNumber": "8000661"
+    },
+    "headerAdministrationId": "Y8",
+    "headerJourneyNumber": 22114,
+    "origin": {
+     "evaNumber": "8000013"
+    },
+    "scheduledStartTime": "2026-12-08T08:58:00+01:00",
+    "transportAtStart": {
+     "administrationId": "Y8",
+     "category": "BRB",
+     "categoryInternal": "DRB",
+     "journeyDescription": "RB13",
+     "journeyNumber": 22114,
+     "line": {
+      "name": "RB13"
+     },
+     "operationalJourneyNumber": "22114",
+     "type": "REGIONAL_TRAIN"
+    },
+    "type": "REGULAR"
+   },
+   "platform": {},
+   "platformSchedule": {},
+   "time": "2026-12-08T08:58:00+01:00",
+   "timeSchedule": "2026-12-08T08:58:00+01:00",
+   "timeType": "SCHEDULE",
+   "transport": {
+    "administrationId": "Y8",
+    "category": "BRB",
+    "categoryInternal": "DRB",
+    "direction": {
+     "stopPlaces": [
+      {
+       "evaNumber": "8000661"
+      }
+     ]
+    },
+    "journeyDescription": "RB13",
+    "journeyNumber": 22114,
+    "line": {
+     "name": "RB13"
+    },
+    "operationalJourneyNumber": "22114",
+    "type": "REGIONAL_TRAIN",
+    "via": [
+     {
+      "displayPriority": 1,
+      "evaNumber": "8000658"
+     }
+    ]
+   }
+  }
+ ],
+ "messages": {},
+ "meta": {
+  "consideredStopPlaces": [
+   "365000",
+   "780808",
+   "781966",
+   "781967",
+   "8000013"
+  ]
+ },
+ "stations": [
+  {
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Augsburg Hbf"
+    }
+   ],
+   "stada": "220"
+  }
+ ],
+ "stopPlaces": [
+  {
+   "evaNumber": "8000013",
+   "ifopt": "de:09761:100",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Augsburg Hbf"
+    }
+   ],
+   "stada": "220"
+  },
+  {
+   "evaNumber": "8000096",
+   "ifopt": "de:08111:6115",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Stuttgart Hbf"
+    }
+   ],
+   "stada": "6071"
+  },
+  {
+   "evaNumber": "8000261",
+   "ifopt": "de:09162:100",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "München Hbf"
+    }
+   ],
+   "stada": "4234"
+  },
+  {
+   "evaNumber": "8004158",
+   "ifopt": "de:09162:10",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "München-Pasing"
+    }
+   ],
+   "stada": "4266"
+  },
+  {
+   "evaNumber": "8002553",
+   "ifopt": "de:02000:8002553",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Hamburg-Altona"
+    }
+   ],
+   "stada": "2517"
+  },
+  {
+   "evaNumber": "8000170",
+   "ifopt": "de:08421:1008",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Ulm Hbf"
+    }
+   ],
+   "stada": "6323"
+  },
+  {
+   "evaNumber": "8000244",
+   "ifopt": "de:08222:2417",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Mannheim Hbf"
+    }
+   ],
+   "stada": "3925"
+  },
+  {
+   "evaNumber": "8070003",
+   "ifopt": "de:06412:11511",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Frankfurt(M) Flughafen Fernbf",
+     "symbol": "Frankfurt(M) $flughafen Fernbf"
+    }
+   ],
+   "stada": "7982"
+  },
+  {
+   "evaNumber": "8073368",
+   "ifopt": "de:05315:11901",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Köln Messe/Deutz Gl.11-12"
+    }
+   ],
+   "stada": "3329"
+  },
+  {
+   "evaNumber": "8000266",
+   "ifopt": "de:05124:11376",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Wuppertal Hbf"
+    }
+   ],
+   "stada": "6914"
+  },
+  {
+   "evaNumber": "8000142",
+   "ifopt": "de:05914:2007",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Hagen Hbf"
+    }
+   ],
+   "stada": "2457"
+  },
+  {
+   "evaNumber": "8000080",
+   "ifopt": "de:05913:131",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Dortmund Hbf"
+    }
+   ],
+   "stada": "1289"
+  },
+  {
+   "evaNumber": "8000263",
+   "ifopt": "de:05515:41000",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Münster(Westf)Hbf"
+    }
+   ],
+   "stada": "4280"
+  },
+  {
+   "evaNumber": "8000294",
+   "ifopt": "de:03404:71612",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Osnabrück Hbf"
+    }
+   ],
+   "stada": "4787"
+  },
+  {
+   "evaNumber": "8000050",
+   "ifopt": "de:04011:13927",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Bremen Hbf"
+    }
+   ],
+   "stada": "855"
+  },
+  {
+   "evaNumber": "8000147",
+   "ifopt": "de:02000:8000147",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Hamburg-Harburg"
+    }
+   ],
+   "stada": "2519"
+  },
+  {
+   "evaNumber": "8002549",
+   "ifopt": "de:02000:10950",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Hamburg Hbf"
+    }
+   ],
+   "stada": "2514"
+  },
+  {
+   "evaNumber": "8002548",
+   "ifopt": "de:02000:8002548",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Hamburg Dammtor"
+    }
+   ],
+   "stada": "2513"
+  },
+  {
+   "evaNumber": "8000002",
+   "ifopt": "de:08136:1000",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Aalen Hbf"
+    }
+   ],
+   "stada": "4"
+  },
+  {
+   "evaNumber": "8000658",
+   "ifopt": "de:09761:111",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Augsburg Haunstetterstraße"
+    }
+   ],
+   "stada": "219"
+  },
+  {
+   "evaNumber": "8000661",
+   "ifopt": "de:09761:200",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Augsburg-Hochzoll"
+    }
+   ],
+   "stada": "223"
+  },
+  {
+   "evaNumber": "8003299",
+   "ifopt": "de:09771:1000",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Kissing"
+    }
+   ],
+   "stada": "3210"
+  },
+  {
+   "evaNumber": "8004008",
+   "ifopt": "de:09771:1120",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Mering-St Afra"
+    }
+   ],
+   "stada": "5616"
+  },
+  {
+   "evaNumber": "8003982",
+   "ifopt": "de:09771:1100",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Mering"
+    }
+   ],
+   "stada": "4064"
+  },
+  {
+   "evaNumber": "8000197",
+   "ifopt": "de:09763:99",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Kempten(Allgäu)Hbf"
+    }
+   ],
+   "stada": "3155"
+  },
+  {
+   "evaNumber": "8001033",
+   "ifopt": "de:09772:7100",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Bobingen"
+    }
+   ],
+   "stada": "717"
+  },
+  {
+   "evaNumber": "8005444",
+   "ifopt": "de:09772:7200",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Schwabmünchen"
+    }
+   ],
+   "stada": "5702"
+  },
+  {
+   "evaNumber": "8000057",
+   "ifopt": "de:09777:1000",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Buchloe"
+    }
+   ],
+   "stada": "944"
+  },
+  {
+   "evaNumber": "8000194",
+   "ifopt": "de:09762:950",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Kaufbeuren"
+    }
+   ],
+   "stada": "3141"
+  },
+  {
+   "evaNumber": "8000195",
+   "ifopt": "de:09181:503",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Kaufering"
+    }
+   ],
+   "stada": "3142"
+  },
+  {
+   "evaNumber": "8000660",
+   "ifopt": "de:09761:120",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Augsburg Morellstr."
+    }
+   ],
+   "stada": "222"
+  },
+  {
+   "evaNumber": "8000659",
+   "ifopt": "de:09761:600",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Augsburg Messe"
+    }
+   ],
+   "stada": "7996"
+  },
+  {
+   "evaNumber": "8003079",
+   "ifopt": "de:09761:700",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Inningen"
+    }
+   ],
+   "stada": "2997"
+  },
+  {
+   "evaNumber": "8004571",
+   "ifopt": "de:09772:7540",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Oberottmarshausen"
+    }
+   ],
+   "stada": "4679"
+  },
+  {
+   "evaNumber": "8002346",
+   "ifopt": "de:09772:7500",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Graben(Lechfeld)Gewerbepark"
+    }
+   ],
+   "stada": "8278"
+  },
+  {
+   "evaNumber": "8003490",
+   "ifopt": "de:09772:7570",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Lagerlechfeld"
+    }
+   ],
+   "stada": "3492"
+  },
+  {
+   "evaNumber": "8003342",
+   "ifopt": "de:09772:7580",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Klosterlechfeld"
+    }
+   ],
+   "stada": "3284"
+  },
+  {
+   "evaNumber": "8000220",
+   "ifopt": "de:09190:41571",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Weilheim(Oberbay)"
+    }
+   ],
+   "stada": "6616"
+  },
+  {
+   "evaNumber": "8000662",
+   "ifopt": "de:09761:400",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Augsburg-Oberhausen"
+    }
+   ],
+   "stada": "224"
+  },
+  {
+   "evaNumber": "8000105",
+   "ifopt": "de:06412:10",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Frankfurt(Main)Hbf"
+    }
+   ],
+   "stada": "1866"
+  },
+  {
+   "evaNumber": "8000139",
+   "ifopt": "de:09774:2600",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Günzburg"
+    }
+   ],
+   "stada": "2422"
+  },
+  {
+   "evaNumber": "8000156",
+   "ifopt": "de:08221:1160",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Heidelberg Hbf"
+    }
+   ],
+   "stada": "2628"
+  },
+  {
+   "evaNumber": "8000377",
+   "ifopt": "de:08226:4109",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Weinheim(Bergstr)Hbf"
+    }
+   ],
+   "stada": "6622"
+  },
+  {
+   "evaNumber": "8000031",
+   "ifopt": "de:06431:236",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Bensheim"
+    }
+   ],
+   "stada": "488"
+  },
+  {
+   "evaNumber": "8000068",
+   "ifopt": "de:06411:4734",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Darmstadt Hbf"
+    }
+   ],
+   "stada": "1126"
+  },
+  {
+   "evaNumber": "8003979",
+   "ifopt": "de:09771:1200",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Merching"
+    }
+   ],
+   "stada": "4062"
+  },
+  {
+   "evaNumber": "8005381",
+   "ifopt": "de:09771:1300",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Schmiechen(Schwab)"
+    }
+   ],
+   "stada": "5609"
+  },
+  {
+   "evaNumber": "8001683",
+   "ifopt": "de:09181:501",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Egling"
+    }
+   ],
+   "stada": "1482"
+  },
+  {
+   "evaNumber": "8006184",
+   "ifopt": "de:09181:508",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Walleshausen"
+    }
+   ],
+   "stada": "6510"
+  },
+  {
+   "evaNumber": "8000119",
+   "ifopt": "de:09181:502",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Geltendorf"
+    }
+   ],
+   "stada": "2058"
+  },
+  {
+   "evaNumber": "8005656",
+   "ifopt": "de:09181:504",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "St Ottilien"
+    }
+   ],
+   "stada": "5946"
+  },
+  {
+   "evaNumber": "8005417",
+   "ifopt": "de:09181:506",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Schondorf(Bay)"
+    }
+   ],
+   "stada": "5644"
+  },
+  {
+   "evaNumber": "8006048",
+   "ifopt": "de:09181:507",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Utting"
+    }
+   ],
+   "stada": "6382"
+  },
+  {
+   "evaNumber": "8005086",
+   "ifopt": "de:09181:505",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Riederau"
+    }
+   ],
+   "stada": "5270"
+  },
+  {
+   "evaNumber": "8005639",
+   "ifopt": "de:09181:1423",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "St Alban"
+    }
+   ],
+   "stada": "8123"
+  },
+  {
+   "evaNumber": "8001447",
+   "ifopt": "de:09181:500",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Dießen"
+    }
+   ],
+   "stada": "1205"
+  },
+  {
+   "evaNumber": "8004925",
+   "ifopt": "de:09190:45004",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Raisting"
+    }
+   ],
+   "stada": "5104"
+  },
+  {
+   "evaNumber": "8000191",
+   "ifopt": "de:08212:90",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Karlsruhe Hbf"
+    }
+   ],
+   "stada": "3107"
+  },
+  {
+   "evaNumber": "8000260",
+   "ifopt": "de:09663:177",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Würzburg Hbf"
+    }
+   ],
+   "stada": "6945"
+  },
+  {
+   "evaNumber": "8000115",
+   "ifopt": "de:06631:11049",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Fulda"
+    }
+   ],
+   "stada": "1973"
+  },
+  {
+   "evaNumber": "8003200",
+   "ifopt": "de:06611:200007",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Kassel-Wilhelmshöhe"
+    }
+   ],
+   "stada": "3127"
+  },
+  {
+   "evaNumber": "8000128",
+   "ifopt": "de:03152:33817",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Göttingen"
+    }
+   ],
+   "stada": "2218"
+  },
+  {
+   "evaNumber": "8000152",
+   "ifopt": "de:03241:31",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Hannover Hbf"
+    }
+   ],
+   "stada": "2545"
+  },
+  {
+   "evaNumber": "8000238",
+   "ifopt": "de:03355:8000238",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Lüneburg"
+    }
+   ],
+   "stada": "3855"
+  },
+  {
+   "evaNumber": "8004318",
+   "ifopt": "de:09772:5000",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Neusäß"
+    }
+   ],
+   "stada": "4435"
+  },
+  {
+   "evaNumber": "8006378",
+   "ifopt": "de:09772:5050",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Westheim(Schwab)"
+    }
+   ],
+   "stada": "6719"
+  },
+  {
+   "evaNumber": "8001439",
+   "ifopt": "de:09772:6100",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Diedorf(Schwab)"
+    }
+   ],
+   "stada": "1196"
+  },
+  {
+   "evaNumber": "8002263",
+   "ifopt": "de:09772:6200",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Gessertshausen"
+    }
+   ],
+   "stada": "2110"
+  },
+  {
+   "evaNumber": "8003483",
+   "ifopt": "de:09772:6300",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Kutzenhausen"
+    }
+   ],
+   "stada": "3479"
+  },
+  {
+   "evaNumber": "8001468",
+   "ifopt": "de:09772:6400",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Dinkelscherben"
+    }
+   ],
+   "stada": "1222"
+  },
+  {
+   "evaNumber": "8002074",
+   "ifopt": "de:09774:2818",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Freihalden"
+    }
+   ],
+   "stada": "1903"
+  },
+  {
+   "evaNumber": "8003123",
+   "ifopt": "de:09774:2748",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Jettingen"
+    }
+   ],
+   "stada": "3053"
+  },
+  {
+   "evaNumber": "8001276",
+   "ifopt": "de:09774:2790",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Burgau(Schwab)"
+    }
+   ],
+   "stada": "979"
+  },
+  {
+   "evaNumber": "8004030",
+   "ifopt": "de:09774:2731",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Mindelaltheim"
+    }
+   ],
+   "stada": "4118"
+  },
+  {
+   "evaNumber": "8004654",
+   "ifopt": "de:09774:2779",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Offingen"
+    }
+   ],
+   "stada": "4748"
+  },
+  {
+   "evaNumber": "8003627",
+   "ifopt": "de:09774:2942",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Leipheim"
+    }
+   ],
+   "stada": "3629"
+  },
+  {
+   "evaNumber": "8004239",
+   "ifopt": "de:09775:4801",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Nersingen"
+    }
+   ],
+   "stada": "4341"
+  },
+  {
+   "evaNumber": "8006730",
+   "ifopt": "de:09775:1711",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Neu-Ulm"
+    }
+   ],
+   "stada": "4357"
+  },
+  {
+   "evaNumber": "8003952",
+   "ifopt": "de:09772:4300",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Meitingen"
+    }
+   ],
+   "stada": "4038"
+  },
+  {
+   "evaNumber": "8004451",
+   "ifopt": "de:09772:4400",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Nordendorf"
+    }
+   ],
+   "stada": "4572"
+  },
+  {
+   "evaNumber": "8003989",
+   "ifopt": "de:09779:6200",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Mertingen Bahnhof"
+    }
+   ],
+   "stada": "4073"
+  },
+  {
+   "evaNumber": "8000078",
+   "ifopt": "de:09779:5500",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Donauwörth"
+    }
+   ],
+   "stada": "1265"
+  },
+  {
+   "evaNumber": "8004731",
+   "ifopt": "de:09779:6459",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Otting-Weilheim"
+    }
+   ],
+   "stada": "4834"
+  },
+  {
+   "evaNumber": "8000122",
+   "ifopt": "de:09577:16200",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Treuchtlingen"
+    }
+   ],
+   "stada": "6252"
+  },
+  {
+   "evaNumber": "8000385",
+   "ifopt": "de:09577:16100",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Gunzenhausen"
+    }
+   ],
+   "stada": "2424"
+  },
+  {
+   "evaNumber": "8000534",
+   "ifopt": "de:09577:16650",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Muhr am See"
+    }
+   ],
+   "stada": "4214"
+  },
+  {
+   "evaNumber": "8005907",
+   "ifopt": "de:09571:13000",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Triesdorf"
+    }
+   ],
+   "stada": "6268"
+  },
+  {
+   "evaNumber": "8000009",
+   "ifopt": "de:09561:11000",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Ansbach"
+    }
+   ],
+   "stada": "161"
+  },
+  {
+   "evaNumber": "8004521",
+   "ifopt": "de:09571:13160",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Oberdachstetten"
+    }
+   ],
+   "stada": "4632"
+  },
+  {
+   "evaNumber": "8001278",
+   "ifopt": "de:09575:14130",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Burgbernheim-Wildbad"
+    }
+   ],
+   "stada": "981"
+  },
+  {
+   "evaNumber": "8000091",
+   "ifopt": "de:09575:14350",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Steinach(bei Rothenburg ob der Tauber)"
+    }
+   ],
+   "stada": "5981"
+  },
+  {
+   "evaNumber": "8005947",
+   "ifopt": "de:09575:14950",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Uffenheim"
+    }
+   ],
+   "stada": "6311"
+  },
+  {
+   "evaNumber": "8003881",
+   "ifopt": "de:09675:29593",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Marktbreit"
+    }
+   ],
+   "stada": "3973"
+  },
+  {
+   "evaNumber": "8000818",
+   "ifopt": "de:09679:5020",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Ochsenfurt"
+    }
+   ],
+   "stada": "4720"
+  },
+  {
+   "evaNumber": "8002333",
+   "ifopt": "de:09679:5025",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Goßmannsdorf"
+    }
+   ],
+   "stada": "2206"
+  },
+  {
+   "evaNumber": "8006488",
+   "ifopt": "de:09679:5050",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Winterhausen"
+    }
+   ],
+   "stada": "6808"
+  },
+  {
+   "evaNumber": "8006580",
+   "ifopt": "de:09663:294:1",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Würzburg-Heidingsfeld Ost"
+    }
+   ],
+   "stada": "6947"
+  },
+  {
+   "evaNumber": "8006582",
+   "ifopt": "de:09663:54",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Würzburg Süd"
+    }
+   ],
+   "stada": "6946"
+  },
+  {
+   "evaNumber": "8003693",
+   "ifopt": "de:09776:1592",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Lindau-Reutin"
+    }
+   ],
+   "stada": "3729"
+  },
+  {
+   "evaNumber": "8000962",
+   "ifopt": "de:09777:1289",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Biessenhofen"
+    }
+   ],
+   "stada": "634"
+  },
+  {
+   "evaNumber": "8002458",
+   "ifopt": "de:09777:1235",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Günzach"
+    }
+   ],
+   "stada": "2421"
+  },
+  {
+   "evaNumber": "8003065",
+   "ifopt": "de:09780:750",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Immenstadt"
+    }
+   ],
+   "stada": "2986"
+  },
+  {
+   "evaNumber": "8004584",
+   "ifopt": "de:09780:1783",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Oberstaufen"
+    }
+   ],
+   "stada": "4693"
+  },
+  {
+   "evaNumber": "8005138",
+   "ifopt": "de:09776:1420",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Röthenbach(Allgäu)"
+    }
+   ],
+   "stada": "5387"
+  },
+  {
+   "evaNumber": "8002710",
+   "ifopt": "de:09776:1515",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Heimenkirch"
+    }
+   ],
+   "stada": "2659"
+  },
+  {
+   "evaNumber": "8000387",
+   "ifopt": "de:09776:1860",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Hergatz"
+    }
+   ],
+   "stada": "2709"
+  },
+  {
+   "evaNumber": "8000230",
+   "ifopt": "de:09776:1546",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Lindau-Insel"
+    }
+   ],
+   "stada": "3727"
+  },
+  {
+   "evaNumber": "8000250",
+   "ifopt": "de:06414:6907",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Wiesbaden Hbf"
+    }
+   ],
+   "stada": "6744"
+  },
+  {
+   "evaNumber": "8002156",
+   "ifopt": "de:09777:1400",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Füssen"
+    }
+   ],
+   "stada": "1992"
+  },
+  {
+   "evaNumber": "8001622",
+   "ifopt": "de:09777:9003",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Ebenhofen"
+    }
+   ],
+   "stada": "1430"
+  },
+  {
+   "evaNumber": "8003889",
+   "ifopt": "de:09777:71",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Marktoberdorf Nord"
+    }
+   ],
+   "stada": "8334"
+  },
+  {
+   "evaNumber": "8003885",
+   "ifopt": "de:09777:1100",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Marktoberdorf"
+    }
+   ],
+   "stada": "3977"
+  },
+  {
+   "evaNumber": "8003877",
+   "ifopt": "de:09777:9015",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Marktoberdorf Schule"
+    }
+   ],
+   "stada": "3978"
+  },
+  {
+   "evaNumber": "8003663",
+   "ifopt": "de:09777:9012",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Leuterschach"
+    }
+   ],
+   "stada": "3684"
+  },
+  {
+   "evaNumber": "8003639",
+   "ifopt": "de:09777:9011",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Lengenwang"
+    }
+   ],
+   "stada": "3661"
+  },
+  {
+   "evaNumber": "8005505",
+   "ifopt": "de:09777:1329",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Seeg"
+    }
+   ],
+   "stada": "5785"
+  },
+  {
+   "evaNumber": "8006309",
+   "ifopt": "de:09777:1343",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Weizern-Hopferau"
+    }
+   ],
+   "stada": "6650"
+  },
+  {
+   "evaNumber": "8000085",
+   "ifopt": "de:05111:18235",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Düsseldorf Hbf"
+    }
+   ],
+   "stada": "1401"
+  },
+  {
+   "evaNumber": "8000086",
+   "ifopt": "de:05112:16032",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Duisburg Hbf"
+    }
+   ],
+   "stada": "1374"
+  },
+  {
+   "evaNumber": "8000098",
+   "ifopt": "de:05113:9289",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Essen Hbf"
+    }
+   ],
+   "stada": "1690"
+  },
+  {
+   "evaNumber": "8002256",
+   "ifopt": "de:09772:4000",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Gersthofen"
+    }
+   ],
+   "stada": "2104"
+  },
+  {
+   "evaNumber": "8002162",
+   "ifopt": "de:09772:4100",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Gablingen"
+    }
+   ],
+   "stada": "1993"
+  },
+  {
+   "evaNumber": "8003560",
+   "ifopt": "de:09772:4200",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Langweid(Lech)"
+    }
+   ],
+   "stada": "3566"
+  },
+  {
+   "evaNumber": "8002761",
+   "ifopt": "de:09772:4350",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Herbertshofen"
+    }
+   ],
+   "stada": "2697"
+  },
+  {
+   "evaNumber": "8006363",
+   "ifopt": "de:09772:4450",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Westendorf"
+    }
+   ],
+   "stada": "6709"
+  },
+  {
+   "evaNumber": "8000778",
+   "ifopt": "de:09779:5954",
+   "localizedNames": [
+    {
+     "language": "deu",
+     "name": "Bäumenheim"
+    }
+   ],
+   "stada": "429"
+  }
+ ]
+}
