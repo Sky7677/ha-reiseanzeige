@@ -49,7 +49,7 @@ from .core.board import Station as BoardStation
 from .core.boardmatch import match_snapshot, pending
 from .core.journey import draft_snapshot, norm_line
 from .core.link_format import IGNORED, OK, UNKNOWN, deep_link, parse_pairing
-from .core.openboards import OpenBoardsClient, OpenBoardsError, aiohttp_post, is_eva
+from .core.openboards import TRANSIENT, OpenBoardsClient, OpenBoardsError, aiohttp_post, is_eva
 from .core.realtime import leg_realtime, stops_to_poll
 from .core.share_text import ShareTextError, looks_like_share, parse_share_text
 from .core.trips import (
@@ -373,12 +373,18 @@ class Reiseanzeige:
         snapshot = copy.deepcopy(trip["snapshot"])
         created = snapshot.get("createdAt")
         notes: list[str] = []
+        errors: list[OpenBoardsError] = []
         try:
-            matched = await match_snapshot(snapshot, self.client, self.railnet.places, self.stations.stations, log=notes.append)
+            matched = await match_snapshot(snapshot, self.client, self.railnet.places, self.stations.stations,
+                                           log=notes.append, on_error=lambda _leg, err: errors.append(err))
         except OpenBoardsError as err:
-            _LOGGER.warning("Reise %s: Züge nicht in OpenBoards gesucht: %s", trip_id, err)
+            await self.trips.mark_enrich_result(trip_id, err.code in TRANSIENT)
+            trip = next((t for t in self.trips.trips if t["id"] == trip_id), None)
+            _LOGGER.warning("Reise %s: Züge nicht in OpenBoards gesucht: %s%s", trip_id, err,
+                            f"; neuer Versuch um {trip['enrichRetryAt'][11:16]}" if trip and trip.get("enrichRetryAt") else "")
             self.rejected(err)
             return err.code
+        await self.trips.mark_enrich_result(trip_id, any(e.code in TRANSIENT for e in errors))
         for note in notes:
             _LOGGER.info("Reise %s: %s", trip_id, note)
         rides = [l for l in (matched or snapshot)["legs"] if l.get("kind") == "ride"]

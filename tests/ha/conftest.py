@@ -35,6 +35,14 @@ async def http_like_home_assistant(hass):
 
 
 @pytest.fixture(autouse=True)
+def no_request_gap():
+    """Abstand zwischen zwei Abfragen an OpenBoards abschalten: mit freezer steht die Uhr
+    der Ereignisschleife, ein Warten käme nie zurück. Geprüft wird er in test_openboards.py."""
+    with patch("custom_components.reiseanzeige.core.openboards.MIN_GAP", 0.0):
+        yield
+
+
+@pytest.fixture(autouse=True)
 def no_data_download(request):
     """Weder Gleisnetz noch Fahrplan noch Bahnhofsnummern aus dem Netz laden – außer in
     Tests mit railnet_release, timetable_release bzw. stations_release."""

@@ -525,7 +525,7 @@ async def test_client_fehler_und_zwischenspeicher():
         calls.append((url, headers, payload))
         return responses.pop(0)
     responses = [(200, '{"departures": []}'), (401, ""), (429, ""), (400, "Unknown eva"), (404, ""), (503, "")]
-    client = ob.OpenBoardsClient(post, "cid", "key", limiter=ob.RateLimiter(limit=1000))
+    client = ob.OpenBoardsClient(post, "cid", "key", limiter=ob.RateLimiter(limit=1000, min_gap=0))
     q = ob.query(False, ["8000013"], at(8, 0), at(9, 0))
     assert (await client.board(q)).departures == []
     assert calls[0][0].endswith("/departures") and calls[0][1]["DB-Client-ID"] == "cid" and calls[0][1]["DB-Api-Key"] == "key"
@@ -534,9 +534,54 @@ async def test_client_fehler_und_zwischenspeicher():
         with pytest.raises(OpenBoardsError) as err:
             await client.board(ob.query(True, ["8000013"], at(8, len(calls)), at(9, 0)))
         assert err.value.code == code
+        client._paused_until = None   # Pause nach 429 hier übergehen (eigener Test unten)
     assert "Unknown eva" in str(err.value)
     assert (await client.board(ob.query(True, ["8000013"], at(8, 30), at(9, 0)))).entries == [], "404: leere Tafel"
     with pytest.raises(OpenBoardsError) as err:
         await client.board(ob.query(True, ["8000013"], at(8, 31), at(9, 0)))
     assert err.value.code == "UNAVAILABLE"
     assert client.calls == 6
+
+
+async def test_hoechstens_vier_abfragen_pro_sekunde_und_60_pro_minute():
+    now = [0.0]
+    waits = []
+
+    async def sleep(s):
+        waits.append(round(s, 3))
+        now[0] += s
+    lim = ob.RateLimiter(limit=3, clock=lambda: now[0], sleep=sleep)
+    for _ in range(4):
+        await lim.acquire()
+    # 0.25 s Abstand; die vierte wartet aufs Ende der Minute
+    assert waits == [0.25, 0.25, 59.51]
+
+
+async def test_pause_nach_zu_vielen_anfragen():
+    now = [0.0]
+    calls = []
+
+    async def post(url, headers, payload):
+        calls.append(url)
+        return responses.pop(0)
+    responses = [(429, ""), (200, '{"departures": []}')]
+    client = ob.OpenBoardsClient(post, "cid", "key", limiter=ob.RateLimiter(limit=1000, min_gap=0), clock=lambda: now[0])
+    q = ob.query(False, ["8000013"], at(8, 0), at(9, 0))
+    with pytest.raises(OpenBoardsError) as err:
+        await client.board(q)
+    assert err.value.code == "RATE_LIMITED" and client.paused() == 60
+    now[0] = 30.0
+    with pytest.raises(OpenBoardsError) as err:
+        await client.board(q)
+    assert err.value.code == "RATE_LIMITED" and "Pause" in str(err.value)
+    assert len(calls) == 1, "in der Pause keine Anfrage"
+    now[0] = 61.0
+    assert (await client.board(q)).departures == [] and len(calls) == 2
+
+
+async def test_voruebergehende_fehler_einzelner_abschnitte():
+    errors = []
+    down = Boards([BOARD])
+    down.fail = OpenBoardsError("UNAVAILABLE", "503")
+    assert await bm.match_snapshot(ice612(), down, PLACES, on_error=lambda leg, err: errors.append(err.code)) is None
+    assert errors == ["UNAVAILABLE"]

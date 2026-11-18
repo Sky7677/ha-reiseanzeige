@@ -1,6 +1,7 @@
 """Die Integration in einem echten (Test-)Home-Assistant: Einrichtung, Teilen,
 WebSocket-Befehle der Karte, Sensor, Kartenproxy, Entladen."""
 
+from datetime import datetime
 from unittest.mock import patch
 
 from homeassistant import config_entries
@@ -185,7 +186,7 @@ async def test_diagnose_ohne_zugangsdaten(hass, boards):
     entry = await setup(hass)
     diag = await async_get_config_entry_diagnostics(hass, entry)
     assert diag["data"] == {"client_id": "**REDACTED**", "api_key": "**REDACTED**"}
-    assert diag["trips"] == [] and diag["version"] == "0.9.1"
+    assert diag["trips"] == [] and diag["version"] == "0.9.2"
     assert diag["credentials"] is True and diag["openboards_calls_since_start"] == 0
     assert diag["app_links"] == [] and diag["app_local_only"] is True
     assert diag["railnet"]["enabled"] is True and diag["railnet"]["loaded"] is False
@@ -194,19 +195,20 @@ async def test_diagnose_ohne_zugangsdaten(hass, boards):
 
 
 async def test_zug_nicht_gefunden_neuer_versuch_spaeter(hass, boards, hass_admin_user, hass_ws_client, freezer):
-    """OpenBoards kennt den Plan Tage vorher; klappt es beim Teilen nicht, folgt ein neuer
+    """OpenBoards kennt den Plan Tage vorher. Findet sich ein Zug nicht, folgt ein neuer
     Versuch – drei Tage vorher alle 12 Stunden, in der Stunde davor alle 5 Minuten."""
     await hass_ws_client(hass)
     freezer.move_to("2026-10-29T12:00:00+01:00")
     entry = await setup(hass)
-    boards.fail = OpenBoardsError("UNAVAILABLE", "HTTP 503", 503)
+    trips, boards.trips = boards.trips, [t for t in boards.trips if t.key != "-222"]   # ICE noch nicht da
     hass.bus.async_fire("mobile_app.share", {"text": SHARE}, context=Context(user_id=hass_admin_user.id))
     await hass.async_block_till_done(wait_background_tasks=True)
     trip = entry.runtime_data.trips.list()[0]
-    assert not any(l["matched"] for l in trip["snapshot"]["legs"])
+    assert [l["matched"] for l in trip["snapshot"]["legs"]] == [False, True, False, True, False]
 
-    boards.fail = None
+    boards.trips = trips
     boards.queries.clear()
+    entry.runtime_data.client.clear()   # Zwischenspeicher läuft in echter Zeit
     freezer.move_to("2026-10-29T23:00:00+01:00")
     await entry.runtime_data.tick()
     assert boards.queries == [], "noch keine 12 Stunden"
@@ -216,6 +218,40 @@ async def test_zug_nicht_gefunden_neuer_versuch_spaeter(hass, boards, hass_admin
     trip = entry.runtime_data.trips.get(trip["id"])
     assert [l["matched"] for l in trip["snapshot"]["legs"]] == [False, True, True, True, False]
     assert trip["snapshot"]["plannedDeparture"] == "2026-11-01T14:18:00+01:00"
+
+
+async def test_zu_viele_anfragen_bald_neu(hass, boards, hass_admin_user, hass_ws_client, freezer):
+    """Zu viele Anfragen (429) oder Bahn nicht erreichbar: neuer Versuch nach 2 Minuten,
+    dann 4, … – nicht erst im üblichen Abstand (Tage vorher 12 Stunden, 0.9.0)."""
+    await hass_ws_client(hass)
+    freezer.move_to("2026-10-29T12:00:00+01:00")
+    entry = await setup(hass)
+    rt = entry.runtime_data
+    boards.fail = OpenBoardsError("RATE_LIMITED", "HTTP 429", 429)
+    hass.bus.async_fire("mobile_app.share", {"text": SHARE}, context=Context(user_id=hass_admin_user.id))
+    await hass.async_block_till_done(wait_background_tasks=True)
+    trip = rt.trips.trips[0]
+
+    def retry_at():
+        return datetime.fromisoformat(rt.trips.trips[0]["enrichRetryAt"])
+    assert retry_at() == datetime.fromisoformat("2026-10-29T12:02:00+01:00") and trip["enrichErrors"] == 1
+    assert len(boards.queries) == 1, "nach 429 keine weitere Abfrage (Pause)"
+    assert rt.client.paused() > 0
+
+    # Noch in der Pause: der Versuch scheitert ohne Anfrage, der Abstand verdoppelt sich
+    freezer.move_to("2026-10-29T12:02:30+01:00")
+    await rt.tick()
+    assert len(boards.queries) == 1
+    assert retry_at() == datetime.fromisoformat("2026-10-29T12:06:30+01:00")
+
+    rt.client._paused_until = None   # Pause vorbei (läuft in echter Zeit)
+    boards.fail = None
+    freezer.move_to("2026-10-29T12:07:00+01:00")
+    await rt.tick()
+    await hass.async_block_till_done(wait_background_tasks=True)
+    trip = rt.trips.get(trip["id"])
+    assert [l["matched"] for l in trip["snapshot"]["legs"]] == [False, True, True, True, False]
+    assert rt.trips.trips[0]["enrichRetryAt"] is None and rt.trips.trips[0]["enrichErrors"] == 0
 
 
 async def test_reisen_aus_der_timetables_api_werden_neu_zugeordnet(hass, boards, hass_admin_user, freezer):
@@ -229,7 +265,8 @@ async def test_reisen_aus_der_timetables_api_werden_neu_zugeordnet(hass, boards,
     trip = rt.trips.trips[0]
     for leg in trip["snapshot"]["legs"][1:4]:
         leg.update(matched=True, source="timetables", tripId="-222-2611011636", iris={"x": 1})
-    trip.update(enriched=True, enrichAttemptAt=None, realtime={"legs": {"2": {"origin": "iris", "stopovers": []}}})
+    trip.update(enriched=True, enrichAttemptAt=None, enrichRetryAt=None,
+                realtime={"legs": {"2": {"origin": "iris", "stopovers": []}}})
     boards.fail = None
     await rt.tick()
     await hass.async_block_till_done(wait_background_tasks=True)

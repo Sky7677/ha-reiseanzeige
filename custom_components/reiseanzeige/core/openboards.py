@@ -11,8 +11,11 @@ Monat, geprüft am 08.11.2026).
     POST /departures  bzw.  /arrivals   (JSON-Abfrage, siehe body())
 
 Antworten bleiben JSON (dict); Board liefert, was die Auswertung braucht.
-Sparsam: höchstens RATE_LIMIT Abfragen pro Minute (erlaubt sind 10 pro Sekunde),
-gleiche Abfragen innerhalb von CACHE_TTL teilen sich eine Antwort.
+Sparsam: höchstens RATE_LIMIT Abfragen pro Minute und mindestens MIN_GAP Sekunden
+zwischen zwei Abfragen (erlaubt sind 10 pro Sekunde; ob je Anwendung oder je Konto,
+sagt das Portal nicht – App und Integration zusammen bleiben so darunter). Nach „zu
+viele Anfragen“ (429) PAUSE Sekunden lang keine Abfrage. Gleiche Abfragen innerhalb
+von CACHE_TTL teilen sich eine Antwort. Werte wie in der App.
 """
 
 from __future__ import annotations
@@ -33,6 +36,9 @@ MAX_WINDOW = timedelta(hours=8)
 MAX_STATIONS = 15
 MAX_ENTRIES = 50
 RATE_LIMIT = 60                 # Abfragen pro Minute, wie in der App
+MIN_GAP = 0.25                  # Sekunden zwischen zwei Abfragen: höchstens 4 pro Sekunde
+PAUSE = 60.0                    # Sekunden ohne Abfrage nach HTTP 429
+TRANSIENT = ("RATE_LIMITED", "UNAVAILABLE", "BAD_RESPONSE")   # vorübergehend: bald neu versuchen
 CACHE_TTL = 60                  # Sekunden
 REQUEST_TIMEOUT = 30
 
@@ -234,12 +240,15 @@ class BoardSource(Protocol):
 
 
 class RateLimiter:
-    """Höchstens `limit` Aufrufe je `window` Sekunden (gleitendes Fenster)."""
+    """Höchstens `limit` Aufrufe je `window` Sekunden (gleitendes Fenster) und mindestens
+    `min_gap` Sekunden zwischen zwei Aufrufen (Standard: MIN_GAP)."""
 
     def __init__(self, limit: int = RATE_LIMIT, window: float = 60.0,
                  clock: Callable[[], float] = _time.monotonic,
-                 sleep: Callable[[float], Awaitable[None]] = asyncio.sleep) -> None:
+                 sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+                 min_gap: float | None = None) -> None:
         self.limit, self.window, self.clock, self.sleep = limit, window, clock, sleep
+        self.min_gap = MIN_GAP if min_gap is None else min_gap
         self._stamps: deque[float] = deque()
         self._lock = asyncio.Lock()
 
@@ -249,10 +258,14 @@ class RateLimiter:
                 now = self.clock()
                 while self._stamps and now - self._stamps[0] >= self.window:
                     self._stamps.popleft()
-                if len(self._stamps) < self.limit:
+                if len(self._stamps) >= self.limit:
+                    wait = self.window - (now - self._stamps[0]) + 0.01
+                elif self._stamps and now - self._stamps[-1] < self.min_gap:
+                    wait = self.min_gap - (now - self._stamps[-1])
+                else:
                     self._stamps.append(now)
                     return
-                await self.sleep(self.window - (now - self._stamps[0]) + 0.01)
+                await self.sleep(wait)
 
 
 # (Adresse, Kopfzeilen, Inhalt) → (HTTP-Status, Text)
@@ -289,6 +302,7 @@ class OpenBoardsClient:
         self._clock = clock
         self._cache: dict[str, tuple[float, Board]] = {}
         self._pending: dict[str, asyncio.Future] = {}
+        self._paused_until: float | None = None
         self.calls = 0  # für die Diagnose
 
     async def board(self, q: BoardQuery) -> Board:
@@ -317,7 +331,13 @@ class OpenBoardsClient:
             del self._cache[k]
         return result
 
+    def paused(self) -> float:
+        """Sekunden, die die Pause nach HTTP 429 noch dauert (0: keine)."""
+        return max(0.0, self._paused_until - self._clock()) if self._paused_until is not None else 0.0
+
     async def _request(self, arrivals: bool, payload: dict) -> Board:
+        if (left := self.paused()) > 0:
+            raise OpenBoardsError("RATE_LIMITED", f"OpenBoards: Pause nach zu vielen Anfragen, noch {left:.0f} s", 429)
         await self._limiter.acquire()
         self.calls += 1
         url = f"{self._base}/{'arrivals' if arrivals else 'departures'}"
@@ -332,6 +352,7 @@ class OpenBoardsClient:
         if status in (401, 403):
             raise OpenBoardsError("BAD_CREDENTIALS", "Zugangsdaten werden von OpenBoards nicht akzeptiert", status)
         if status == 429:
+            self._paused_until = self._clock() + PAUSE
             raise OpenBoardsError("RATE_LIMITED", "OpenBoards: zu viele Anfragen", status)
         if status == 400:
             raise OpenBoardsError("BAD_REQUEST", "OpenBoards: HTTP 400" + _reason(text), status)

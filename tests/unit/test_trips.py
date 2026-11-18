@@ -209,3 +209,40 @@ async def test_erneute_zuordnung_im_takt():
     assert m.due_for_enrichment() == [], "alle Bahn-Abschnitte gefunden"
     await m.set_snapshot(tid, draft_snapshot(j, clock()))
     assert [l["matched"] for l in m.get(tid)["snapshot"]["legs"]] == [False, True, True, True, False]
+
+
+async def test_nach_voruebergehendem_fehler_bald_neu():
+    """Zu viele Anfragen oder Bahn nicht erreichbar: neuer Versuch nach 2, 4, 8 … Minuten,
+    höchstens im üblichen Abstand; ein Versuch ohne solchen Fehler setzt zurück."""
+    clock = Clock(datetime(2026, 10, 29, 12, 0, tzinfo=TZ))
+    m = await manager(clock)
+    j = shared()
+    tid = (await m.add_from_share("max", j, draft_snapshot(j, clock())))["trip"]["id"]
+    await m.mark_enrich_attempt(tid)
+    await m.mark_enrich_result(tid, transient=True)
+    assert m.due_for_enrichment() == []
+    clock.t += timedelta(minutes=2)
+    assert len(m.due_for_enrichment()) == 1
+    await m.mark_enrich_attempt(tid)
+    await m.mark_enrich_result(tid, transient=True)
+    assert m.trips[0]["enrichRetryAt"] == (clock.t + timedelta(minutes=4)).isoformat()
+    for _ in range(10):
+        await m.mark_enrich_result(tid, transient=True)
+    assert m.trips[0]["enrichRetryAt"] == (clock.t + timedelta(hours=12)).isoformat(), "höchstens der übliche Abstand"
+    await m.mark_enrich_result(tid, transient=False)
+    assert m.trips[0]["enrichRetryAt"] is None and m.trips[0]["enrichErrors"] == 0
+    assert m.due_for_enrichment() == [], "danach wieder der übliche Abstand"
+
+
+async def test_zu_viele_anfragen_ist_kein_ausfall_der_echtzeit():
+    clock = Clock(at(1, 16))
+    m = await manager(clock)
+    j = shared()
+    tid = (await m.add_from_share("max", j, draft_snapshot(j, clock())))["trip"]["id"]
+    await m.set_snapshot(tid, matched(draft_snapshot(j, clock())))
+    limited = [{"legIndex": 2, "status": "error", "error": "RATE_LIMITED"}]
+    for _ in range(3):
+        assert await m.apply_realtime(tid, limited) == []
+    h = m.get(tid)["realtimeHealth"]
+    assert h["consecutiveFailures"] == 0 and not h["failing"] and h["lastError"] == "RATE_LIMITED"
+    assert m.trips[0]["lastRefreshAt"] == clock().isoformat(), "nächste Abfrage im üblichen Abstand"
