@@ -131,13 +131,15 @@ async def test_verbinden_reisen_standort_loeschen(hass, iris, hass_admin_user, h
     await rt.notify(hass_admin_user.id, "Echtzeit fehlt")
     assert len(calls) == n
 
-    # In Home Assistant gelöscht: diese Instanz bekommt die Reise nicht mehr
+    # Reisen aus der App löscht man nur dort (Entscheidung 18.11.2026)
     await ws.send_json({"id": 14, "type": f"{DOMAIN}/delete", "trip_id": trip["id"]})
-    assert (await ws.receive_json())["success"]
-    up = copy.deepcopy(sample("upsert-zubringer.json"))
-    up["messages"][0]["revision"] = 5
-    assert (await post(client, webhook_id, up))[1]["trips"] == {TRIP: "deleted"}
-    assert (await post(client, webhook_id, sample("location.json")))[1]["trips"] == {TRIP: "deleted"}
+    res = await ws.receive_json()
+    assert not res["success"] and res["error"]["code"] == "from_app"
+    assert len(rt.trips.list()) == 1
+    gone = copy.deepcopy(sample("delete-stop-bye.json"))
+    gone["messages"] = [m for m in gone["messages"] if m["type"] == "trip.delete"]
+    assert (await post(client, webhook_id, gone))[1]["trips"] == {TRIP: "ok"}
+    assert (await post(client, webhook_id, sample("location.json")))[1]["trips"] == {TRIP: "unknown"}
     assert rt.trips.list() == []
 
     # Eine zweite Reise; dann Senden stoppen, löschen, aufheben in der App
@@ -210,6 +212,45 @@ async def test_fehler_und_aufheben_in_home_assistant(hass, iris, hass_admin_user
     assert await post(client, webhook_id, sample("upsert-augsburg-berlin.json")) == (200, None)
     await ws.send_json({"id": 4, "type": f"{DOMAIN}/me"})
     assert (await ws.receive_json())["result"]["linked"] is False
+
+
+async def test_administratoren_sehen_alle_verbindungen(hass, iris, hass_admin_user, hass_read_only_user,
+                                                      hass_read_only_access_token, hass_ws_client,
+                                                      hass_client_no_auth, freezer):
+    """Etwa das kaputte Handy einer anderen Person: Admins sehen und heben jede Verbindung auf."""
+    ws = await hass_ws_client(hass)
+    ro = await hass_ws_client(hass, hass_read_only_access_token)   # vor dem Stellen der Uhr anmelden
+    freezer.move_to("2026-10-07T21:00:00+02:00")
+    rt, _ = await setup(hass, hass_admin_user)
+    client = await hass_client_no_auth()
+    _, own = await connect(hass, ws, client)
+    # Verbindung einer anderen Person (Handy dieser Person, Reise aus ihrer App)
+    other = rt.links.begin(hass_read_only_user.id)
+    status, body = await post(client, other["token"], sample("hello.json") | {"messages": [
+        {"type": "link.hello", "device": "Pixel 9", "appInstance": "0" * 32}]})
+    assert status == 200
+    up = copy.deepcopy(sample("upsert-augsburg-berlin.json"))
+    up["messages"][0]["tripId"] = "anna"
+    assert (await post(client, body["link"]["webhookId"], up))[1]["trips"] == {"anna": "ok"}
+
+    await ws.send_json({"id": 2, "type": f"{DOMAIN}/links"})
+    links = (await ws.receive_json())["result"]["links"]
+    assert [(l["device"], l["own"], l.get("userName")) for l in links] == [
+        ("Nokia 8.3 5G", True, None), ("Pixel 9", False, hass_read_only_user.name)]
+
+    # ohne Adminrechte nur die eigene
+    await ro.send_json({"id": 1, "type": f"{DOMAIN}/links"})
+    assert [l["device"] for l in (await ro.receive_json())["result"]["links"]] == ["Pixel 9"]
+    await ro.send_json({"id": 2, "type": f"{DOMAIN}/link_remove", "link_id": rt.links.for_user(hass_admin_user.id)[0]["id"]})
+    assert (await ro.receive_json())["error"]["code"] == "not_found"
+
+    # Admin hebt die fremde auf: ihre Reisen sind sofort weg, die eigene bleibt
+    await ws.send_json({"id": 3, "type": f"{DOMAIN}/link_remove", "link_id": links[1]["id"]})
+    assert (await ws.receive_json())["success"]
+    await hass.async_block_till_done()
+    assert [l["device"] for l in rt.links.links.values()] == ["Nokia 8.3 5G"]
+    assert rt.trips.list() == []
+    assert own["webhookId"] in {l["webhookId"] for l in rt.links.links.values()}
 
 
 async def test_umleitung_per_gps_kommt_aus_der_app(hass, iris, railnet_release, hass_admin_user, hass_ws_client,

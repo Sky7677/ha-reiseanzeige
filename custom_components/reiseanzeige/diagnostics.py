@@ -29,7 +29,6 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
         "phones": {uid: {k: v for k, v in o.items() if k in ("notify", "tracker", "deviceName")} for uid, o in rt.owners.data.items()},
         # Verbundene Android-Apps ohne Webhook-Adressen
         "app_links": [rt.links.public(l) | {"user": rt.name_of(l["userId"])} for l in rt.links.links.values()],
-        "app_trips_deleted_here": len(rt.links.tombstones),
         "app_local_only": rt.links.local_only,
         "trips": rt.trips.trips,
     }

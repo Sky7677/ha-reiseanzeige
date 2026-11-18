@@ -179,15 +179,26 @@ def ws_map_base(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None:
 # --- Android-App verbinden (links.py) ---
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/links"})
-@callback
-def ws_links(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None:
-    """Verbundene Apps des angemeldeten Benutzers."""
+@websocket_api.async_response
+async def ws_links(hass: HomeAssistant, connection, msg: dict[str, Any]) -> None:
+    """Verbundene Apps des angemeldeten Benutzers; Administratoren sehen alle (etwa um das
+    kaputte Handy einer anderen Person aufzuheben), mit dem Namen der Person."""
     try:
         rt = _runtime(hass)
     except TripError as err:
         return _error(connection, msg["id"], err)
-    connection.send_result(msg["id"], {"links": [rt.links.public(l) for l in rt.links.for_user(connection.user.id)],
-                                       "base": rt.links.base_url()})
+    me = connection.user
+    own = rt.links.for_user(me.id)
+    others = ([l for l in rt.links.links.values() if l["userId"] != me.id] if me.is_admin else [])
+    names: dict[str, str | None] = {}
+    for link in others:
+        if link["userId"] not in names:
+            user = await hass.auth.async_get_user(link["userId"])
+            names[link["userId"]] = user.name if user else None
+    others.sort(key=lambda l: ((names.get(l["userId"]) or "").casefold(), l["createdAt"]))
+    links = [rt.links.public(l) | {"own": True} for l in own]
+    links += [rt.links.public(l) | {"own": False, "userName": names.get(l["userId"])} for l in others]
+    connection.send_result(msg["id"], {"links": links, "base": rt.links.base_url()})
 
 
 @websocket_api.websocket_command({vol.Required("type"): f"{DOMAIN}/link_start"})

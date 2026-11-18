@@ -50,7 +50,6 @@ _LOGGER = logging.getLogger(__name__)
 PAIRING_TTL = 600            # Sekunden, die ein Einmal-Schlüssel gilt
 RATE_LIMIT = 60              # Anfragen je Verbindung und Minute
 LOCATION_MAX_AGE = timedelta(minutes=30)   # danach wird der Standort der Tracker-Entität geleert
-TOMBSTONE_DAYS = 2           # so lange antwortet Home Assistant „deleted“ auf eine hier gelöschte App-Reise
 
 
 def tracker_unique_id(entry_id: str, link_id: str) -> str:
@@ -67,7 +66,6 @@ class Links:
         self.app_url = (app_url or "").strip().rstrip("/") or None
         self._store: Store[dict] = Store(hass, STORAGE_VERSION, STORAGE_KEY_LINKS)
         self.links: dict[str, dict] = {}
-        self.tombstones: list[dict] = []
         self.locations: dict[str, dict] = {}
         self._pending: dict[str, dict] = {}
         self._registered: set[str] = set()
@@ -79,10 +77,9 @@ class Links:
     async def load(self) -> None:
         data = await self._store.async_load() or {}
         self.links = data.get("links") or {}
-        self.tombstones = data.get("tombstones") or []
 
     async def _save(self) -> None:
-        await self._store.async_save({"links": self.links, "tombstones": self.tombstones})
+        await self._store.async_save({"links": self.links})
 
     def _register(self, webhook_id: str, name: str) -> None:
         if webhook_id in self._registered:
@@ -203,7 +200,6 @@ class Links:
         if link is None:
             return False
         self._unregister(link["webhookId"])
-        self.tombstones = [t for t in self.tombstones if t["linkId"] != link_id]
         self.locations.pop(link_id, None)
         await self._save()
         removed = await self.rt.trips.remove_link(link_id)
@@ -214,23 +210,8 @@ class Links:
         async_dispatcher_send(self.hass, SIGNAL_LINKS_CHANGED)
         return True
 
-    # --- Hier gelöschte App-Reisen ---
-
-    async def add_tombstone(self, link_id: str, trip_id: str) -> None:
-        until = (dt_util.now() + timedelta(days=TOMBSTONE_DAYS)).isoformat()
-        self.tombstones = [t for t in self.tombstones if not (t["linkId"] == link_id and t["tripId"] == trip_id)]
-        self.tombstones.append({"linkId": link_id, "tripId": trip_id, "until": until})
-        await self._save()
-
-    def tombstoned(self, link_id: str, trip_id: str) -> bool:
-        return any(t["linkId"] == link_id and t["tripId"] == trip_id for t in self.tombstones)
-
     async def cleanup(self, now: datetime) -> None:
-        """Abgelaufene Grabsteine und alte Standorte entfernen (aus dem Takt der Laufzeit)."""
-        keep = [t for t in self.tombstones if datetime.fromisoformat(t["until"]) > now]
-        if len(keep) != len(self.tombstones):
-            self.tombstones = keep
-            await self._save()
+        """Alte Standorte entfernen (aus dem Takt der Laufzeit)."""
         for link_id, loc in list(self.locations.items()):
             if now - loc["time"] > LOCATION_MAX_AGE:
                 self.clear_location(link_id)
@@ -291,7 +272,7 @@ class Links:
             link["lastSeenAt"] = dt_util.now().isoformat()
             if req.app_version:
                 link["appVersion"] = req.app_version
-            self._store.async_delay_save(lambda: {"links": self.links, "tombstones": self.tombstones}, 600)
+            self._store.async_delay_save(lambda: {"links": self.links}, 600)
             messages = req.messages
 
         trips: dict[str, str] = {}

@@ -12,7 +12,8 @@ const snap = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'fixtures
 const tick = (ms = 30) => new Promise(r => setTimeout(r, ms));
 
 // Attrappe der Schnittstelle mit Zustand (als HTTP-Pfade; callWS unten bildet die WebSocket-Befehle darauf ab)
-const api = {trips: [], calls: [], links: [{id: 'l1', device: 'Nokia 8.3 5G', lastSeenAt: '2026-10-08T05:40:00Z'}]};
+const api = {trips: [], calls: [], links: [{id: 'l1', device: 'Nokia 8.3 5G', lastSeenAt: '2026-10-08T05:40:00Z', own: true},
+	{id: 'l2', device: 'Pixel 9', own: false, userName: 'Anna'}]};
 const makeTrip = (id, ownerId, ownerName) => ({id, ownerId, ownerName, status: 'upcoming', departure: snap.plannedDeparture, arrival: snap.plannedArrival, snapshot: snap, seats: {}, realtime: null, realtimeHealth: {failing: false}});
 const reply = (status, body) => ({ok: status < 300, status, json: async () => body});
 const fakeFetch = async (url, opts = {}) => {
@@ -242,6 +243,7 @@ test('Android-App: verbundene Apps, neue Verbindung mit QR-Code, aufheben mit Na
 	assert.equal(panel.classList.contains('hidden'), false);
 	assert.ok($('.app-toggle').classList.contains('hidden'));
 	assert.match(panel.textContent, /Nokia 8\.3 5G/);
+	assert.match(panel.textContent, /Pixel 9 · Anna/, 'Administratoren sehen auch fremde Verbindungen');
 	panel.querySelector('[data-action="app-start"]').click();
 	await tick(60);
 	assert.ok(panel.querySelector('.app-qr svg'), 'QR-Code');
@@ -254,7 +256,8 @@ test('Android-App: verbundene Apps, neue Verbindung mit QR-Code, aufheben mit Na
 	remove.click();
 	await tick(60);
 	assert.ok(api.calls.includes('DELETE api/links/l1'));
-	assert.match($('.app-panel').textContent, /Noch keine Reiseanzeige-App verbunden/);
+	assert.doesNotMatch($('.app-panel').textContent, /Nokia/);
+	assert.match($('.app-panel').textContent, /Pixel 9/);
 	$('[data-action="app-close"]').click();
 	await tick(20);
 	assert.ok($('.app-panel').classList.contains('hidden'));
@@ -271,6 +274,8 @@ test('Reise aus der Android-App: Wagen und Platz nur anzeigen', async () => {
 	await tick(60);
 	assert.equal($('[data-action="seat-edit"]'), null, 'kein Bearbeiten');
 	assert.match($('.info').textContent, /Wagen 7, Platz 45 · aus der App/);
+	assert.equal($('[data-action="delete"]'), null, 'gelöscht wird in der App');
+	assert.match($('.info .updated').textContent, /Löschen in der Reiseanzeige-App/);
 	api.trips = [];
 	await card._load();
 });

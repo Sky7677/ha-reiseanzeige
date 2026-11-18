@@ -108,7 +108,7 @@ Der Schlüssel zum Verbinden gilt 10 Minuten und einmal. Die dauerhafte Adresse 
 - Umleitungen per GPS wertet die App aus; Home Assistant legt nur die Linie auf seine Gleise.
 - Wagen und Sitzplatz kommen aus der App; die Karte zeigt sie nur an.
 - Push-Nachrichten kommen von der App, nicht von Home Assistant. Das Ereignis `reiseanzeige` für Automationen bleibt.
-- Eine Reise in der Karte zu löschen, löscht sie nur in Home Assistant. Wird die Verbindung aufgehoben (in der Karte oder in der App), entfernt Home Assistant die Reisen dieser App sofort.
+- Reisen aus der App löscht man in der App; die Karte bietet dafür keinen Knopf. Wird die Verbindung aufgehoben (in der Karte oder in der App), entfernt Home Assistant die Reisen dieser App sofort – so auch, wenn das Handy kaputt oder weg ist. Administratoren sehen in der Karte unter „Android-App“ die Verbindungen aller Personen und können jede aufheben.
 
 **Erreichbarkeit:** Die App schickt an die interne Adresse von Home Assistant, etwa über ein VPN wie WireGuard (die Reiseanzeige muss dort zu den eingeschlossenen Apps gehören). Die Adresse lässt sich in den Optionen ändern („Adresse für die Android-App“). Standardmäßig nimmt Home Assistant Nachrichten der App nur aus privaten Netzen an; Adressen von Tailscale (100.x) zählen nicht dazu – dann die Option „Android-App nur aus dem lokalen Netz“ abschalten.
 
