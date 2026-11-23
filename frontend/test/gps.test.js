@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {buildGeometry, computePosition, pointAtAlong} from '../src/position.js';
 import {buildTripView} from '../src/view-model.js';
-import {applyGps, evaluateFix, readFix, projectOnto, fixSample, speedFromFixes, speedLabel, GPS_RULES} from '../src/gps.js';
+import {applyGps, applyAppPoint, evaluateFix, readFix, readAppResult, projectOnto, fixSample, speedFromFixes, speedLabel, GPS_RULES} from '../src/gps.js';
 
 const snapshot = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'fixtures', 'augsburg-berlin.snapshot.json'), 'utf8'));
 const trip = {id: 't', status: 'running', snapshot, realtime: null, realtimeHealth: {failing: false}};
@@ -137,13 +137,55 @@ test('Ungenauer Standort (100 m) mit speed 0: keine falsche 0, sondern abgeleite
 	assert.equal(speedOf(fix(onRoute(pos.along), {speed: 40, accuracy: 25}), now, previous).approx, false);
 });
 
-test('Geschwindigkeitsanzeige: frisch kräftig, danach „zuletzt … · vor x min“', () => {
+test('Geschwindigkeitsanzeige mit Uhrzeit der Messung, nach 2 Minuten blasser', () => {
 	const now = at('08:00');
-	assert.deepEqual(speedLabel({kmh: 298, at: now - 90 * 1000}, now), {text: '298 km/h', stale: false});
-	assert.deepEqual(speedLabel({kmh: 298, at: now - 5 * MIN}, now), {text: 'zuletzt 298 km/h · vor 5 min', stale: true});
-	assert.deepEqual(speedLabel({kmh: 150, at: now - 30 * 1000, approx: true}, now), {text: '≈ 150 km/h', stale: false});
-	assert.deepEqual(speedLabel({kmh: 150, at: now - 3 * MIN, approx: true}, now), {text: 'zuletzt ≈ 150 km/h · vor 3 min', stale: true});
+	assert.deepEqual(speedLabel({kmh: 298, at: now - 90 * 1000}, now), {text: '298 km/h · 07:58', stale: false});
+	assert.deepEqual(speedLabel({kmh: 298, at: now - 5 * MIN}, now), {text: '298 km/h · 07:55', stale: true});
+	assert.deepEqual(speedLabel({kmh: 150, at: now - 30 * 1000, approx: true}, now), {text: '≈ 150 km/h · 07:59', stale: false});
+	assert.deepEqual(speedLabel({kmh: 150, at: now - 3 * MIN, approx: true}, now), {text: '≈ 150 km/h · 07:57', stale: true});
 	assert.equal(speedLabel(null, now), null);
+});
+
+// Tracker der Android-App mit ihrem Ergebnis (Attribute train_*)
+const appState = (along, {tMin = 0, leg = ICE, speed = 39.72, approx = true, trip_id = 't', gps = true} = {}) => {
+	const [lat, lon] = onRoute(along, leg);
+	const t = new Date(at('08:00') + tMin * MIN).toISOString();
+	return {state: 'not_home', attributes: {latitude: lat + 0.001, longitude: lon, gps_accuracy: 64, speed: null, fix_time: t, trip_id,
+		train_leg: leg, train_latitude: lat, train_longitude: lon, train_time: t, train_gps: gps,
+		train_speed: speed, train_speed_time: speed == null ? null : t, train_speed_approx: approx}};
+};
+
+test('Ergebnis der App lesen: Zugpunkt und Geschwindigkeit, nur für die eigene Reise', () => {
+	const now = at('08:00');
+	const r = readAppResult(appState(computeAt(now).along), 't');
+	assert.equal(r.leg, ICE);
+	assert.equal(r.gps, true);
+	assert.deepEqual(r.speed, {kmh: 143, at: now, approx: true}, '39,72 m/s = 143 km/h, wie die App');
+	assert.equal(readAppResult(appState(80), 'andere'), null, 'Messung einer anderen Reise');
+	assert.equal(readAppResult(appState(80, {speed: null}), 't').speed, null, 'App kennt keine Geschwindigkeit');
+	// Ältere App ohne Ergebnis: nur die Messung
+	assert.equal(readAppResult({state: 'not_home', attributes: {latitude: 50, longitude: 10, trip_id: 't'}}, 't'), null);
+	assert.equal(readAppResult(null, 't'), null);
+});
+
+test('Zugpunkt der App hat Vorrang: kein Prüfen wie beim GPS, Abklingen mit dem Alter', () => {
+	const now = at('08:00');
+	const pos = computeAt(now);
+	// App sieht den Zug 3 km weiter (etwa ohne Echtzeit hier): Punkt folgt der App
+	const ahead = readAppResult(appState(pos.along + 3), 't');
+	const p = applyAppPoint({pos, point: ahead, geometry, computeAt, now});
+	assert.equal(p.source, 'app');
+	assert.ok(Math.abs(p.along - (pos.along + 3)) < 0.05, `along ${p.along}`);
+	// mit dem Alter schwächer, nach 10 Minuten gar nicht mehr
+	const old = readAppResult(appState(computeAt(now - 5 * MIN).along + 3, {tMin: -5}), 't');
+	const q = applyAppPoint({pos, point: old, geometry, computeAt, now});
+	assert.ok(q.gpsWeight < 0.5 && q.along > pos.along && q.along < pos.along + 3);
+	assert.equal(applyAppPoint({pos, point: readAppResult(appState(80, {tMin: -11}), 't'), geometry, computeAt, now}), null);
+	// anderer Abschnitt als die eigene Rechnung: nicht verwendet (dann eigene Auswertung)
+	assert.equal(applyAppPoint({pos, point: {...ahead, leg: 0}, geometry, computeAt, now}), null);
+	// Uhr des Handys etwas vor: zählt wie frisch
+	const early = applyAppPoint({pos, point: {...ahead, at: now + 20 * 1000}, geometry, computeAt, now});
+	assert.equal(early.gpsWeight, 1);
 });
 
 test('Doppelt befahrenes Stück (Umkehr): der GPS-Abgleich nimmt die Stelle, die zur Uhrzeit passt', async () => {

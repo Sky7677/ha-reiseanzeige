@@ -20,6 +20,7 @@
 // schickt im Hintergrund gesammelt und nennt die Messzeit (Attribut fix_time).
 
 import {dist, pointAtAlong} from './position.js';
+import {clock} from './format.js';
 
 export const GPS_RULES = Object.freeze({
 	MAX_ACCURACY_M: 250,
@@ -50,6 +51,25 @@ export const readFix = (state) => {
 		accuracy: Number.isFinite(Number(a.gps_accuracy)) ? Number(a.gps_accuracy) : Infinity,
 		speed: Number.isFinite(Number(a.speed)) ? Number(a.speed) : null, // m/s
 		at: Date.parse(a.fix_time ?? state.last_updated),
+	};
+};
+
+// Ergebnis der Android-App aus ihrem Tracker (Attribute train_*): Zugpunkt auf der Strecke
+// und Geschwindigkeit, wie die App sie anzeigt (gemessen oder „≈“, mit Zeit der Messung).
+// Nur für die Reise, zu der die Messung gehört; null ohne Ergebnis.
+export const readAppResult = (state, tripId) => {
+	const a = state?.attributes;
+	if (!a || a.trip_id !== tripId || a.train_latitude == null || a.train_longitude == null) return null;
+	const lat = Number(a.train_latitude), lon = Number(a.train_longitude), leg = Number(a.train_leg);
+	const at = Date.parse(a.train_time);
+	if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isInteger(leg) || !Number.isFinite(at)) return null;
+	const speed = a.train_speed == null ? NaN : Number(a.train_speed);
+	const speedAt = Date.parse(a.train_speed_time);
+	return {
+		leg, lat, lon, at, gps: Boolean(a.train_gps),
+		speed: Number.isFinite(speed) && Number.isFinite(speedAt)
+			? {kmh: round(speed * 3.6), at: speedAt, approx: Boolean(a.train_speed_approx)}
+			: null,
 	};
 };
 
@@ -138,6 +158,27 @@ export const applyGps = ({pos, fix, view, geometry, computeAt, now, rules = GPS_
 	return {...pos, point: at.point, vertex: at.vertex, along, stopped: pos.stopped && Math.abs(r.offsetKm * weight) < 0.2, source: 'gps', gpsAge: r.age, gpsWeight: weight, gpsSpeed: fix.speed, gpsAccuracy: fix.accuracy, gpsAlongAtFix: r.alongAtFix, gpsAt: fix.at};
 };
 
+// Zugpunkt der App: hat bei Reisen aus der App Vorrang vor der eigenen Auswertung des
+// Standorts – die App hat ihn schon geprüft und auf die Strecke gesetzt. Hier zählt nur,
+// dass er frisch ist und zum selben Abschnitt gehört; wie beim GPS klingt die Korrektur
+// mit dem Alter ab. null: nicht verwendbar (dann die eigene Auswertung).
+export const applyAppPoint = ({pos, point, geometry, computeAt, now, rules = GPS_RULES}) => {
+	if (!pos || !point) return null;
+	const age = Math.max(0, now - point.at); // kleine Abweichung der Uhren von Handy und Browser zählt nicht
+	if (age > rules.MAX_AGE_MS || point.leg !== pos.leg) return null;
+	const then = computeAt(point.at);
+	const g = geometry[point.leg];
+	if (!then || then.leg !== point.leg || !g) return null;
+	const proj = projectOnto(g, [point.lat, point.lon], {along: then.along, tolM: rules.MIN_TOLERANCE_M});
+	if (!proj) return null;
+	const offsetKm = proj.along - then.along;
+	const weight = Math.exp(-age / rules.DECAY_MS) * Math.max(0, 1 - age / rules.MAX_AGE_MS);
+	const along = Math.min(Math.max(pos.along + offsetKm * weight, 0), g.cum.at(-1) ?? 0);
+	const at = pointAtAlong(g, along);
+	return {...pos, point: at.point, vertex: at.vertex, along, stopped: pos.stopped && Math.abs(offsetKm * weight) < 0.2,
+		source: 'app', appGps: point.gps, gpsAge: age, gpsWeight: weight};
+};
+
 // Daten eines akzeptierten Standorts für die Geschwindigkeit (aus applyGps), sonst null
 export const fixSample = (pos) => (pos?.source === 'gps'
 	? {leg: pos.leg, along: pos.gpsAlongAtFix, at: pos.gpsAt, speed: pos.gpsSpeed, accuracy: pos.gpsAccuracy}
@@ -163,12 +204,10 @@ export const speedFromFixes = ({current, previous, rules = GPS_RULES}) => {
 	return null;
 };
 
-// Anzeige: frisch kräftig ("298 km/h"), danach als letzter Wert mit Alter
-// ("zuletzt 298 km/h · vor 5 min"). null, wenn es keinen Wert gibt.
+// Anzeige mit der Uhrzeit der Messung ("298 km/h · 06:42", abgeleitet "≈ 150 km/h · 06:42"),
+// nach SPEED_MAX_AGE_MS blasser (stale). null, wenn es keinen Wert gibt.
 export const speedLabel = (last, now, rules = GPS_RULES) => {
 	if (!last) return null;
 	const age = Math.max(0, now - last.at);
-	const value = `${last.approx ? '≈ ' : ''}${last.kmh} km/h`;
-	if (age <= rules.SPEED_MAX_AGE_MS) return {text: value, stale: false};
-	return {text: `zuletzt ${value} · vor ${Math.round(age / 60000)} min`, stale: true};
+	return {text: `${last.approx ? '≈ ' : ''}${last.kmh} km/h · ${clock(last.at)}`, stale: age > rules.SPEED_MAX_AGE_MS};
 };

@@ -72,10 +72,13 @@ Die Nachrichten werden der Reihe nach verarbeitet.
 ```json
 {"type": "location", "tripId": "…",
  "fixes": [{"lat": 49.4459, "lon": 11.0823, "accuracy": 12.0, "time": "2026-10-08T07:40:31+02:00", "speed": 33.4, "bearing": 12.0}],
- "train": {"leg": 1, "lat": 49.4471, "lon": 11.0850, "time": "2026-10-08T07:40:31+02:00", "gps": true}}
+ "train": {"leg": 1, "lat": 49.4471, "lon": 11.0850, "time": "2026-10-08T07:40:31+02:00", "gps": true,
+           "speed": 33.4, "speedTime": "2026-10-08T07:40:31+02:00", "speedApprox": false}}
 ```
 
-`fixes`: Messungen des Handys, älteste zuerst, höchstens 30. `accuracy` in Metern, `speed` in m/s, `bearing` in Grad; beide optional. `train`: Zugpunkt auf der Strecke laut App, optional. Ein Ziel zeigt nie den Standort selbst an, sondern nur den Punkt auf der Strecke.
+`fixes`: Messungen des Handys, älteste zuerst, höchstens 30. `accuracy` in Metern, `speed` in m/s, `bearing` in Grad; beide optional.
+
+`train`: Ergebnis der App, optional – der Zugpunkt auf der Strecke zur Zeit `time` (`leg`, `lat`, `lon`; `gps`: per GPS korrigiert) und die Geschwindigkeit, wie die App sie anzeigt: `speed` in m/s, `speedTime` Zeit der Messung, `speedApprox` abgeleitet aus zwei Standorten auf der Strecke statt vom Handy gemessen (alle drei optional). Ein Ziel nutzt dieses Ergebnis vor seiner eigenen Auswertung der `fixes`; die bleibt Ersatz, etwa für Nachrichten ohne `train`. Ein Ziel zeigt nie den Standort selbst an, sondern nur den Punkt auf der Strecke.
 
 ### `route.gps`
 
@@ -143,7 +146,7 @@ Die App nimmt den Link nur an, wenn sie die Kopplungskennung selbst erzeugt hat 
 | `hello-response.json` | Antwort darauf mit dauerhafter Adresse |
 | `upsert-augsburg-berlin.json` | `trip.upsert`, Verbindung wie aus `teilen/augsburg-berlin-2026-10-08.txt` ausgelesen |
 | `upsert-zubringer.json` | `trip.upsert` nach dem Umplanen unterwegs: ICE 1604 bis Erfurt aus der alten Reise, danach die neue Verbindung |
-| `location.json` | `location` mit zwei Messungen und Zugpunkt |
+| `location.json` | `location` mit zwei Messungen, Zugpunkt und Geschwindigkeit der App |
 | `route-gps.json` | `route.gps` mit Umleitung über Leipzig |
 | `route-gps-ende.json` | `route.gps` mit `gps: null` |
 | `delete-stop-bye.json` | `trip.delete`, `sharing.stop` und `link.bye` |

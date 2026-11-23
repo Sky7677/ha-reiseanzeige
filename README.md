@@ -105,7 +105,7 @@ Der Schlüssel zum Verbinden gilt 10 Minuten und einmal. Die dauerhafte Adresse 
 **Danach gilt für die verbundene Person:**
 
 - Neue, ersetzte und gelöschte Reisen kommen aus der App. Halte, Strecke und Echtzeit rechnet Home Assistant weiter selbst.
-- Mit „Standort senden“ in der App kommen die Standorte während der Fahrt in einen eigenen Tracker (`device_tracker.reiseanzeige_<person>_<handy>`), ohne Verlauf in Home Assistant. Die Karte zeigt wie bisher nur den Punkt auf der Strecke. Den Standort der Companion-App braucht die Reiseanzeige dann nicht mehr.
+- Mit „Standort senden“ in der App kommen die Standorte während der Fahrt in einen eigenen Tracker (`device_tracker.reiseanzeige_<person>_<handy>`), ohne Verlauf in Home Assistant. Dazu schickt die App ihr Ergebnis: den Zugpunkt auf der Strecke und die Geschwindigkeit, wie die App sie anzeigt (Attribute `train_*`). Die Karte übernimmt beides und zeigt die Geschwindigkeit mit der Uhrzeit der Messung („143 km/h · 06:42“, abgeleitet mit „≈“); ihre eigene Auswertung des Standorts bleibt nur Ersatz (ab 0.10.0). „Jetzt aktualisieren“ in der App misst sofort genau und schickt gleich. Den Standort der Companion-App braucht die Reiseanzeige dann nicht mehr.
 - Umleitungen per GPS wertet die App aus; Home Assistant legt nur die Linie auf seine Gleise.
 - Wagen und Sitzplatz kommen aus der App; die Karte zeigt sie nur an.
 - Push-Nachrichten kommen von der App, nicht von Home Assistant. Das Ereignis `reiseanzeige` für Automationen bleibt.

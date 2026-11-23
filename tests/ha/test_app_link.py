@@ -128,6 +128,17 @@ async def test_verbinden_reisen_standort_loeschen(hass, boards, hass_admin_user,
     state = hass.states.get(TRACKER)
     assert state.attributes["latitude"] == 49.4512 and state.attributes["gps_accuracy"] == 11
     assert state.attributes["fix_time"] == "2026-10-08T07:40:31+02:00" and state.attributes["speed"] == 24.9
+    # Ergebnis der App: Zugpunkt und Geschwindigkeit, wie die App sie anzeigt
+    assert state.attributes["train_leg"] == 1 and state.attributes["train_latitude"] == 49.4510
+    assert state.attributes["train_speed"] == 24.9 and state.attributes["train_speed_approx"] is False
+    assert state.attributes["train_speed_time"] == "2026-10-08T07:40:31+02:00"
+    # „Jetzt aktualisieren“: dieselbe Messung mit neuem Ergebnis noch einmal
+    again = copy.deepcopy(sample("location.json"))
+    again["messages"][0]["train"] |= {"speed": 30.0, "speedTime": "2026-10-08T07:40:40+02:00", "speedApprox": True}
+    assert (await post(client, webhook_id, again))[1]["trips"] == {TRIP: "ok"}
+    await hass.async_block_till_done()
+    state = hass.states.get(TRACKER)
+    assert state.attributes["train_speed"] == 30.0 and state.attributes["train_speed_approx"] is True
     await rt.notify(hass_admin_user.id, "Echtzeit fehlt")
     assert len(calls) == n
 

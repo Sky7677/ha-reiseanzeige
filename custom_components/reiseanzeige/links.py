@@ -219,11 +219,13 @@ class Links:
     # --- Standort (nur im Speicher) ---
 
     @callback
-    def set_location(self, link_id: str, fix: dict, trip_id: str) -> None:
+    def set_location(self, link_id: str, fix: dict, trip_id: str, train: dict | None = None) -> None:
+        """Letzte Messung samt Ergebnis der App (Zugpunkt, Geschwindigkeit). „Jetzt
+        aktualisieren“ in der App schickt die letzte Messung mit neuem Ergebnis noch einmal."""
         old = self.locations.get(link_id)
-        if old and old["time"] >= fix["time"]:
+        if old and (old["time"] > fix["time"] or (old["time"] == fix["time"] and not train)):
             return
-        self.locations[link_id] = fix | {"tripId": trip_id}
+        self.locations[link_id] = fix | {"tripId": trip_id, "train": train}
         async_dispatcher_send(self.hass, f"{SIGNAL_LINK_LOCATION}_{link_id}")
 
     @callback

@@ -280,11 +280,15 @@ def _message(raw: Any) -> dict | None:
         if train is not None:
             if not isinstance(train, dict):
                 raise _bad("train: Objekt erwartet")
+            # Ergebnis der App: Zugpunkt und Geschwindigkeit, wie die App sie anzeigt
             msg["train"] = {"leg": _int(train.get("leg"), "train.leg", 0, MAX_LEGS),
                             "lat": _num(train.get("lat"), "train.lat", -90, 90),
                             "lon": _num(train.get("lon"), "train.lon", -180, 180),
                             "time": _time(train.get("time"), "train.time"),
-                            "gps": bool(train.get("gps"))}
+                            "gps": bool(train.get("gps")),
+                            "speed": _num(train.get("speed"), "train.speed", 0, 200, optional=True),
+                            "speedTime": _time(train["speedTime"], "train.speedTime") if train.get("speedTime") else None,
+                            "speedApprox": bool(train.get("speedApprox"))}
     elif kind == "route.gps":
         msg["tripId"] = _trip_id(raw.get("tripId"))
         msg["leg"] = _int(raw.get("leg"), "leg", 0, MAX_LEGS)
