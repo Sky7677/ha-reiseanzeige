@@ -47,6 +47,14 @@ def test_zubringer_und_sitzplatz():
 def test_standort_und_umleitung():
     loc = parse_request(sample("location.json")).messages[0]
     assert [f["accuracy"] for f in loc["fixes"]] == [14.0, 11.0] and loc["train"]["leg"] == 1
+    assert loc["train"]["speed"] == 24.9 and loc["train"]["speedApprox"] is False
+    assert loc["train"]["speedTime"].isoformat() == "2026-10-08T07:40:31+02:00"
+    # Ältere App ohne Geschwindigkeit im Zugpunkt, oder ohne bekannte Geschwindigkeit
+    raw = sample("location.json")
+    for k in ("speed", "speedTime", "speedApprox"):
+        raw["messages"][0]["train"][k] = None
+    old = parse_request(raw).messages[0]["train"]
+    assert old["speed"] is None and old["speedTime"] is None and old["speedApprox"] is False
     route = parse_request(sample("route-gps.json")).messages[0]
     assert route["gps"]["after"]["name"] == "Erfurt Hbf" and len(route["gps"]["points"]) == 2
     assert parse_request(sample("route-gps-ende.json")).messages[0]["gps"] is None

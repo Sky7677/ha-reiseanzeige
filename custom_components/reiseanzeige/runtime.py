@@ -315,7 +315,7 @@ class Reiseanzeige:
                 return UNKNOWN
             if kind == "location":
                 if msg["fixes"]:
-                    self.links.set_location(link["id"], msg["fixes"][-1], trip["id"])
+                    self.links.set_location(link["id"], msg["fixes"][-1], trip["id"], msg.get("train"))
                 return OK
             if kind == "sharing.stop":
                 self.links.clear_location(link["id"])

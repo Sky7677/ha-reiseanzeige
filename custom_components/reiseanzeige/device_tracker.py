@@ -43,7 +43,9 @@ class AppTracker(TrackerEntity):
     _attr_has_entity_name = False
     # Kein Standortverlauf in Home Assistant
     _unrecorded_attributes = frozenset({ATTR_LATITUDE, ATTR_LONGITUDE, ATTR_GPS_ACCURACY, "speed", "bearing",
-                                        "fix_time", "trip_id"})
+                                        "fix_time", "trip_id", "train_leg", "train_latitude", "train_longitude",
+                                        "train_time", "train_gps", "train_speed", "train_speed_time",
+                                        "train_speed_approx"})
 
     def __init__(self, rt, entry: ConfigEntry, link_id: str) -> None:
         self.rt = rt
@@ -85,5 +87,15 @@ class AppTracker(TrackerEntity):
         if not fix:
             return {}
         # fix_time: Zeit der Messung – die App schickt im Hintergrund gesammelt
-        return {"speed": fix.get("speed"), "bearing": fix.get("bearing"), "fix_time": fix["time"].isoformat(),
-                "trip_id": fix.get("tripId")}
+        attrs = {"speed": fix.get("speed"), "bearing": fix.get("bearing"), "fix_time": fix["time"].isoformat(),
+                 "trip_id": fix.get("tripId")}
+        # Ergebnis der App: Zugpunkt auf der Strecke und Geschwindigkeit, wie die App sie
+        # anzeigt (m/s); die Karte nutzt es vor ihrer eigenen Auswertung der Messung
+        train = fix.get("train")
+        if train:
+            attrs |= {"train_leg": train["leg"], "train_latitude": train["lat"], "train_longitude": train["lon"],
+                      "train_time": train["time"].isoformat(), "train_gps": train["gps"],
+                      "train_speed": train.get("speed"),
+                      "train_speed_time": train["speedTime"].isoformat() if train.get("speedTime") else None,
+                      "train_speed_approx": train.get("speedApprox", False)}
+        return attrs

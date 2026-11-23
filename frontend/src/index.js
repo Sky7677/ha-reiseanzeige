@@ -14,15 +14,15 @@ import {createHaClient} from './ha-client.js';
 import {selectTrip, switcherGroups, switcherLabels} from './select.js';
 import {buildTripView} from './view-model.js';
 import {buildGeometry, computePosition, splitRoute} from './position.js';
-import {readFix, applyGps, fixSample, speedFromFixes, speedLabel} from './gps.js';
+import {readFix, readAppResult, applyAppPoint, applyGps, fixSample, speedFromFixes, speedLabel} from './gps.js';
 import {renderInfo, renderIdle} from './render-info.js';
 import {renderBoard} from './render-board.js';
 import {createTripMap} from './map.js';
 import {STYLE} from './styles.js';
-import {dayTime, esc} from './format.js';
+import {clock, dayTime, esc} from './format.js';
 import qrcode from 'qrcode-generator';
 
-export const CARD_VERSION = '0.13.0';
+export const CARD_VERSION = '0.14.0';
 const POLL_MS = 60 * 1000;
 const SESSION_CHECK_MS = 60 * 1000;
 const field = (form, name) => form.elements.namedItem(name);
@@ -415,21 +415,28 @@ class ReiseanzeigeCard extends HTMLElement {
 		const now = Date.now();
 		const view = buildTripView(trip, now);
 		let pos = computePosition(view, g.geometry, now);
-		// GPS-Korrektur, wenn für die Eigentümerin ein Standort eingetragen ist (gps.js)
-		const fix = trip.ownerLocation ? readFix(this._hass?.states?.[trip.ownerLocation]) : null;
-		if (pos && fix) {
-			const computeAt = (t) => computePosition(buildTripView(trip, t), g.geometry, t);
-			pos = applyGps({pos, fix, view, geometry: g.geometry, computeAt, now});
-		}
+		// Standort der Eigentümerin (gps.js): bei der Android-App zuerst deren Ergebnis
+		// (Zugpunkt, Geschwindigkeit), die eigene Auswertung der Messung nur als Ersatz
+		const state = trip.ownerLocation ? this._hass?.states?.[trip.ownerLocation] : null;
+		const fix = readFix(state);
+		const app = readAppResult(state, trip.id);
+		const computeAt = (t) => computePosition(buildTripView(trip, t), g.geometry, t);
+		if (pos && app) pos = applyAppPoint({pos, point: app, geometry: g.geometry, computeAt, now}) ?? pos;
+		if (pos && fix && pos.source !== 'app') pos = applyGps({pos, fix, view, geometry: g.geometry, computeAt, now});
 		this._map.setPosition(pos, pos ? splitRoute(g.geometry, pos) : null);
-		// Geschwindigkeit: nur bei einem neuen akzeptierten Standort neu bestimmen; gilt nur
-		// für diese Reise und solange sie läuft. Unbekannt → letzter guter Wert bleibt.
+		// Geschwindigkeit: von der App, wie sie sie anzeigt; sonst bei einem neuen akzeptierten
+		// Standort neu bestimmen. Gilt nur für diese Reise und solange sie läuft; unbekannt →
+		// letzter guter Wert bleibt.
 		if (this._lastSpeed?.tripId !== trip.id || trip.status !== 'running') { this._lastSpeed = null; this._prevFix = null; }
-		const sample = fixSample(pos);
-		if (sample && trip.status === 'running' && sample.at !== this._prevFix?.at) {
-			const speed = speedFromFixes({current: sample, previous: this._prevFix});
-			if (speed) this._lastSpeed = {...speed, tripId: trip.id};
-			this._prevFix = sample;
+		if (trip.status === 'running' && app?.speed) {
+			this._lastSpeed = {...app.speed, tripId: trip.id, fromApp: true};
+		} else {
+			const sample = fixSample(pos);
+			if (sample && trip.status === 'running' && sample.at !== this._prevFix?.at) {
+				const speed = speedFromFixes({current: sample, previous: this._prevFix});
+				if (speed) this._lastSpeed = {...speed, tripId: trip.id};
+				this._prevFix = sample;
+			}
 		}
 		this._showSpeed();
 	}
@@ -489,7 +496,11 @@ class ReiseanzeigeCard extends HTMLElement {
 		el.classList.toggle('hidden', !label);
 		el.classList.toggle('stale', Boolean(label?.stale));
 		el.textContent = label?.text ?? '';
-		el.title = (label?.stale ? 'Letzte Geschwindigkeit' : 'Geschwindigkeit') + (this._lastSpeed?.approx ? ' – abgeleitet aus zwei Standorten auf der Strecke, weil das Handy gerade kein genaues GPS meldet' : ' laut GPS des Handys');
+		const s = this._lastSpeed;
+		el.title = (label?.stale ? 'Letzte Geschwindigkeit' : 'Geschwindigkeit')
+			+ (s?.fromApp ? ' laut Reiseanzeige-App' : '')
+			+ (s?.approx ? ' – abgeleitet aus zwei Standorten auf der Strecke, weil das Handy gerade kein genaues GPS meldet' : ' – vom GPS des Handys')
+			+ (s ? `, gemessen um ${clock(s.at)}` : '');
 	}
 
 	getCardSize () { return 8; }

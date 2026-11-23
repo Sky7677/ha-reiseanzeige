@@ -226,7 +226,8 @@ export const createTripMap = (container, {base, dark = false, theme = 'muted', f
 		// Zugposition und Teilung gefahren/kommend (aus position.js)
 		setPosition (newPos, split) {
 			pos = newPos;
-			if (pos?.source === 'gps' && pos.gpsWeight > 0.2) { if (!gpsBadge._map) gpsBadge.addTo(map); } else gpsBadge.remove();
+			const gps = pos?.source === 'gps' || (pos?.source === 'app' && pos.appGps);
+			if (gps && pos.gpsWeight > 0.2) { if (!gpsBadge._map) gpsBadge.addTo(map); } else gpsBadge.remove();
 			if (current) current.split = split;
 			updateTrain();
 			applyView(true);
